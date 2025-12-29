@@ -122,7 +122,14 @@ class SecurityHeadersMiddleware
 
         // CSP（クリックジャッキング + XSS対策）
         $csp = $this->buildContentSecurityPolicy();
-        $response->headers->set('Content-Security-Policy', $csp);
+
+        // 開発環境では一部ヘッダを緩和
+        if (app()->environment('local', 'development')) {
+            // CSPをReport-Onlyモードに
+            $response->headers->set('Content-Security-Policy-Report-Only', $csp);
+        } else {
+            $response->headers->set('Content-Security-Policy', $csp);
+        }
 
         // MIMEスニッフィング防止
         $response->headers->set('X-Content-Type-Options', 'nosniff');
@@ -162,7 +169,9 @@ class SecurityHeadersMiddleware
         $policies = [
             "default-src 'self'",
             "script-src 'self'",
-            "style-src 'self' 'unsafe-inline'",  // Tailwind CSS用
+            // ✅ 推奨: Vite/Webpackビルド時（本プロジェクト）
+            "style-src 'self'",
+            // ⚠️ CDN使用時のみ: "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
             "font-src 'self' data:",
             "frame-ancestors 'self'",
@@ -175,6 +184,10 @@ class SecurityHeadersMiddleware
     }
 }
 ```
+
+**重要**: Tailwind CSS と CSP の設定:
+- **Vite/Webpack ビルド時**: `style-src 'self'` のみ（推奨）
+- **CDN版**: `style-src 'self' 'unsafe-inline'` が必要（セキュリティリスクあり）
 
 ---
 

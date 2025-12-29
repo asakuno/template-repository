@@ -115,7 +115,37 @@ export function SafeHTML({ content }: SafeHTMLProps) {
 
   return <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />;
 }
+
+// より厳格な設定例（タグのみ許可、属性なし）
+export function StrictSafeHTML({ content }: SafeHTMLProps) {
+  const sanitizedContent = DOMPurify.sanitize(content, {
+    ALLOWED_TAGS: ['p', 'strong', 'em', 'ul', 'ol', 'li'],
+    ALLOWED_ATTR: [],  // 属性を一切許可しない
+    KEEP_CONTENT: true,
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false,
+  });
+
+  return <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />;
+}
+
+// リンクを許可する場合（外部リンク対策込み）
+export function SafeHTMLWithLinks({ content }: SafeHTMLProps) {
+  const sanitizedContent = DOMPurify.sanitize(content, {
+    ALLOWED_TAGS: ['p', 'a', 'strong', 'em'],
+    ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+    ALLOWED_URI_REGEXP: /^https?:\/\//,  // HTTP(S)のみ許可
+    ADD_ATTR: ['target', 'rel'],
+    ADD_VALUES: { target: '_blank', rel: 'noopener noreferrer' },
+  });
+
+  return <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />;
+}
 ```
+
+**推奨**: セキュリティレベルに応じて適切な設定を選択する。デフォルトは `StrictSafeHTML` を使用し、必要に応じて許可範囲を拡大する。
+
+---
 
 ### URL検証（javascript:スキーム対策）
 
@@ -197,16 +227,31 @@ class AddContentSecurityPolicy
 |--------------|---------|------|
 | `default-src` | `'self'` | デフォルトで同一オリジンのみ許可 |
 | `script-src` | `'self'` | スクリプトは同一オリジンのみ |
-| `style-src` | `'self' 'unsafe-inline'` | インラインスタイル許可（Tailwind CSS用） |
+| `style-src` | `'self'` | スタイルは同一オリジンのみ（Tailwind CSSビルド時） |
 | `img-src` | `'self' data: https:` | 画像はdata URIとHTTPS許可 |
 | `frame-ancestors` | `'self'` | iframe埋め込み制限 |
 | `object-src` | `'none'` | Flash等のプラグイン禁止 |
 | `base-uri` | `'self'` | `<base>` タグのURL制限 |
 
+### Tailwind CSS と CSP
+
+**重要**: Tailwind CSS の使用方法により CSP 設定が異なる:
+
+- **Vite/Webpack ビルド時**: インラインスタイルは不要 → `'unsafe-inline'` 削除可能
+- **CDN版**: `'unsafe-inline'` が必要（本番環境では非推奨）
+
+```php
+// ✅ 推奨: ビルド時スタイル生成（本プロジェクトはこちら）
+"style-src 'self'",
+
+// ⚠️ やむを得ない場合のみ（セキュリティリスクあり）
+"style-src 'self' 'unsafe-inline'",
+```
+
 ### 注意事項
 
 - `'unsafe-inline'` と `'unsafe-eval'` は可能な限り使用しない
-- Tailwind CSS の Inlining により `style-src 'unsafe-inline'` が必要になる場合がある
+- `'unsafe-inline'` はCSPの保護を弱体化させるため、ビルド時スタイル生成を推奨
 - 本番環境では Report-Only モードで動作確認後、Enforce モードに移行する
 
 ---

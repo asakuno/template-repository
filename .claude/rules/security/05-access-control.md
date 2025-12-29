@@ -245,11 +245,15 @@ return [
     'driver' => 'argon2id',  // bcrypt より安全
 
     'argon' => [
-        'memory' => 65536,
-        'threads' => 4,
-        'time' => 4,
+        // OWASP推奨値
+        'memory' => 65536,  // 64MB（最低19456 = 19MB）
+        'threads' => 4,     // CPU並列処理数
+        'time' => 4,        // 反復回数（最低2）
     ],
 ];
+
+// **注意**: メモリ/時間を増やすとサーバー負荷が高くなる
+// 本番環境では負荷テストを実施して調整
 ```
 
 ---
@@ -261,6 +265,7 @@ return [
 ```php
 use Illuminate\Validation\Rules\Password;
 
+// ✅ 基本設定（最低限の要件）
 $request->validate([
     'password' => [
         'required',
@@ -272,18 +277,39 @@ $request->validate([
             ->uncompromised(),   // 漏洩パスワードチェック（Have I Been Pwned API）
     ],
 ]);
+
+// ✅ より強固な推奨設定（NIST準拠）
+$request->validate([
+    'password' => [
+        'required',
+        'confirmed',
+        Password::min(12)        // NIST推奨は最低12文字
+            ->mixedCase()
+            ->numbers()
+            ->symbols()
+            ->uncompromised(3),  // 3回以上漏洩していないこと
+    ],
+]);
+
+// ✅ 重要システム向け設定（金融・医療等）
+$request->validate([
+    'password' => [
+        'required',
+        'confirmed',
+        Password::min(16)
+            ->mixedCase()
+            ->numbers()
+            ->symbols()
+            ->uncompromised()
+            ->rules(['regex:/[A-Z]/'])           // 大文字必須
+            ->rules(['regex:/[a-z]/'])           // 小文字必須
+            ->rules(['regex:/[0-9]/'])           // 数字必須
+            ->rules(['regex:/[@$!%*#?&]/'])      // 記号必須
+    ],
+]);
 ```
 
-### カスタムパスワードルール
-
-```php
-// プロジェクト固有のルール
-Password::min(12)
-    ->mixedCase()
-    ->numbers()
-    ->symbols()
-    ->uncompromised(3);  // 3回以上漏洩していないこと
-```
+**推奨**: 一般的なアプリケーションでは12文字以上、重要システムでは16文字以上を推奨。
 
 ---
 

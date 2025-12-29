@@ -28,14 +28,21 @@
 外部Webhook等でCSRF検証を除外する場合のみ設定する。
 
 ```php
-// Laravel 11以降（bootstrap/app.php）
-->withMiddleware(function (Middleware $middleware) {
-    $middleware->validateCsrfTokens(except: [
-        'stripe/*',      // Stripe webhook
-        'webhook/*',     // 外部システムからのWebhook
-    ]);
-})
+// bootstrap/app.php（Laravel 11）
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->validateCsrfTokens(except: [
+            'stripe/*',      // Stripe webhook
+            'webhook/*',     // 外部システムからのWebhook
+        ]);
+    })
+    ->create();
 ```
+
+**重要**: 除外設定は必要最小限に限定し、安易な除外は避ける。
 
 ---
 
@@ -125,6 +132,20 @@ return [
     'same_site' => 'lax',
 ];
 ```
+
+### セッションドライバ選定基準
+
+| ドライバ | パフォーマンス | 永続性 | スケーラビリティ | 推奨環境 |
+|---------|--------------|--------|----------------|----------|
+| **file** | ⭐⭐ | ⭐⭐ | ⭐ | 開発環境 |
+| **database** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | 単一サーバ本番 |
+| **redis** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | 複数サーバ本番 |
+| **memcached** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐ | 高速だが再起動でデータ消失 |
+
+**負荷分散環境の注意点**:
+- `file` ドライバは使用不可（セッションが共有されない）
+- `database` は書き込み負荷に注意
+- `redis` が最も推奨（Redis Sentinel/Clusterで冗長化）
 
 ---
 

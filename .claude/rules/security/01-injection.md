@@ -163,20 +163,31 @@ Route::get('/download', function(Request $request) {
 
 #### 方法3: realpath() + パス検証
 
-```php
-// ✅ 安全: realpath() + ディレクトリ検証
-use Illuminate\Support\Str;
+**重要**: `realpath()` はファイルが存在しない場合に `false` を返すため、先に `file_exists()` でファイルの存在を確認する。
 
+```php
+// ✅ 安全: basename() + file_exists() + realpath() の組み合わせ
 public function downloadFile(Request $request)
 {
     $basePath = storage_path('app/files');
-    $requestedPath = $basePath . '/' . $request->input('filename');
+    $filename = $request->input('filename');
 
-    // 実際のパスを取得
+    // 1. basename()でファイル名のみ取得
+    $safeFilename = basename($filename);
+
+    // 2. パスを構築
+    $requestedPath = $basePath . '/' . $safeFilename;
+
+    // 3. ファイルの存在確認
+    if (!file_exists($requestedPath)) {
+        abort(404, 'File not found');
+    }
+
+    // 4. realpath()で正規化
     $realPath = realpath($requestedPath);
 
-    // パスが許可されたディレクトリ内か検証
-    if ($realPath === false || !Str::startsWith($realPath, $basePath)) {
+    // 5. ベースパス内か検証
+    if ($realPath === false || !str_starts_with($realPath, $basePath)) {
         abort(403, 'Unauthorized file access');
     }
 
