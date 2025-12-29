@@ -3,9 +3,68 @@ name: backend-coding-guidelines
 description: Comprehensive Laravel backend coding guidelines for 4-layer architecture (DDD-lite). **CRITICAL**: Focuses on patterns AI commonly fails to implement correctly, especially Entity/ValueObject design, UseCase structure, and layer separation. Reference this skill when implementing or refactoring backend code during Phase 2.
 ---
 
-# Backend Coding Guidelines - What AI Gets Wrong (4-Layer Architecture Edition)
+# Backend Coding Guidelines - What AI Gets Wrong
 
 This skill focuses on patterns AI commonly fails to implement correctly in Laravel applications following a 4-layer architecture (Presentation, Application, Domain, Infrastructure).
+
+## Table of Contents
+
+1. [How to Use This Skill](#how-to-use-this-skill)
+2. [Architecture Overview](#architecture-overview)
+3. [AI's Critical Weaknesses - Quick Reference](#ais-critical-weaknesses---quick-reference)
+4. [Naming Conventions](#naming-conventions)
+5. [Method Naming](#method-naming)
+6. [Class Modifiers](#class-modifiers)
+7. [Prohibited Patterns](#prohibited-patterns)
+8. [AI Weakness Checklist](#ai-weakness-checklist)
+9. [Summary: What to Watch For](#summary-what-to-watch-for)
+
+---
+
+## How to Use This Skill
+
+This skill is designed for **Phase 2: Implementation & Review** in the development workflow.
+
+### Recommended Workflow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Phase 2: Implementation & Review                            │
+└─────────────────────────────────────────────────────────────┘
+
+Step 1: Pre-Implementation Check
+├─ Review relevant sections below based on what you're building:
+│  ├─ Building Entity/ValueObject? → Read Entity Design & ValueObject Design
+│  ├─ Building UseCase? → Read UseCase Structure
+│  ├─ Building Repository? → Read Repository Pattern
+│  └─ Cross-module communication? → Read Module Isolation
+│
+Step 2: Implementation
+├─ Implement following the correct patterns
+├─ Avoid AI's common mistakes highlighted in Quick Reference
+│
+Step 3: Pre-Review Self-Check
+├─ Run through AI Weakness Checklist
+├─ Verify no prohibited patterns used
+├─ Check layer separation rules
+│
+Step 4: Code Review (Codex MCP)
+├─ Request code review with focus on patterns from this skill
+└─ Fix any violations identified
+```
+
+### When to Reference Detailed Guides
+
+The Quick Reference section below provides high-level patterns. For detailed examples and variations:
+
+- **Entity Design**: See [references/entity-design.md](references/entity-design.md)
+- **ValueObject Design**: See [references/valueobject-design.md](references/valueobject-design.md)
+- **UseCase Structure**: See [references/usecase-structure.md](references/usecase-structure.md)
+- **Repository Pattern**: See [references/repository-pattern.md](references/repository-pattern.md)
+- **Layer Separation**: See [references/layer-separation.md](references/layer-separation.md)
+- **Module Isolation**: See [references/module-isolation.md](references/module-isolation.md)
+
+---
 
 ## Architecture Overview
 
@@ -22,32 +81,21 @@ Presentation → Application → Domain ← Infrastructure
 - Domain layer MUST NOT depend on any other layer
 - Infrastructure implements Domain interfaces (Dependency Inversion)
 
-## ⚠️ Critical: AI's Common Failures
+---
 
-### 1. Entity Design (Most Critical)
+## AI's Critical Weaknesses - Quick Reference
 
-**Pattern AI ALWAYS gets wrong**: Using public constructors and mutable properties
+### 1. Entity Design ⚠️ MOST CRITICAL
 
-```php
-// ❌ Typical AI pattern (mutable, no factory methods)
-class Member
-{
-    public function __construct(
-        public ?string $id,
-        public string $name,
-        public string $email,
-    ) {}
-}
+**AI gets wrong**: Using public constructors and mutable properties
 
-// ❌ AI creates Entities without distinguishing creation vs reconstruction
-$member = new Member(null, 'Taro', 'taro@example.com'); // 新規作成?
-$member = new Member('123', 'Taro', 'taro@example.com'); // DB復元?
-```
-
-**Correct pattern**: Private constructor with factory methods
+**Correct pattern**:
+- Private constructor with `create()` and `reconstruct()` factory methods
+- All properties `readonly` with ValueObject types
+- Class marked as `final`
 
 ```php
-// ✅ Correct: final class with factory methods
+// ✅ Correct pattern
 final class Member
 {
     private function __construct(
@@ -56,253 +104,102 @@ final class Member
         private readonly Email $email,
     ) {}
 
-    // 新規作成用 - IDは自動生成
-    public static function create(Name $name, Email $email): self
-    {
-        return new self(
-            id: MemberId::generate(),
-            name: $name,
-            email: $email,
-        );
+    public static function create(Name $name, Email $email): self {
+        return new self(MemberId::generate(), $name, $email);
     }
 
-    // DB復元用 - 既存データの再構築
-    public static function reconstruct(
-        MemberId $id,
-        Name $name,
-        Email $email,
-    ): self {
+    public static function reconstruct(MemberId $id, Name $name, Email $email): self {
         return new self($id, $name, $email);
     }
-
-    // Getter methods
-    public function id(): MemberId { return $this->id; }
-    public function name(): Name { return $this->name; }
-    public function email(): Email { return $this->email; }
 }
 ```
+
+👉 **Detailed guide**: [references/entity-design.md](references/entity-design.md)
 
 ---
 
-### 2. ValueObject Design
+### 2. ValueObject Design ⚠️
 
-**Pattern AI gets wrong**: Skipping validation or using primitives
+**AI gets wrong**: Skipping validation or using primitives in Entities
 
-```php
-// ❌ AI writes: No validation, accepts any string
-final readonly class Email
-{
-    public function __construct(public string $value) {}
-}
-
-// ❌ AI writes: Using primitives instead of ValueObjects
-final class Member
-{
-    public function __construct(
-        private readonly string $id,    // Should be MemberId
-        private readonly string $name,  // Should be Name
-        private readonly string $email, // Should be Email
-    ) {}
-}
-```
-
-**Correct pattern**: Validation at creation time with factory methods
+**Correct pattern**:
+- Private constructor with `create()` factory method
+- Validation at creation time
+- Class marked as `final readonly`
+- Has `value()` and `equals()` methods
 
 ```php
-// ✅ Correct: ValueObject with validation
+// ✅ Correct pattern
 final readonly class Email
 {
     private function __construct(private string $value) {}
 
-    public static function create(string $value): self
-    {
+    public static function create(string $value): self {
         if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException("無効なメールアドレス形式: {$value}");
         }
         return new self($value);
     }
 
-    public function value(): string
-    {
-        return $this->value;
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
-}
-
-// ✅ Correct: ID ValueObject with generation
-final readonly class MemberId
-{
-    private function __construct(private string $value) {}
-
-    public static function generate(): self
-    {
-        return new self((string) Str::uuid());
-    }
-
-    public static function from(string $value): self
-    {
-        return new self($value);
-    }
-
-    public function value(): string
-    {
-        return $this->value;
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
+    public function value(): string { return $this->value; }
+    public function equals(self $other): bool { return $this->value === $other->value; }
 }
 ```
+
+👉 **Detailed guide**: [references/valueobject-design.md](references/valueobject-design.md)
 
 ---
 
-### 3. UseCase Structure
+### 3. UseCase Structure ⚠️
 
-**Pattern AI gets wrong**: Business logic in controller, no DTOs
+**AI gets wrong**: Business logic in controller, no DTOs, or returning Entities
 
-```php
-// ❌ AI writes: Logic in controller
-final class MemberController extends Controller
-{
-    public function store(Request $request)
-    {
-        // Business logic in controller
-        $member = new Member();
-        $member->name = $request->input('name');
-        $member->email = $request->input('email');
-        $member->save();
-
-        return redirect()->route('members.index');
-    }
-}
-
-// ❌ AI writes: UseCase returns Entity directly
-final readonly class CreateMemberUseCase
-{
-    public function execute(string $name, string $email): Member
-    {
-        // Returns Entity to Presentation layer
-    }
-}
-```
-
-**Correct pattern**: UseCase with Input/Output DTOs
+**Correct pattern**:
+- Input DTO for parameters (primitives)
+- Output DTO for results (primitives)
+- Uses Repository interface (not implementation)
+- Class marked as `final readonly`
 
 ```php
-// ✅ Correct: Input DTO
-final readonly class CreateMemberInput
-{
-    public function __construct(
-        public string $name,
-        public string $email,
-    ) {}
-}
-
-// ✅ Correct: Output DTO
-final readonly class CreateMemberOutput
-{
-    public function __construct(
-        public string $id,
-    ) {}
-}
-
-// ✅ Correct: UseCase with DTOs
+// ✅ Correct pattern
 final readonly class CreateMemberUseCase
 {
     public function __construct(
         private MemberRepositoryInterface $repository,
     ) {}
 
-    public function execute(CreateMemberInput $input): CreateMemberOutput
-    {
+    public function execute(CreateMemberInput $input): CreateMemberOutput {
         $member = Member::create(
             name: Name::create($input->name),
             email: Email::create($input->email),
         );
-
         $this->repository->save($member);
-
-        return new CreateMemberOutput(
-            id: $member->id()->value(),
-        );
-    }
-}
-
-// ✅ Correct: Controller uses UseCase
-final class MemberController extends Controller
-{
-    public function store(
-        CreateMemberRequest $request,
-        CreateMemberUseCase $useCase,
-    ): RedirectResponse {
-        $useCase->execute(new CreateMemberInput(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-        ));
-
-        return redirect()->route('members.index')
-            ->with('success', 'メンバーを作成しました');
+        return new CreateMemberOutput(id: $member->id()->value());
     }
 }
 ```
+
+👉 **Detailed guide**: [references/usecase-structure.md](references/usecase-structure.md)
 
 ---
 
-### 4. Repository Pattern
+### 4. Repository Pattern ⚠️
 
-**Pattern AI gets wrong**: Returning Eloquent Model, missing interface
+**AI gets wrong**: Returning Eloquent Model or missing interface separation
 
-```php
-// ❌ AI writes: Repository returns Eloquent Model
-final class MemberRepository
-{
-    public function findById(string $id): ?MemberModel
-    {
-        return MemberModel::find($id);
-    }
-}
-
-// ❌ AI writes: No interface separation
-final class MemberRepository
-{
-    public function findById(string $id): ?Member
-    {
-        $model = MemberModel::find($id);
-        return $model ? new Member($model->id, $model->name, $model->email) : null;
-    }
-}
-```
-
-**Correct pattern**: Interface in Domain, implementation in Infrastructure
+**Correct pattern**:
+- Interface in Domain layer (`MemberRepositoryInterface`)
+- Implementation in Infrastructure layer (`EloquentMemberRepository`)
+- Returns Entity (not Eloquent Model)
+- Uses `reconstruct()` to build Entity from Model
 
 ```php
-// ✅ Correct: Interface in Domain layer
-// modules/{Module}/Domain/Repositories/MemberRepositoryInterface.php
-interface MemberRepositoryInterface
-{
-    public function findById(MemberId $id): ?Member;
-    public function findByEmail(Email $email): ?Member;
-    public function save(Member $member): void;
-    public function delete(MemberId $id): void;
-}
-
-// ✅ Correct: Implementation in Infrastructure layer
-// modules/{Module}/Infrastructure/Repositories/EloquentMemberRepository.php
+// ✅ Correct pattern
 final class EloquentMemberRepository implements MemberRepositoryInterface
 {
-    public function findById(MemberId $id): ?Member
-    {
+    public function findById(MemberId $id): ?Member {
         $model = MemberModel::find($id->value());
-
-        if ($model === null) {
-            return null;
-        }
+        if ($model === null) return null;
 
         return Member::reconstruct(
             id: MemberId::from($model->id),
@@ -310,206 +207,79 @@ final class EloquentMemberRepository implements MemberRepositoryInterface
             email: Email::create($model->email),
         );
     }
-
-    public function save(Member $member): void
-    {
-        MemberModel::updateOrCreate(
-            ['id' => $member->id()->value()],
-            [
-                'name' => $member->name()->value(),
-                'email' => $member->email()->value(),
-            ],
-        );
-    }
 }
 ```
+
+👉 **Detailed guide**: [references/repository-pattern.md](references/repository-pattern.md)
 
 ---
 
-### 5. Layer Separation Violations
+### 5. Layer Separation ⚠️
 
-**Pattern AI gets wrong**: Cross-layer dependencies
+**AI gets wrong**: Cross-layer dependencies (Domain → Laravel, UseCase → Eloquent, Controller → DB)
 
-```php
-// ❌ AI writes: Domain depends on Eloquent
-// In Domain layer
-use Illuminate\Database\Eloquent\Model;
-
-final class Member
-{
-    public function save(): void
-    {
-        MemberModel::create([...]); // Domain depends on Infrastructure
-    }
-}
-
-// ❌ AI writes: UseCase uses Eloquent directly
-final readonly class CreateMemberUseCase
-{
-    public function execute(CreateMemberInput $input): void
-    {
-        MemberModel::create([
-            'name' => $input->name,
-            'email' => $input->email,
-        ]);
-    }
-}
-
-// ❌ AI writes: Controller accesses database
-final class MemberController extends Controller
-{
-    public function index(): Response
-    {
-        $members = MemberModel::all(); // Direct DB access
-        return Inertia::render('Members/Index', ['members' => $members]);
-    }
-}
-```
-
-**Correct pattern**: Proper layer isolation
+**Correct pattern**:
+- Domain layer: Pure PHP, no Laravel dependencies
+- Application layer: Uses Repository interfaces
+- Controller: Uses UseCases only
+- No cross-layer shortcuts
 
 ```php
-// ✅ Correct: Domain layer has no external dependencies
-// Domain layer: Pure PHP, no Laravel/Eloquent
-final class Member
-{
+// ✅ Correct: Domain layer is pure PHP
+final class Member {
     // No use statements for Laravel classes
     // No database operations
     // Pure business logic only
 }
 
 // ✅ Correct: UseCase uses Repository interface
-final readonly class ListMembersUseCase
-{
+final readonly class ListMembersUseCase {
     public function __construct(
         private MemberRepositoryInterface $repository,
     ) {}
-
-    public function execute(): ListMembersOutput
-    {
-        $members = $this->repository->findAll();
-
-        return new ListMembersOutput(
-            members: array_map(
-                fn(Member $m) => new MemberData(
-                    id: $m->id()->value(),
-                    name: $m->name()->value(),
-                    email: $m->email()->value(),
-                ),
-                $members,
-            ),
-        );
-    }
 }
 
 // ✅ Correct: Controller uses UseCase
-final class MemberController extends Controller
-{
-    public function index(ListMembersUseCase $useCase): Response
-    {
+final class MemberController extends Controller {
+    public function index(ListMembersUseCase $useCase): Response {
         $output = $useCase->execute();
-
-        return Inertia::render('Members/Index', [
-            'members' => $output->members,
-        ]);
+        return Inertia::render('Members/Index', ['members' => $output->members]);
     }
 }
 ```
 
+👉 **Detailed guide**: [references/layer-separation.md](references/layer-separation.md)
+
 ---
 
-### 6. Module Isolation
+### 6. Module Isolation ⚠️
 
-**Pattern AI gets wrong**: Direct cross-module references
+**AI gets wrong**: Direct cross-module references to internal classes
 
-```php
-// ❌ AI writes: Module A directly uses Module B's internals
-// In Project module
-use Modules\Member\Domain\Entities\Member;
-use Modules\Member\Domain\Repositories\MemberRepositoryInterface;
-
-final readonly class CreateProjectUseCase
-{
-    public function __construct(
-        private MemberRepositoryInterface $memberRepository, // Wrong!
-    ) {}
-}
-```
-
-**Correct pattern**: Use Contract for cross-module communication
+**Correct pattern**:
+- Contract interface in `modules/Contract/{Module}/`
+- Contract DTOs use primitives
+- Module implements Contract
+- Other modules use Contract (not internals)
 
 ```php
-// ✅ Correct: Contract defines public API
+// ✅ Correct: Use Contract for cross-module communication
 // modules/Contract/Member/MemberServiceInterface.php
-interface MemberServiceInterface
-{
-    public function findById(string $id): ?MemberDto;
+interface MemberServiceInterface {
     public function exists(string $id): bool;
 }
 
-// ✅ Correct: Module implements Contract
-// modules/Member/Application/Services/MemberService.php
-final readonly class MemberService implements MemberServiceInterface
-{
-    public function __construct(
-        private MemberRepositoryInterface $repository,
-    ) {}
-
-    public function findById(string $id): ?MemberDto
-    {
-        $member = $this->repository->findById(MemberId::from($id));
-        if ($member === null) {
-            return null;
-        }
-
-        return new MemberDto(
-            id: $member->id()->value(),
-            name: $member->name()->value(),
-        );
-    }
-}
-
-// ✅ Correct: Other module uses Contract
 // modules/Project/Application/UseCases/CreateProjectUseCase.php
-use Modules\Contract\Member\MemberServiceInterface;
+use Modules\Contract\Member\MemberServiceInterface; // Via Contract
 
-final readonly class CreateProjectUseCase
-{
+final readonly class CreateProjectUseCase {
     public function __construct(
-        private MemberServiceInterface $memberService, // Via Contract
+        private MemberServiceInterface $memberService,
     ) {}
 }
 ```
 
----
-
-## Directory Structure
-
-```
-modules/
-├── Contract/
-│   └── {Module}/
-│       ├── {Module}ServiceInterface.php
-│       └── DTOs/
-├── {Module}/
-│   ├── Presentation/
-│   │   ├── Controllers/
-│   │   ├── Requests/
-│   │   └── Resources/
-│   ├── Application/
-│   │   ├── UseCases/
-│   │   ├── DTOs/
-│   │   └── Services/
-│   ├── Domain/
-│   │   ├── Entities/
-│   │   ├── ValueObjects/
-│   │   ├── Repositories/      # Interfaces only
-│   │   ├── Services/          # Domain Services
-│   │   └── Exceptions/
-│   └── Infrastructure/
-│       ├── Repositories/      # Implementations
-│       └── Models/
-```
+👉 **Detailed guide**: [references/module-isolation.md](references/module-isolation.md)
 
 ---
 
