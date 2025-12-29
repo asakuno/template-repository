@@ -9,27 +9,14 @@ description: Comprehensive Storybook story creation guidelines. Covers story str
 
 ## How to Use This Skill
 
-### When to Reference
+### Quick Reference - Phase 2: Testing & Stories
 
-このスキルは以下の状況で参照してください：
+**ストーリー作成時:**
+- [ ] Creation Rulesで作成対象を確認（条件分岐による表示切り替えのみ）
+- [ ] 実装規約を確認（Meta最小限、バレルインポート禁止）
+- [ ] 詳細パターンは[story-patterns.md](references/story-patterns.md)を参照
 
-- **Phase 2 (Testing & Stories)**: コンポーネント実装後、Storybook ストーリーを作成する際
-- **Code Review**: ストーリー作成方針をレビューする際
-- **Story Refactoring**: 既存ストーリーの品質改善時
-
-### Workflow Integration
-
-```
-Phase 2: Testing & Stories
-├─ Component Implementation ✓
-├─ Unit Tests (Vitest) ✓
-└─ Storybook Stories
-   ├─ このスキルで作成基準を確認
-   ├─ 条件分岐を特定
-   └─ 必要なストーリーのみ作成
-```
-
-**重要**: ストーリーはビジュアルテストのためのものです。単純な prop 値の違いでストーリーを乱立させず、**条件分岐による見た目の違い**にフォーカスします。
+**重要**: ビジュアルテストのため、**条件分岐による見た目の違い**にフォーカス
 
 ---
 

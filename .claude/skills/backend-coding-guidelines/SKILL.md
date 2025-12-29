@@ -23,46 +23,25 @@ This skill focuses on patterns AI commonly fails to implement correctly in Larav
 
 ## How to Use This Skill
 
-This skill is designed for **Phase 2: Implementation & Review** in the development workflow.
+### Quick Reference - Phase 2: Implementation & Review
 
-### Recommended Workflow
+**実装前チェック:**
+- [ ] 実装対象に応じたパターンを確認（Entity/ValueObject/UseCase/Repository）
+- [ ] AI's Critical Weaknessesセクションで注意点を把握
+- [ ] Prohibited Patternsを確認
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Phase 2: Implementation & Review                            │
-└─────────────────────────────────────────────────────────────┘
+**実装後チェック:**
+- [ ] AI Weakness Checklistで自己チェック
+- [ ] 禁止パターンが使用されていないか確認
+- [ ] レイヤー分離ルールが守られているか確認
 
-Step 1: Pre-Implementation Check
-├─ Review relevant sections below based on what you're building:
-│  ├─ Building Entity/ValueObject? → Read Entity Design & ValueObject Design
-│  ├─ Building UseCase? → Read UseCase Structure
-│  ├─ Building Repository? → Read Repository Pattern
-│  └─ Cross-module communication? → Read Module Isolation
-│
-Step 2: Implementation
-├─ Implement following the correct patterns
-├─ Avoid AI's common mistakes highlighted in Quick Reference
-│
-Step 3: Pre-Review Self-Check
-├─ Run through AI Weakness Checklist
-├─ Verify no prohibited patterns used
-├─ Check layer separation rules
-│
-Step 4: Code Review (Codex MCP)
-├─ Request code review with focus on patterns from this skill
-└─ Fix any violations identified
-```
-
-### When to Reference Detailed Guides
-
-The Quick Reference section below provides high-level patterns. For detailed examples and variations:
-
-- **Entity Design**: See [references/entity-design.md](references/entity-design.md)
-- **ValueObject Design**: See [references/valueobject-design.md](references/valueobject-design.md)
-- **UseCase Structure**: See [references/usecase-structure.md](references/usecase-structure.md)
-- **Repository Pattern**: See [references/repository-pattern.md](references/repository-pattern.md)
-- **Layer Separation**: See [references/layer-separation.md](references/layer-separation.md)
-- **Module Isolation**: See [references/module-isolation.md](references/module-isolation.md)
+**詳細な実装ガイド:**
+- [Entity Design](references/entity-design.md) - Entityの詳細パターン
+- [ValueObject Design](references/valueobject-design.md) - ValueObjectの詳細パターン
+- [UseCase Structure](references/usecase-structure.md) - UseCaseの詳細パターン
+- [Repository Pattern](references/repository-pattern.md) - Repositoryの詳細パターン
+- [Layer Separation](references/layer-separation.md) - レイヤー分離の詳細
+- [Module Isolation](references/module-isolation.md) - モジュール分離の詳細
 
 ---
 

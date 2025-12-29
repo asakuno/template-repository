@@ -11,26 +11,17 @@ This skill covers testing patterns for Laravel applications following a 4-layer 
 
 ## How to Use This Skill
 
-### When to Reference
+### Quick Reference - Phase 2: Testing & Review
 
-This skill should be referenced during **Phase 2 (Testing & Review)** when:
-- Creating PHPUnit tests for Domain/Application/Infrastructure/Presentation layers
-- Working with the `backend-test-review` agent
-- Implementing TDD workflow (RED → GREEN → REFACTOR)
-- Reviewing test code for quality and completeness
+**テスト作成時:**
+- [ ] Test Strategy Overviewでテストタイプを確認
+- [ ] Quick Referenceで該当レイヤーのパターンを確認
+- [ ] 詳細が必要な場合は`references/`の該当ファイルを参照
 
-### Workflow Integration
-
-1. **Pre-Testing**: Review Test Strategy Overview and Quick Reference
-2. **During Testing**: Reference detailed patterns in `references/` directory
-3. **Pre-Review**: Use AI Weakness Checklist to self-check test quality
-4. **Code Review**: Codex MCP validates test coverage and patterns
-
-### Progressive Disclosure
-
-- **Start here**: Quick Reference (below) for test type overview
-- **Need details?**: Click through to detailed reference documentation
-- **Self-check**: Use AI Weakness Checklist before review
+**テスト後チェック:**
+- [ ] AI Weakness Checklistで自己チェック
+- [ ] テストカバレッジと品質を確認
+- [ ] backend-test-reviewエージェントでレビュー
 
 ---
 

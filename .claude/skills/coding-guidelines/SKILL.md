@@ -9,21 +9,15 @@ This skill focuses on patterns AI commonly fails to implement correctly in Larav
 
 ## How to Use This Skill
 
-### When to Reference This Skill
-- **Phase 2 (Implementation & Review)**: When implementing or refactoring React components
-- **Before Code Review**: To verify implementation against AI's common failures
-- **During Debugging**: When components are hard to test or maintain
+### Quick Reference - Phase 2: Implementation & Review
 
-### Workflow Integration
-1. **Pre-Implementation**: Review relevant Critical AI Failures section
-2. **During Implementation**: Reference specific pattern documents as needed
-3. **Pre-Review**: Run through AI Weakness Checklist
-4. **Code Review**: Verify patterns match guidelines
+**実装前:**
+- [ ] Critical AI Failuresセクションで注意点を確認
+- [ ] 該当パターンの詳細ドキュメントを参照
 
-### Progressive Disclosure Approach
-- **Start here**: Quick reference for critical failures
-- **Dive deeper**: Click reference links for detailed implementation examples
-- **Verify**: Use checklists to ensure completeness
+**実装後:**
+- [ ] AI Weakness Checklistで自己チェック
+- [ ] パターンがガイドラインに一致しているか確認
 
 ## Architecture Overview
 

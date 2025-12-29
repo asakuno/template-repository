@@ -9,23 +9,16 @@ This skill defines quality standards, structure, and naming conventions for test
 
 ## How to Use This Skill
 
-### During Phase 2 (Testing & Stories)
+### Quick Reference - Phase 2: Testing & Stories
 
-When implementing tests or creating stories:
+**テスト作成時:**
+- [ ] Quick Referenceチェックリストで品質基準を確認
+- [ ] 詳細パターンが必要な場合は`references/`を参照
+  - [test-patterns.md](references/test-patterns.md) - 全テストシナリオのコード例
+  - [aaa-pattern-guide.md](references/aaa-pattern-guide.md) - AAAパターンの詳細
 
-1. **Reference this skill** for decision-making criteria and quality standards
-2. **Use Quick Reference** for rapid validation during test writing
-3. **Consult reference documentation** for detailed code patterns when needed:
-   - `references/test-patterns.md` - Comprehensive code examples for all test scenarios
-   - `references/aaa-pattern-guide.md` - AAA pattern details and common anti-patterns
-
-### Integration with test-review Agent
-
-This skill provides the quality standards that the `test-review` agent uses to:
-- Verify AAA pattern adherence
-- Check branch coverage completeness
-- Validate test naming conventions
-- Ensure behavior-focused testing
+**test-reviewエージェントとの連携:**
+- このスキルの基準でAAA準拠、カバレッジ、命名規則、動作テストを検証
 
 ## Quick Reference
 

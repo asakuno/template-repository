@@ -11,21 +11,15 @@ description: UI/UX design guidelines focusing on what AI commonly overlooks or f
 
 ## How to Use This Skill
 
-### When to Use
-- **Phase 1 (UI/UX Design Review)**: 実装前のチェックリスト確認、要件特定
-- **Phase 4 (Browser Verification)**: 実装後の実測検証、ツールでの確認
+### Quick Reference - Phase 1 & 4
 
-### Why This Skill Exists
-AIは見栄えの良いUIを自信を持って生成しますが、以下を**実際には測定・検証しません**：
-- コントラスト比（見た目で判断）
-- ブレークポイントでのテスト（デスクトップのみ確認）
-- ARIA属性（省略する）
-- パフォーマンスメトリクス（仮定する）
+**Phase 1（実装前）:**
+- [ ] Critical Checklistで要件を特定
+- [ ] AIが見落とす検証項目を把握（コントラスト比、ARIA属性、パフォーマンス）
 
-### How to Use
-1. **Phase 1**: Quick Referenceチェックリストを確認して要件を特定
-2. **Phase 4**: Verification Guide（`references/verification-guide.md`）に従って実測検証
-3. **詳細パターン**: `references/ai-oversights-detailed.md` で具体的なコード例を参照
+**Phase 4（実装後）:**
+- [ ] [Verification Guide](references/verification-guide.md) で実測検証
+- [ ] [AI Oversights Detailed](references/ai-oversights-detailed.md) で具体例を確認
 
 ---
 

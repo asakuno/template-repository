@@ -23,39 +23,21 @@ This skill provides architectural guidelines for Laravel applications following 
 
 ## How to Use This Skill
 
-### During Phase 1: Architecture Planning & Review
+### Quick Reference - Phase 1: Architecture Planning
 
-This skill is designed to be referenced during Phase 1 (Planning & Review) when making backend architecture decisions.
+**Architecture Decision Checklist:**
+- [ ] 要件からモジュール配置を決定 ([Decision Framework](#decision-framework))
+- [ ] レイヤー構造を設計 ([Layer Responsibilities](#layer-responsibilities))
+- [ ] 依存関係ルールを検証 ([Dependency Rules](#dependency-rules))
+- [ ] Contractインターフェース設計（クロスモジュール通信時）
+- [ ] Anti-patternsチェック ([Anti-Patterns](#anti-patterns-to-avoid))
+- [ ] Deptrac設定を計画
 
-**Step 1: Understand the Requirements**
-- [ ] Review feature requirements from `DESIGN.md` or specification
-- [ ] Identify the business domain(s) involved
-- [ ] List the data entities and operations required
-
-**Step 2: Determine Module Placement**
-- [ ] Does this belong to an existing module? (Check `modules/` directory)
-- [ ] If new module needed, verify against [Decision Framework](#decision-framework)
-- [ ] If cross-module communication needed, plan Contract interfaces
-
-**Step 3: Design Layer Structure**
-- [ ] Identify what goes in each layer using [Layer Responsibilities](#layer-responsibilities)
-- [ ] Verify dependency rules: [Dependency Rules](#dependency-rules)
-- [ ] Review detailed layer patterns: [Layer Details](references/layer-details.md)
-
-**Step 4: Plan Module Communication (if cross-module)**
-- [ ] Design Contract interface in `modules/Contract/{Module}/`
-- [ ] Define Contract DTOs for data exchange
-- [ ] Review: [Module Structure](references/module-structure.md)
-
-**Step 5: Validate Design**
-- [ ] Run through [Architecture Decision Checklist](#architecture-decision-checklist)
-- [ ] Check for anti-patterns: [Anti-Patterns](references/anti-patterns.md)
-- [ ] Plan Deptrac validation: [Deptrac Configuration](references/deptrac-config.md)
-
-**Step 6: Document Decisions**
-- [ ] Document module boundaries and responsibilities
-- [ ] Document Contract interfaces (if new)
-- [ ] Note any architectural trade-offs made
+**詳細な実装ガイド:**
+- [Layer Details](references/layer-details.md) - 各レイヤーの詳細パターンとコード例
+- [Module Structure](references/module-structure.md) - モジュール構成とContract実装
+- [Anti-Patterns](references/anti-patterns.md) - よくある間違いと正しい実装
+- [Deptrac Configuration](references/deptrac-config.md) - 静的解析の設定方法
 
 ---
 
