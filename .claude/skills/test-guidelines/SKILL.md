@@ -5,242 +5,76 @@ description: Comprehensive testing guidelines for Vitest and React Testing Libra
 
 # Test Guidelines - Vitest / React Testing Library
 
-This document defines quality standards, structure, and naming conventions for test code using Vitest and React Testing Library.
+This skill defines quality standards, structure, and naming conventions for test code using Vitest and React Testing Library.
 
-## Core Guidelines
+## How to Use This Skill
 
-- Explicitly import necessary functions from `vitest` in all test files. Do not rely on global definitions.
-- Write `describe` / `test` descriptions in Japanese with specific conditions and expected results, using the format "when [condition], it should [result]".
-- Follow the AAA (Arrange-Act-Assert) pattern strictly, comparing using `actual` and `expected` variables. One test, one assertion (multiple properties can be compared as object).
-- Prohibit nested `describe` blocks. Place shared data in the top-level `describe` scope.
-- Identify all branches and exception paths to ensure meaningful coverage. Verify behavior, not implementation details.
-- Limit snapshots to verifying semantic HTML and accessibility attributes. Do not use them for style changes.
+### During Phase 2 (Testing & Stories)
 
-## Code Examples
+When implementing tests or creating stories:
 
-### Basic Test Structure
+1. **Reference this skill** for decision-making criteria and quality standards
+2. **Use Quick Reference** for rapid validation during test writing
+3. **Consult reference documentation** for detailed code patterns when needed:
+   - `references/test-patterns.md` - Comprehensive code examples for all test scenarios
+   - `references/aaa-pattern-guide.md` - AAA pattern details and common anti-patterns
 
-```typescript
-import { describe, expect, test } from "vitest";
-import { calculateTotal } from "./calculateTotal";
+### Integration with test-review Agent
 
-describe("calculateTotal", () => {
-  test("商品が1つの場合、その価格を返すこと", () => {
-    // Arrange
-    const items = [{ price: 100 }];
-    const expected = 100;
+This skill provides the quality standards that the `test-review` agent uses to:
+- Verify AAA pattern adherence
+- Check branch coverage completeness
+- Validate test naming conventions
+- Ensure behavior-focused testing
 
-    // Act
-    const actual = calculateTotal(items);
+## Quick Reference
 
-    // Assert
-    expect(actual).toBe(expected);
-  });
+Use this checklist when writing or reviewing tests:
 
-  test("商品が複数の場合、合計金額を返すこと", () => {
-    // Arrange
-    const items = [{ price: 100 }, { price: 200 }, { price: 300 }];
-    const expected = 600;
+- [ ] Explicit imports from `vitest` (no global definitions)
+- [ ] Test descriptions in Japanese with specific conditions and expected results
+- [ ] AAA pattern strictly followed with `actual` and `expected` variables
+- [ ] One test, one assertion (or object comparison for multiple properties)
+- [ ] No nested `describe` blocks
+- [ ] All branches and exception paths identified and tested
+- [ ] Testing behavior, not implementation details
+- [ ] Test file named `[ComponentName].test.tsx` or `[functionName].test.ts`
+- [ ] Test file placed in the same directory as the component/function
+- [ ] Snapshots limited to semantic HTML and accessibility attributes only
 
-    // Act
-    const actual = calculateTotal(items);
+## Core Principles
 
-    // Assert
-    expect(actual).toBe(expected);
-  });
+### 1. Explicit Imports
 
-  test("商品が空の場合、0を返すこと", () => {
-    // Arrange
-    const items: Array<{ price: number }> = [];
-    const expected = 0;
-
-    // Act
-    const actual = calculateTotal(items);
-
-    // Assert
-    expect(actual).toBe(expected);
-  });
-});
-```
-
-### Component Test Example
+Always import necessary functions from `vitest` explicitly:
 
 ```typescript
-import { render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
-import { Button } from "./Button";
+```
 
-describe("Button", () => {
-  test("children が表示されること", () => {
-    // Arrange
-    const expected = "クリック";
+**Rationale**: Avoids relying on global definitions, making dependencies clear.
 
-    // Act
-    render(<Button>{expected}</Button>);
-    const actual = screen.getByRole("button", { name: expected });
+### 2. Descriptive Test Names (Japanese)
 
-    // Assert
-    expect(actual).toBeInTheDocument();
-  });
+Write `describe` and `test` descriptions in Japanese with specific conditions and expected results:
 
-  test("disabled が true の場合、ボタンが無効化されること", () => {
-    // Arrange & Act
-    render(<Button disabled>クリック</Button>);
-    const actual = screen.getByRole("button");
-
-    // Assert
-    expect(actual).toBeDisabled();
-  });
-
-  test("クリック時に onClick が呼ばれること", async () => {
-    // Arrange
-    const { user } = render(<Button onClick={handleClick}>クリック</Button>);
-    const handleClick = vi.fn();
-    const button = screen.getByRole("button");
-
-    // Act
-    await user.click(button);
-
-    // Assert
-    expect(handleClick).toHaveBeenCalledTimes(1);
-  });
+```typescript
+test("商品が複数の場合、合計金額を返すこと", () => {
+  // ...
 });
 ```
 
-### Shared Data Management
+**Format**: "when [condition], it should [result]"
+
+### 3. AAA Pattern (Arrange-Act-Assert)
+
+Strictly follow the AAA pattern with `actual` and `expected` variables:
 
 ```typescript
-import { describe, expect, test } from "vitest";
-import { formatDate } from "./formatDate";
-
-describe("formatDate", () => {
-  // Shared data in top-level describe scope
-  const testDate = new Date("2024-01-15T10:30:00");
-
-  test("年月日形式でフォーマットされること", () => {
-    // Arrange
-    const format = "YYYY-MM-DD";
-    const expected = "2024-01-15";
-
-    // Act
-    const actual = formatDate(testDate, format);
-
-    // Assert
-    expect(actual).toBe(expected);
-  });
-
-  test("時分秒を含む形式でフォーマットされること", () => {
-    // Arrange
-    const format = "YYYY-MM-DD HH:mm:ss";
-    const expected = "2024-01-15 10:30:00";
-
-    // Act
-    const actual = formatDate(testDate, format);
-
-    // Assert
-    expect(actual).toBe(expected);
-  });
-});
-```
-
-### Testing Error Cases
-
-```typescript
-import { describe, expect, test } from "vitest";
-import { divide } from "./divide";
-
-describe("divide", () => {
-  test("正常に除算が行われること", () => {
-    // Arrange
-    const a = 10;
-    const b = 2;
-    const expected = 5;
-
-    // Act
-    const actual = divide(a, b);
-
-    // Assert
-    expect(actual).toBe(expected);
-  });
-
-  test("0で除算した場合、エラーがスローされること", () => {
-    // Arrange
-    const a = 10;
-    const b = 0;
-
-    // Act & Assert
-    expect(() => divide(a, b)).toThrow("Division by zero");
-  });
-});
-```
-
-### Bad Examples (Avoid These)
-
-```typescript
-// ❌ Nested describe blocks
-describe("UserService", () => {
-  describe("getUser", () => {
-    describe("when user exists", () => {
-      test("should return user", () => {
-        // ...
-      });
-    });
-  });
-});
-
-// ❌ Multiple assertions without object comparison
-test("ユーザー情報が正しいこと", () => {
-  const user = getUser();
-  expect(user.name).toBe("Taro");
-  expect(user.age).toBe(30);
-  expect(user.email).toBe("taro@example.com");
-});
-
-// ✅ Correct: Object comparison
-test("ユーザー情報が正しいこと", () => {
+test("商品が1つの場合、その価格を返すこと", () => {
   // Arrange
-  const expected = {
-    name: "Taro",
-    age: 30,
-    email: "taro@example.com",
-  };
-
-  // Act
-  const actual = getUser();
-
-  // Assert
-  expect(actual).toEqual(expected);
-});
-
-// ❌ Testing implementation details
-test("state が更新されること", () => {
-  const { result } = renderHook(() => useCounter());
-  expect(result.current.count).toBe(0);
-  act(() => result.current.increment());
-  expect(result.current.count).toBe(1); // Internal state
-});
-
-// ✅ Correct: Testing behavior
-test("カウンターが1増加すること", () => {
-  render(<Counter />);
-  const button = screen.getByRole("button", { name: "増やす" });
-  const counter = screen.getByText("0");
-
-  user.click(button);
-
-  expect(screen.getByText("1")).toBeInTheDocument();
-});
-
-// ❌ No AAA pattern
-test("合計金額を計算すること", () => {
-  expect(calculateTotal([{ price: 100 }, { price: 200 }])).toBe(300);
-});
-
-// ✅ Correct: With AAA pattern
-test("合計金額を計算すること", () => {
-  // Arrange
-  const items = [{ price: 100 }, { price: 200 }];
-  const expected = 300;
+  const items = [{ price: 100 }];
+  const expected = 100;
 
   // Act
   const actual = calculateTotal(items);
@@ -250,30 +84,149 @@ test("合計金額を計算すること", () => {
 });
 ```
 
-## Additional Guidelines
+**Rationale**: Makes tests easier to read, understand, and maintain.
 
-### Test File Naming
+### 4. One Test, One Assertion
 
-- Test files should be named `[ComponentName].test.tsx` or `[functionName].test.ts`
-- Place test files in the same directory as the component/function being tested
-
-### Import Organization
+Each test verifies one behavior. For multiple properties, use object comparison:
 
 ```typescript
-// Correct order
-import { render, screen } from "@testing-library/react";
-import { describe, expect, test, vi } from "vitest";
-import { ComponentUnderTest } from "./ComponentUnderTest";
+// ✅ Correct: Object comparison
+test("ユーザー情報が正しいこと", () => {
+  const expected = { name: "Taro", age: 30, email: "taro@example.com" };
+  const actual = getUser();
+  expect(actual).toEqual(expected);
+});
 ```
 
-### Snapshot Testing
+### 5. Flat Structure (No Nested Describe)
 
-Use snapshots only for:
+Prohibit nested `describe` blocks. Use descriptive test names instead:
+
+```typescript
+// ✅ Correct
+describe("UserService", () => {
+  test("ユーザーが存在する場合、ユーザー情報を返すこと", () => {});
+  test("ユーザーが存在しない場合、エラーがスローされること", () => {});
+});
+```
+
+### 6. Test Behavior, Not Implementation
+
+Focus on what the component does, not how it does it:
+
+```typescript
+// ✅ Testing user-visible behavior
+test("カウンターが1増加すること", async () => {
+  const { user } = render(<Counter />);
+  const button = screen.getByRole("button", { name: "増やす" });
+  await user.click(button);
+  expect(screen.getByText("1")).toBeInTheDocument();
+});
+```
+
+## Test Structure Guidelines
+
+### Test File Organization
+
+- **Naming**: `[ComponentName].test.tsx` or `[functionName].test.ts`
+- **Location**: Same directory as the component/function being tested
+- **Import Order**:
+  1. External libraries (Testing utilities)
+  2. External libraries (Vitest)
+  3. Component or function under test
+
+### Shared Data Management
+
+Place shared data in the top-level `describe` scope:
+
+```typescript
+describe("formatDate", () => {
+  // Shared data in top-level scope
+  const testDate = new Date("2024-01-15T10:30:00");
+
+  test("年月日形式でフォーマットされること", () => {
+    // Use shared data
+  });
+});
+```
+
+## When to Create Tests
+
+### Branch Coverage
+
+Identify all branches and exception paths:
+
+- **Conditional logic**: Test all `if`/`else` branches
+- **Switch statements**: Test all cases including `default`
+- **Error handling**: Test both success and error paths
+- **Edge cases**: Test boundary conditions (empty, null, zero, max values)
+
+### Component Testing Focus
+
+Test components based on user-visible behavior:
+
+- **Rendering**: Verify content appears correctly
+- **User interactions**: Test clicks, input, form submissions
+- **State changes**: Verify UI updates after state changes
+- **Accessibility**: Check ARIA attributes and semantic HTML
+
+## Quality Criteria
+
+### Meaningful Coverage
+
+- **Not just line coverage**: Ensure all logical branches are tested
+- **Behavior coverage**: Verify all user-facing behaviors
+- **Error paths**: Test error handling and edge cases
+
+### Test Maintainability
+
+- **Clear structure**: AAA pattern makes tests easy to understand
+- **Descriptive names**: Japanese descriptions explain what is being tested
+- **No implementation details**: Tests remain valid when refactoring
+
+### Snapshot Testing Limitations
+
+Use snapshots **only** for:
 - Verifying semantic HTML structure
-- Checking accessibility attributes (aria-*, role, etc.)
+- Checking accessibility attributes (`aria-*`, `role`, etc.)
 - Ensuring critical DOM structure remains stable
 
-Do NOT use snapshots for:
+**Do NOT** use snapshots for:
 - CSS class names or inline styles
 - Testing visual appearance
-- Replace proper assertions
+- Replacing proper assertions
+
+## Reference Documentation
+
+For detailed code examples and patterns, consult:
+
+- **`references/test-patterns.md`**: Comprehensive examples including:
+  - Basic test structure
+  - Component testing patterns
+  - Shared data management
+  - Error case testing
+  - Form testing
+  - Import organization
+  - Snapshot testing usage
+
+- **`references/aaa-pattern-guide.md`**: In-depth AAA pattern guidance including:
+  - Why AAA pattern matters
+  - actual vs expected variables
+  - One test, one assertion principle
+  - Common anti-patterns to avoid
+  - Testing behavior vs implementation
+  - Async testing patterns
+  - Branch coverage examples
+
+## Summary
+
+This skill emphasizes:
+
+1. **Structure**: AAA pattern with explicit `actual` and `expected` variables
+2. **Clarity**: Japanese test descriptions with specific conditions and results
+3. **Coverage**: All branches, edge cases, and error paths tested
+4. **Behavior**: Test what users see, not implementation details
+5. **Quality**: Meaningful coverage over line coverage metrics
+
+Always prioritize test maintainability and readability over brevity.
