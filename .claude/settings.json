@@ -1,4 +1,7 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {},
+  "includeCoAuthoredBy": true,
   "permissions": {
     "allow": [
       "mcp__*",
@@ -17,6 +20,7 @@
       "Bash(git add:*)",
       "Bash(git commit:*)"
     ],
+    "deny": [],
     "ask": [
       "Bash(git push:*)",
       "Bash(bun add:*)",
@@ -29,5 +33,35 @@
     "serena",
     "chrome-devtools",
     "kiri"
-  ]
+  ],
+  "enabledPlugins": {
+    "example-skills@anthropic-agent-skills": false,
+    "typescript-lsp@claude-plugins-official": true,
+    "php-lsp@claude-plugins-official": true,
+    "claude-mem@thedotmack": true,
+    "context7@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "thedotmack": {
+      "source": {
+        "source": "github",
+        "repo": "thedotmack/claude-mem"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": true,
+  "learnMode": true
 }
