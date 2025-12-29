@@ -5,43 +5,80 @@ description: Comprehensive Storybook story creation guidelines. Covers story str
 
 # Storybook Guidelines
 
-This document defines standards and best practices for creating and maintaining Storybook stories.
+このスキルは、Storybook ストーリー作成における標準とベストプラクティスを定義します。
+
+## How to Use This Skill
+
+### When to Reference
+
+このスキルは以下の状況で参照してください：
+
+- **Phase 2 (Testing & Stories)**: コンポーネント実装後、Storybook ストーリーを作成する際
+- **Code Review**: ストーリー作成方針をレビューする際
+- **Story Refactoring**: 既存ストーリーの品質改善時
+
+### Workflow Integration
+
+```
+Phase 2: Testing & Stories
+├─ Component Implementation ✓
+├─ Unit Tests (Vitest) ✓
+└─ Storybook Stories
+   ├─ このスキルで作成基準を確認
+   ├─ 条件分岐を特定
+   └─ 必要なストーリーのみ作成
+```
+
+**重要**: ストーリーはビジュアルテストのためのものです。単純な prop 値の違いでストーリーを乱立させず、**条件分岐による見た目の違い**にフォーカスします。
+
+---
 
 ## Creation Rules
 
-- **Create stories for conditional rendering branches**. Stories target conditional operators like `&&` and `?` that show/hide elements or render different UI.
-- Do not create stories for simple prop value differences (variant, size, color, etc.). A default story is sufficient.
-- Examples: Displaying error messages on error state, showing spinners during loading, displaying empty state when no data exists.
-- Do not create stories for hidden states like `isVisible: false` or for logic verification purposes.
-- Keep Meta configuration minimal, specifying only `component`.
-- Use `fn()` for event handlers in each story's `args`. Do not include them in meta.
-- Barrel imports are prohibited. Use individual imports with `@/` alias.
-- Name each story in Japanese to make visual differences immediately clear, avoiding duplicate appearances.
-- Implement in TypeScript with Japanese comments and documentation.
+Storybook ストーリー作成時は以下のルールに従ってください：
+
+### 作成対象
+
+- ✅ **条件分岐による表示・非表示**: `error && <ErrorMessage />`、`isLoading && <Spinner />` など
+- ✅ **条件分岐による UI 切り替え**: `user ? <UserMenu /> : <LoginButton />` など
+- ✅ **データ状態による UI 変化**: 空状態、ローディング中、エラー状態など
+
+### 作成不要
+
+- ❌ **単純な prop 値の違い**: variant、size、color などは Control パネルで確認
+- ❌ **非表示状態**: `isVisible: false` のような何も表示されない状態
+- ❌ **見た目が同じストーリー**: ビジュアルの違いがないストーリーは不要
+- ❌ **内部フックのモック**: コンポーネント内部の custom hook をモックしてまで作成しない
+
+### 実装規約
+
+- **Meta 設定は最小限**: `component` のみを指定
+- **イベントハンドラーは各ストーリーの args**: `fn()` を使用し、meta には含めない
+- **バレルインポート禁止**: `@/` エイリアスを使った個別インポート
+- **日本語でストーリー命名**: ビジュアルの違いが一目で分かるように（例: `ErrorState`, `エラー状態`）
+- **TypeScript で実装**: コメントとドキュメントは日本語
+
+---
 
 ## Anti-patterns to Avoid
 
-- Forcing stories for states that require mocking internal hooks.
-- Creating multiple stories with identical visual appearance.
-- Adding stories for logic verification or empty renders.
+以下のアンチパターンを避けてください：
 
-## Code Examples
+1. **内部フックのモック強要**: 内部 hook をモックしてまでストーリーを作成しない
+2. **見た目が同じ重複ストーリー**: ビジュアルの違いがないストーリーは作成しない
+3. **ロジック検証目的のストーリー**: ロジックは Vitest でテスト、Storybook はビジュアル確認
+4. **単純な prop 値の違いで複数作成**: variant、size の違いは Control パネルで確認可能
+5. **非表示状態のストーリー**: 何も表示されない状態は意味がない
 
-### Basic Story File Structure (No Conditional Branching)
+---
+
+## Story Patterns Overview
+
+### 基本パターン
+
+**条件分岐なしのコンポーネント**: Default ストーリー1つで十分
 
 ```typescript
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
-import { Button } from "@/components/ui/button/Button";
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-// Don't create stories for simple prop differences like variant, size
 export const Default: Story = {
   args: {
     onClick: fn(),
@@ -50,165 +87,60 @@ export const Default: Story = {
 };
 ```
 
-### Conditional Branching Example (Error State)
+### 条件分岐パターン
 
-```typescript
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
-import { FormField } from "@/components/ui/form-field/FormField";
+以下のような条件分岐がある場合、各ブランチのストーリーを作成：
 
-const meta = {
-  component: FormField,
-} satisfies Meta<typeof FormField>;
+| パターン | 例 | 作成するストーリー |
+|---------|----|--------------------|
+| **エラー状態** | `error && <ErrorMessage />` | Default, ErrorState |
+| **ローディング** | `isLoading ? <Spinner /> : <Content />` | Default, Loading, NoData |
+| **認証状態** | `user ? <UserMenu /> : <LoginButton />` | LoggedIn, NotLoggedIn |
+| **権限分岐** | `hasPermission && <AdminPanel />` | Default, AdminView |
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+### 判断基準
 
-// When component displays different UI based on error presence
-export const Default: Story = {
-  args: {
-    label: "Username",
-    value: "",
-    onChange: fn(),
-  },
-};
+> **「この2つのストーリーを並べて見たとき、ビジュアルの違いがハッキリ分かるか？」**
 
-// Error message is displayed when error exists (conditional branching)
-export const ErrorState: Story = {
-  args: {
-    label: "Username",
-    value: "a",
-    error: "Username must be at least 3 characters",
-    onChange: fn(),
-  },
-};
-```
+答えが **「Yes」なら作成**、**「No」なら不要** です。
 
-### Loading State Example
+詳細なコード例とパターンについては、以下のリファレンスドキュメントを参照してください。
 
-```typescript
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
-import { DataList } from "@/components/features/data/data-list/DataList";
+---
 
-const meta = {
-  component: DataList,
-} satisfies Meta<typeof DataList>;
+## Reference Documents
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+詳細な実装パターンとコード例は以下のリファレンスファイルに記載されています：
 
-const mockData = [
-  { id: "1", name: "Item 1" },
-  { id: "2", name: "Item 2" },
-  { id: "3", name: "Item 3" },
-];
+| ファイル | 内容 | 参照タイミング |
+|---------|------|---------------|
+| [story-patterns.md](references/story-patterns.md) | 基本構造、条件分岐パターン、ローディング・認証状態、アンチパターンの詳細コード例 | ストーリー作成時、具体的な実装パターンが必要な時 |
 
-// Normal display
-export const Default: Story = {
-  args: {
-    data: mockData,
-    onItemClick: fn(),
-  },
-};
+### story-patterns.md の構成
 
-// Spinner is shown when isLoading is true (conditional branching)
-export const Loading: Story = {
-  args: {
-    data: [],
-    isLoading: true,
-    onItemClick: fn(),
-  },
-};
+1. **基本的なストーリーファイル構造**: 条件分岐なしのシンプルなパターン
+2. **条件分岐パターン（エラー状態）**: エラーメッセージ表示・非表示の実装例
+3. **ローディング状態パターン**: スピナー、空状態の実装例
+4. **認証状態パターン**: ログイン・未ログイン状態の切り替え実装例
+5. **避けるべきアンチパターン**: NG 例と理由の詳細説明
 
-// Empty state is shown when data is empty (conditional branching)
-export const NoData: Story = {
-  args: {
-    data: [],
-    onItemClick: fn(),
-  },
-};
-```
+---
 
-### Authentication State Example
+## Quick Reference
 
-```typescript
-import type { Meta, StoryObj } from "@storybook/react";
-import { fn } from "@storybook/test";
-import { UserMenu } from "@/components/features/header/user-menu/UserMenu";
+### ストーリー作成チェックリスト
 
-const meta = {
-  component: UserMenu,
-} satisfies Meta<typeof UserMenu>;
+ストーリーを作成する前に以下を確認：
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+- [ ] コンポーネントに条件分岐（`&&`, `?:`, `if`）があるか？
+- [ ] その分岐により**見た目が明確に変わる**か？
+- [ ] 非表示状態（何も表示されない）ではないか？
+- [ ] 内部フックのモックなしで実装可能か？
 
-const mockUser = {
-  id: "1",
-  name: "Taro Yamada",
-  avatarUrl: "https://example.com/avatar.jpg",
-};
+すべてにチェックが入る場合のみ、ストーリーを作成してください。
 
-// User menu is displayed when logged in
-export const LoggedIn: Story = {
-  args: {
-    user: mockUser,
-    onLogout: fn(),
-  },
-};
+---
 
-// Login button is displayed when user is null (conditional branching)
-export const NotLoggedIn: Story = {
-  args: {
-    user: null,
-    onLogin: fn(),
-  },
-};
-```
+## Summary
 
-### Bad Examples (Avoid These)
-
-```typescript
-// ❌ Creating multiple stories for simple prop value differences
-export const PrimaryButton: Story = {
-  args: {
-    variant: "primary",
-    children: "Button",
-  },
-};
-
-export const SecondaryButton: Story = {
-  args: {
-    variant: "secondary",
-    children: "Button",
-  },
-};
-
-export const LargeButton: Story = {
-  args: {
-    size: "large",
-    children: "Button",
-  },
-};
-
-// ❌ Hidden state story (no visual difference)
-export const Hidden: Story = {
-  args: {
-    isVisible: false,
-  },
-};
-
-// ❌ Duplicate stories with same appearance
-export const Default1: Story = {
-  args: {
-    text: "Test 1",
-  },
-};
-
-export const Default2: Story = {
-  args: {
-    text: "Test 2",
-  },
-};
-```
+Storybook ストーリーは **ビジュアルテストのためのツール** です。条件分岐による見た目の違いにフォーカスし、単純な prop 値の違いや内部実装の詳細はストーリー作成の対象外です。迷った場合は「ビジュアルの違いがあるか？」を基準に判断してください。
