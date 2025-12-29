@@ -4,240 +4,63 @@
 
 ## プロジェクト概要
 
-**技術スタック**
+| 領域 | 技術 |
+|------|------|
+| バックエンド | Laravel 12.x (PHP 8.4+), Inertia.js |
+| フロントエンド | React/TypeScript, Tailwind CSS, shadcn/ui |
+| フォーム | Laravel Precognition（リアルタイムバリデーション） |
+| テスト | PHPUnit (Backend), Vitest + RTL (Frontend), Storybook |
+| ビルド | Composer (Backend), Bun (Frontend) |
+| Lint/Format | Laravel Pint (Backend), Biome (Frontend) |
+| 静的解析 | PHPStan, deptrac（依存関係） |
 
-バックエンドは Laravel 12.x（PHP 8.4+）を使用し、Inertia.js でフロントエンドと連携する。フォームバリデーションには Laravel Precognition を採用し、リアルタイムバリデーションを実現する。
+## アーキテクチャ
 
-フロントエンドは React/TypeScript を使用し、スタイリングには Tailwind CSS と shadcn/ui を採用する。テストは Vitest と React Testing Library、UI ドキュメントは Storybook を使用する。
+### バックエンド: 4層アーキテクチャ
+```
+Presentation → Application → Domain ← Infrastructure
+```
+詳細: `Skill('backend-architecture-guidelines')`, `Skill('backend-coding-guidelines')`
 
-ビルドツールはフロントエンドに Bun、バックエンドに Composer を使用する。Lint/Format はフロントエンドに Biome、バックエンドに Laravel Pint を使用する。依存関係の静的解析には deptrac を使用する。
+### フロントエンド: ハイブリッドアーキテクチャ
+- **静的データ**: Inertia Props（認証情報、メニュー、権限、SEO コンテンツ）
+- **動的データ**: API + カスタムフック（通知、統計、検索結果）
+- **フォーム**: Laravel Precognition（`@inertiajs/react` の `useForm` は**使用禁止**）
 
-**アーキテクチャの特徴**
-
-本プロジェクトはハイブリッドアーキテクチャを採用している。静的コンテンツは Inertia.js によるサーバーレンダリングで配信し、動的データは API エンドポイント経由でリアルタイムに取得する。フォームバリデーションには Laravel Precognition を使用し、送信前のリアルタイムバリデーションを実現する。
-
-バックエンドは4層アーキテクチャ（Presentation → Application → Domain ← Infrastructure）を採用し、関心の分離を徹底する。フロントエンドは Presenter Pattern を採用し、UI ロジックをコンポーネントから分離する。データ取得ロジックはカスタムフックに分離し、プレゼンテーショナルコンポーネントのテスタビリティを確保する。
-
-## ハイブリッドアーキテクチャ
-
-### データソースの使い分け
-
-**Inertia Props（静的データ）** は以下の用途に使用する。ユーザー認証情報、ナビゲーションメニュー、権限情報、ページ固有の設定、SEO に重要なコンテンツなど、更新頻度が低いデータが該当する。
-
-**API（動的データ）** は以下の用途に使用する。リアルタイム通知、ライブ統計情報、検索結果、フィルタリング・ソート・ページネーション、頻繁に更新されるデータが該当する。
-
-### フォームバリデーション
-
-フォームには Laravel Precognition を使用し、`@inertiajs/react` の `useForm` は使用しない。Precognition により、フォーム送信前にサーバーサイドのバリデーションルールを使用したリアルタイムバリデーションが可能になる。
-
-## コーディング原則
-
-### 共通原則
-
-TypeScript と PHP の型定義は厳格に行い、`any` 型の使用は禁止する。コード内コメントは日本語で記述する。
-
-### フロントエンド原則
-
-バレルインポートは禁止し、`import { X } from './index'` ではなく直接パス指定を使用する。Presenter Pattern を採用し、UI ロジックをコンポーネントから分離する。データ取得ロジックはカスタムフックに分離し、コンポーネントはプレゼンテーショナルに保つ。フォームには必ず `laravel-precognition-react` の `useForm` を使用し、`@inertiajs/react` の `useForm` は使用しない。
-
-### バックエンド原則
-
-4層アーキテクチャの依存方向を守る。Entity と ValueObject はファクトリメソッドで生成し、immutable 設計とする。モジュール間通信は Contract 経由のみとする。
+詳細: `Skill('coding-guidelines')`
 
 ## 開発ワークフロー
 
-すべての開発タスクは以下の6フェーズに従う。フェーズのスキップは禁止である。
+すべてのタスクは以下の 6 フェーズに従う。**フェーズのスキップは禁止**。
 
-### Phase 1: Planning & Review（必須）
+| Phase | 内容 | Agent |
+|-------|------|-------|
+| 1. Planning & Review | 調査、計画作成、レビュー | `plan-reviewer` / `backend-plan-reviewer` |
+| 2. Implementation & Review | 実装、コードレビュー | `implement-review` / `backend-implement-review` |
+| 3. Quality Checks | 型チェック、lint、テスト、ビルド | - |
+| 4. Browser Verification | UI/パフォーマンス確認（任意） | Chrome DevTools MCP |
+| 5. Git Commit | `<type>: <description>` 形式 | - |
+| 6. Push | `git push`, 必要に応じて PR 作成 | - |
 
-Agent `plan-reviewer` を使用する。Agent は以下を実行する。既存コード調査（Kiri MCP）とライブラリドキュメント確認（Context7 MCP）を行う Investigation、UI 変更時の ui-design-guidelines を使用した UI Design Review、実装計画作成（TodoWrite）を行う Plan Creation、Codex MCP で統合レビューを行う Plan Review、そして Plan Revision を実施する。成果物は承認された実装計画である。
+### Quality Checks コマンド
 
-Cursor Agent Mode で Codex モデルを選択している場合、Codex MCP を経由せず直接 Codex モデルにレビューを依頼する。これにより二重ラッピングの回避、レイテンシーの改善、コンテキストの一貫性保持が実現される。
-
-### Phase 2: Implementation & Review（必須）
-
-Agent `implement-review` を使用する。Serena MCP で実装を行い、Codex でレビューを実施する。テストは一旦スキップし、必要に応じて `test-review` エージェントを使用する。
-
-### Phase 3: Quality Checks（必須）
-
-フロントエンドでは `bun run typecheck` で型チェック、`bun run check` で Biome lint/format、`bun run test` で Vitest テスト実行、`bun run build` でビルド確認を行う。
-
-バックエンドでは `./vendor/bin/phpstan analyse` で静的解析、`./vendor/bin/pint --test` でコードスタイル確認、`./vendor/bin/phpunit` でテスト実行、`./vendor/bin/deptrac` で依存関係チェックを行う。
-
-### Phase 4: Browser Verification（任意：詳細確認時）
-
-Chrome DevTools で複雑な UI、パフォーマンス、ネットワークを確認する。
-
-### Phase 5: Git Commit（必須）
-
-コミットメッセージ形式は `<type>: <description>` とする。type には feat、fix、refactor、docs、test、style、chore を使用する。
-
-### Phase 6: Push（必須）
-
-`git push origin <branch>` を実行し、必要に応じて `gh pr create` で PR を作成する。
-
-## 利用可能なツール
-
-### Agents（タスク実行）
-
-`plan-reviewer` は Phase 1 を実行し、調査、UI/UX デザインレビュー、実装計画作成、Codex MCP でのレビューを統合実行する。`implement-review` は Phase 2 を実行し、Serena MCP で実装、Codex でレビューを行う。`test-review` はテスト・ストーリー作成、Codex でテストレビューを行う（任意）。
-
-### Skills（知識参照）
-
-`coding-guidelines` は React/TypeScript コーディング規約、Laravel Precognition パターン、ハイブリッドアーキテクチャパターンを提供する。`test-guidelines` は Vitest/RTL テスト規約、AAA パターン、カバレッジ基準を提供する。`storybook-guidelines` は Storybook ストーリー作成規約を提供する。`ui-design-guidelines` は UI/UX 原則、アクセシビリティ、レスポンシブデザインを提供する。
-
-### MCPs
-
-Kiri はセマンティックコード検索と依存関係分析を行う。Context7 はライブラリドキュメント取得を行う。Serena はシンボルベースコード編集を行う。Codex は AI コードレビューを行う。Chrome DevTools はブラウザ自動化を行う。
-
-## Laravel Precognition パターン早見表
-
-### フォームコンポーネント
-
-```tsx
-import { useForm } from 'laravel-precognition-react'
-import { router } from '@inertiajs/react'
-
-interface FormData {
-  name: string
-  email: string
-}
-
-export default function Create() {
-  const form = useForm<FormData>('post', route('members.store'), {
-    name: '',
-    email: '',
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    form.submit({
-      onSuccess: () => router.visit(route('members.index')),
-    })
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <Input
-        value={form.data.name}
-        onChange={(e) => form.setData('name', e.target.value)}
-        onBlur={() => form.validate('name')}
-        error={form.errors.name}
-      />
-      <Button type="submit" disabled={form.processing}>
-        {form.processing ? '処理中...' : '作成'}
-      </Button>
-    </form>
-  )
-}
+**フロントエンド**:
+```bash
+bun run typecheck && bun run check && bun run test && bun run build
 ```
 
-### Laravel FormRequest
-
-```php
-final class CreateMemberRequest extends FormRequest
-{
-    protected $precognitiveRules = ['name', 'email', 'role'];
-
-    public function rules(): array
-    {
-        return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:members'],
-            'role' => ['required', 'in:admin,member,guest'],
-        ];
-    }
-}
-```
-
-## ハイブリッドデータ取得パターン
-
-### ページコンポーネント
-
-```tsx
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
-import { Head } from '@inertiajs/react'
-
-interface Props {
-  user: User           // 静的データ（Inertia）
-  permissions: string[] // 静的データ（Inertia）
-}
-
-export default function Dashboard({ user, permissions }: Props) {
-  // 動的データ（API）
-  const { stats, isLoading } = useStats()
-  const { notifications } = useNotifications()
-
-  return (
-    <AuthenticatedLayout user={user}>
-      <Head title="ダッシュボード" />
-      <StatsCard stats={stats} isLoading={isLoading} />
-      <NotificationList notifications={notifications} />
-    </AuthenticatedLayout>
-  )
-}
-```
-
-### カスタムフック（動的データ取得）
-
-```tsx
-function useStats() {
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  useEffect(() => {
-    fetch('/api/dashboard/stats')
-      .then(res => res.json())
-      .then(setStats)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
-  }, [])
-
-  return { stats, isLoading, error }
-}
-```
-
-### プレゼンテーショナルコンポーネント（テスタブル）
-
-```tsx
-interface StatsCardProps {
-  stats: Stats | null
-  isLoading?: boolean
-  error?: Error | null
-}
-
-function StatsCard({ stats, isLoading, error }: StatsCardProps) {
-  if (isLoading) return <StatsSkeleton />
-  if (error) return <StatsError error={error} />
-  if (!stats) return <NoData />
-
-  return <Card>{/* stats display */}</Card>
-}
-```
-
-## ナビゲーション
-
-```tsx
-import { Link, router } from '@inertiajs/react'
-
-// 宣言的ナビゲーション
-<Link href={route('members.show', { id })}>詳細</Link>
-
-// プログラム的ナビゲーション
-router.visit(route('members.index'))
+**バックエンド**:
+```bash
+./vendor/bin/phpstan analyse && ./vendor/bin/pint --test && ./vendor/bin/phpunit && ./vendor/bin/deptrac
 ```
 
 ## ディレクトリ構成
 
 ```
 project/
-├── app/
-│   └── Http/
-│       ├── Controllers/          # Inertia Controllers
-│       └── Controllers/Api/      # API Controllers
-├── modules/                      # ビジネスロジック (4層アーキテクチャ)
-│   ├── Contract/                 # モジュール間公開API
+├── app/Http/Controllers/         # Inertia/API Controllers
+├── modules/                      # ビジネスロジック (4層)
+│   ├── Contract/{Module}/        # モジュール間公開 API
 │   └── {Module}/
 │       ├── Presentation/
 │       ├── Application/
@@ -246,32 +69,78 @@ project/
 ├── resources/js/
 │   ├── Pages/                    # ページコンポーネント
 │   ├── Components/
-│   │   ├── ui/                   # 汎用UIコンポーネント
-│   │   └── features/             # 機能固有コンポーネント
-│   ├── Layouts/                  # レイアウト
+│   │   ├── ui/                   # 汎用 UI
+│   │   └── features/             # 機能固有
+│   ├── Layouts/
 │   ├── hooks/                    # カスタムフック（API データ取得）
-│   ├── types/                    # 型定義
-│   └── lib/                      # ユーティリティ
+│   ├── types/
+│   └── lib/
 ├── routes/
 │   ├── web.php                   # Inertia routes
 │   └── api.php                   # API routes
 └── tests/
-    ├── Unit/                     # PHPUnit Unit
-    └── Feature/                  # PHPUnit Feature
+    ├── Unit/
+    └── Feature/
 ```
+
+## 利用可能なツール
+
+### Agents（タスク実行）
+
+| Agent | 用途 |
+|-------|------|
+| `plan-reviewer` | Frontend Phase 1: 調査、UI/UX レビュー、計画作成 |
+| `implement-review` | Frontend Phase 2: 実装、コードレビュー |
+| `test-review` | Frontend テスト・Storybook 作成（任意） |
+| `backend-plan-reviewer` | Backend Phase 1: 調査、アーキテクチャレビュー、計画作成 |
+| `backend-implement-review` | Backend Phase 2: Entity/UseCase 実装、レビュー |
+| `backend-test-review` | Backend PHPUnit テスト作成（任意） |
+
+### Skills（知識参照）
+
+| Skill | 内容 |
+|-------|------|
+| `coding-guidelines` | React/TS 規約、Precognition パターン、ハイブリッドアーキテクチャ |
+| `test-guidelines` | Vitest/RTL テスト規約、AAA パターン |
+| `storybook-guidelines` | Storybook ストーリー作成規約 |
+| `ui-design-guidelines` | UI/UX 原則、アクセシビリティ |
+| `backend-coding-guidelines` | Entity/ValueObject、UseCase、Repository パターン |
+| `backend-test-guidelines` | PHPUnit テスト規約 |
+| `backend-architecture-guidelines` | 4層設計、モジュール分離、Contract パターン |
+
+### MCPs
+
+| MCP | 用途 |
+|-----|------|
+| Kiri | セマンティックコード検索、依存関係分析 |
+| Context7 | ライブラリドキュメント取得 |
+| Serena | シンボルベースコード編集 |
+| Codex | AI コードレビュー |
+| Chrome DevTools | ブラウザ自動化 |
+
+## コーディング原則（クイックリファレンス）
+
+### 共通
+- TypeScript/PHP の型定義は厳格に（`any` 禁止）
+- コード内コメントは日本語
+
+### フロントエンド
+- バレルインポート禁止（直接パス指定）
+- データ取得はカスタムフックに分離
+- コンポーネントはプレゼンテーショナルに保つ
+- Page コンポーネントのみ `export default` 許可、その他は名前付きエクスポート
+
+### バックエンド
+- Entity/ValueObject はファクトリメソッド（`create()`, `reconstruct()`）で生成
+- UseCase は Input/Output DTO を使用
+- モジュール間通信は Contract 経由のみ
+- Domain 層は Laravel に依存しない
 
 ## 重要な原則
 
-フェーズをスキップしないこと。「簡単なタスク」という判断は禁物であり、すべてのフェーズを実行する。
-
-品質チェックは必須である。Phase 3 のすべてのチェックをパスするまで次に進まない。
-
-エラーは完全修正する。エラーが出たら完全に修正してから次のフェーズへ進む。
-
-Agent を活用する。plan-reviewer と implement-review を積極的に使用する。
-
-ワークフロー遵守は効率化である。手順を守ることが最も確実な効率化となる。
-
-フォームは Laravel Precognition を使用する。`@inertiajs/react` の `useForm` は使用禁止である。
-
-ハイブリッドアーキテクチャを遵守する。静的データは Inertia、動的データは API を使用する。
+1. **フェーズをスキップしない** - 「簡単なタスク」という判断は禁物
+2. **Quality Checks は必須** - すべてのチェックをパスするまで次に進まない
+3. **エラーは完全修正** - 放置して次に進まない
+4. **Agent を活用** - 計画と実装は Agent に任せる
+5. **フォームは Precognition** - `@inertiajs/react` の `useForm` 使用禁止
+6. **ハイブリッドアーキテクチャ遵守** - 静的は Inertia、動的は API

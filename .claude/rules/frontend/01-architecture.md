@@ -43,6 +43,8 @@ resources/js/
 
 ページコンポーネントは Laravel Controller から渡される props を受け取る。props の型は明示的に定義する。
 
+**エクスポート方針**: Page コンポーネントは `export default` を使用する（Inertia の慣例）。Components 配下は名前付きエクスポートを使用する。
+
 ```tsx
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
@@ -57,6 +59,7 @@ interface Props {
     members: Member[];
 }
 
+// Page コンポーネントは export default を使用
 export default function Index({ members }: Props) {
     return (
         <AuthenticatedLayout>
@@ -73,31 +76,42 @@ export default function Index({ members }: Props) {
 
 ## フォーム送信
 
-Inertia のフォームヘルパーを使用する。`useForm` フックでフォーム状態を管理し、`router` でナビゲーションを行う。
+**重要**: フォームには Laravel Precognition を使用する。`@inertiajs/react` の `useForm` は**使用禁止**。
+
+Precognition により、フォーム送信前にサーバーサイドのバリデーションルールを使用したリアルタイムバリデーションが可能になる。
 
 ```tsx
-import { useForm } from '@inertiajs/react';
+import { useForm } from 'laravel-precognition-react';
+import { router } from '@inertiajs/react';
+
+interface FormData {
+    name: string;
+    email: string;
+}
 
 export default function Create() {
-    const { data, setData, post, processing, errors } = useForm({
+    const form = useForm<FormData>('post', route('members.store'), {
         name: '',
         email: '',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('members.store'));
+        form.submit({
+            onSuccess: () => router.visit(route('members.index')),
+        });
     };
 
     return (
         <form onSubmit={handleSubmit}>
             <Input
-                value={data.name}
-                onChange={(e) => setData('name', e.target.value)}
-                error={errors.name}
+                value={form.data.name}
+                onChange={(e) => form.setData('name', e.target.value)}
+                onBlur={() => form.validate('name')}
+                error={form.errors.name}
             />
-            <Button type="submit" disabled={processing}>
-                作成
+            <Button type="submit" disabled={form.processing}>
+                {form.processing ? '処理中...' : '作成'}
             </Button>
         </form>
     );
