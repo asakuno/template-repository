@@ -30,7 +30,7 @@
 
 ## 開発ワークフロー
 
-すべての開発タスクは以下の6フェーズに従います。**フェーズのスキップ禁止。**
+すべての開発タスクは以下の6フェーズに従う。フェーズのスキップは禁止である。
 
 ### Phase 1: Planning & Review 【必須】
 - **Agent**: `plan-reviewer`（フロントエンド）/ `backend-plan-reviewer`（バックエンド）
@@ -79,13 +79,13 @@ bun run build      # ビルド確認
 **4: Browser Verification 【任意：詳細確認時】**
 - Chrome DevToolsで複雑なUI、パフォーマンス、ネットワーク確認
 
-### Phase 5: Git Commit 【必須】
-- コミットメッセージ形式: `<type>: <description>`
-- type: feat, fix, refactor, docs, test, style, chore
+### Phase 5: Git Commit（必須）
 
-### Phase 6: Push 【必須】
-- `git push origin <branch>` 実行
-- 必要に応じて `gh pr create` でPR作成
+コミットメッセージ形式は `<type>: <description>` とする。type には feat、fix、refactor、docs、test、style、chore を使用する。
+
+### Phase 6: Push（必須）
+
+`git push origin <branch>` を実行し、必要に応じて `gh pr create` で PR を作成する。
 
 ## 利用可能なツール
 
@@ -115,11 +115,178 @@ bun run build      # ビルド確認
 - **`backend-architecture-guidelines`**: 4層アーキテクチャ設計、依存関係ルール、モジュール分離、Contractパターン
 
 ### MCPs
-- **Kiri**: セマンティックコード検索、依存関係分析
-- **Context7**: ライブラリドキュメント取得
-- **Serena**: シンボルベースコード編集
-- **Codex**: AIコードレビュー
-- **Chrome DevTools**: ブラウザ自動化
+
+Kiri はセマンティックコード検索と依存関係分析を行う。Context7 はライブラリドキュメント取得を行う。Serena はシンボルベースコード編集を行う。Codex は AI コードレビューを行う。Chrome DevTools はブラウザ自動化を行う。
+
+## Laravel Precognition パターン早見表
+
+### フォームコンポーネント
+
+```tsx
+import { useForm } from 'laravel-precognition-react'
+import { router } from '@inertiajs/react'
+
+interface FormData {
+  name: string
+  email: string
+}
+
+export default function Create() {
+  const form = useForm<FormData>('post', route('members.store'), {
+    name: '',
+    email: '',
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    form.submit({
+      onSuccess: () => router.visit(route('members.index')),
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Input
+        value={form.data.name}
+        onChange={(e) => form.setData('name', e.target.value)}
+        onBlur={() => form.validate('name')}
+        error={form.errors.name}
+      />
+      <Button type="submit" disabled={form.processing}>
+        {form.processing ? '処理中...' : '作成'}
+      </Button>
+    </form>
+  )
+}
+```
+
+### Laravel FormRequest
+
+```php
+final class CreateMemberRequest extends FormRequest
+{
+    protected $precognitiveRules = ['name', 'email', 'role'];
+
+    public function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:members'],
+            'role' => ['required', 'in:admin,member,guest'],
+        ];
+    }
+}
+```
+
+## ハイブリッドデータ取得パターン
+
+### ページコンポーネント
+
+```tsx
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
+import { Head } from '@inertiajs/react'
+
+interface Props {
+  user: User           // 静的データ（Inertia）
+  permissions: string[] // 静的データ（Inertia）
+}
+
+export default function Dashboard({ user, permissions }: Props) {
+  // 動的データ（API）
+  const { stats, isLoading } = useStats()
+  const { notifications } = useNotifications()
+
+  return (
+    <AuthenticatedLayout user={user}>
+      <Head title="ダッシュボード" />
+      <StatsCard stats={stats} isLoading={isLoading} />
+      <NotificationList notifications={notifications} />
+    </AuthenticatedLayout>
+  )
+}
+```
+
+### カスタムフック（動的データ取得）
+
+```tsx
+function useStats() {
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    fetch('/api/dashboard/stats')
+      .then(res => res.json())
+      .then(setStats)
+      .catch(setError)
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  return { stats, isLoading, error }
+}
+```
+
+### プレゼンテーショナルコンポーネント（テスタブル）
+
+```tsx
+interface StatsCardProps {
+  stats: Stats | null
+  isLoading?: boolean
+  error?: Error | null
+}
+
+function StatsCard({ stats, isLoading, error }: StatsCardProps) {
+  if (isLoading) return <StatsSkeleton />
+  if (error) return <StatsError error={error} />
+  if (!stats) return <NoData />
+
+  return <Card>{/* stats display */}</Card>
+}
+```
+
+## ナビゲーション
+
+```tsx
+import { Link, router } from '@inertiajs/react'
+
+// 宣言的ナビゲーション
+<Link href={route('members.show', { id })}>詳細</Link>
+
+// プログラム的ナビゲーション
+router.visit(route('members.index'))
+```
+
+## ディレクトリ構成
+
+```
+project/
+├── app/
+│   └── Http/
+│       ├── Controllers/          # Inertia Controllers
+│       └── Controllers/Api/      # API Controllers
+├── modules/                      # ビジネスロジック (4層アーキテクチャ)
+│   ├── Contract/                 # モジュール間公開API
+│   └── {Module}/
+│       ├── Presentation/
+│       ├── Application/
+│       ├── Domain/
+│       └── Infrastructure/
+├── resources/js/
+│   ├── Pages/                    # ページコンポーネント
+│   ├── Components/
+│   │   ├── ui/                   # 汎用UIコンポーネント
+│   │   └── features/             # 機能固有コンポーネント
+│   ├── Layouts/                  # レイアウト
+│   ├── hooks/                    # カスタムフック（API データ取得）
+│   ├── types/                    # 型定義
+│   └── lib/                      # ユーティリティ
+├── routes/
+│   ├── web.php                   # Inertia routes
+│   └── api.php                   # API routes
+└── tests/
+    ├── Unit/                     # PHPUnit Unit
+    └── Feature/                  # PHPUnit Feature
+```
 
 ## 重要な原則
 
