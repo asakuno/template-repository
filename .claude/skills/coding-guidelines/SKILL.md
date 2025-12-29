@@ -7,6 +7,24 @@ description: Comprehensive React component coding guidelines for Laravel + Inert
 
 This skill focuses on patterns AI commonly fails to implement correctly in Laravel + Inertia.js applications using Laravel Precognition for form validation and a hybrid architecture (Inertia for static content, API for dynamic data).
 
+## How to Use This Skill
+
+### When to Reference This Skill
+- **Phase 2 (Implementation & Review)**: When implementing or refactoring React components
+- **Before Code Review**: To verify implementation against AI's common failures
+- **During Debugging**: When components are hard to test or maintain
+
+### Workflow Integration
+1. **Pre-Implementation**: Review relevant Critical AI Failures section
+2. **During Implementation**: Reference specific pattern documents as needed
+3. **Pre-Review**: Run through AI Weakness Checklist
+4. **Code Review**: Verify patterns match guidelines
+
+### Progressive Disclosure Approach
+- **Start here**: Quick reference for critical failures
+- **Dive deeper**: Click reference links for detailed implementation examples
+- **Verify**: Use checklists to ensure completeness
+
 ## Architecture Overview
 
 **Hybrid Approach:**
@@ -14,526 +32,142 @@ This skill focuses on patterns AI commonly fails to implement correctly in Larav
 - **Dynamic Data**: API endpoints (real-time updates, interactive features)
 - **Form Validation**: Laravel Precognition (real-time validation without full submission)
 
-## ⚠️ Critical: AI's Common Failures
+---
 
-### 1. Lack of Testability (Most Critical)
+## Critical AI Failures - Quick Reference
 
-**Pattern AI ALWAYS gets wrong**: Creating components that control UI branches with internal state
+### 1. Lack of Testability (Most Critical) ⚠️
+
+**AI's pattern**: Data fetching in components with internal state → untestable
+
+**Correct pattern**: Custom hook for data + presentational component
 
 ```typescript
-// ❌ Typical AI pattern (untestable)
-function UserProfile({ userId }: { userId: string }) {
+// ❌ AI writes: Untestable
+function UserProfile({ userId }) {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
-  const [user, setUser] = useState<User | null>(null)
-
-  useEffect(() => {
-    setLoading(true)
-    fetch(`/api/users/${userId}`)
-      .then(res => res.json())
-      .then(data => setUser(data))
-      .catch(err => setError(err))
-      .finally(() => setLoading(false))
-  }, [userId])
-
-  // Problem: Cannot test each state independently
+  const [user, setUser] = useState(null)
+  useEffect(() => { fetch(`/api/users/${userId}`)... }, [userId])
   if (loading) return <Spinner />
-  if (error) return <ErrorMessage error={error} />
-  if (!user) return <div>Not found</div>
-
   return <div>{user.name}</div>
 }
-```
 
-**Correct pattern**: Separate data fetching hook from presentational component
-
-```typescript
-// ✅ Testable pattern - Custom hook for data fetching
-function useUser(userId: string) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
-
-  useEffect(() => {
-    setIsLoading(true)
-    fetch(`/api/users/${userId}`)
-      .then(res => res.json())
-      .then(setUser)
-      .catch(setError)
-      .finally(() => setIsLoading(false))
-  }, [userId])
-
-  return { user, isLoading, error }
-}
-
-// Presentational Component - fully testable via props
-interface UserProfileProps {
-  user: User | null
-  isLoading?: boolean
-  error?: Error | null
-}
-
-function UserProfile({ user, isLoading, error }: UserProfileProps) {
+// ✅ Correct: Testable
+function UserProfile({ user, isLoading }) {
   if (isLoading) return <Spinner />
-  if (error) return <ErrorMessage error={error} />
-  if (!user) return <div>Not found</div>
-
   return <div>{user.name}</div>
 }
-
-// Page Component - composition
-export default function Show({ userId }: { userId: string }) {
-  const { user, isLoading, error } = useUser(userId)
-  return <UserProfile user={user} isLoading={isLoading} error={error} />
-}
-
-// Easy to test presentational component
-test('displays user name', () => {
-  const user = { name: 'Taro', id: '1' }
-  render(<UserProfile user={user} />)
-  expect(screen.getByText('Taro')).toBeInTheDocument()
-})
 ```
+
+**📖 Detailed Patterns**: [testability-patterns.md](references/testability-patterns.md)
 
 ---
 
-### 2. Form Handling with Laravel Precognition
+### 2. Form Handling ⚠️
 
-**Pattern AI gets wrong**: Using Inertia's useForm or manual fetch for forms
+**AI's pattern**: Using Inertia's `useForm` or manual fetch → no real-time validation
 
-```typescript
-// ❌ AI writes: Inertia useForm (doesn't use Precognition)
-import { useForm } from '@inertiajs/react'
-
-function CreateMember() {
-  const { data, setData, post, processing, errors } = useForm({
-    name: '',
-    email: '',
-  })
-  // Problem: No real-time validation
-  // Problem: Validation only on submit
-}
-
-// ❌ AI writes: Manual form handling
-function CreateMember() {
-  const [name, setName] = useState('')
-  const [errors, setErrors] = useState({})
-  
-  const handleSubmit = async () => {
-    const res = await fetch('/api/members', { ... })
-    // Problem: No precognitive validation
-  }
-}
-```
-
-**Correct pattern**: Use Laravel Precognition with useForm from laravel-precognition-react
+**Correct pattern**: Use Laravel Precognition
 
 ```typescript
-// ✅ Correct: Laravel Precognition
-import { useForm } from 'laravel-precognition-react'
+// ❌ AI writes: import { useForm } from '@inertiajs/react'
+// ✅ Correct: import { useForm } from 'laravel-precognition-react'
 
-interface CreateMemberFormData {
-  name: string
-  email: string
-  role: string
-}
+const form = useForm('post', route('members.store'), { name: '', email: '' })
 
-export default function Create() {
-  const form = useForm<CreateMemberFormData>('post', route('members.store'), {
-    name: '',
-    email: '',
-    role: 'member',
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    form.submit({
-      onSuccess: () => {
-        // リダイレクトまたは成功処理
-        router.visit(route('members.index'))
-      },
-    })
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <Input
-        value={form.data.name}
-        onChange={(e) => form.setData('name', e.target.value)}
-        onBlur={() => form.validate('name')} // リアルタイムバリデーション
-        error={form.errors.name}
-      />
-      <Input
-        value={form.data.email}
-        onChange={(e) => form.setData('email', e.target.value)}
-        onBlur={() => form.validate('email')} // リアルタイムバリデーション
-        error={form.errors.email}
-      />
-      <Button type="submit" disabled={form.processing}>
-        {form.processing ? '処理中...' : '作成'}
-      </Button>
-    </form>
-  )
-}
+// Real-time validation on blur
+<Input
+  value={form.data.name}
+  onChange={(e) => form.setData('name', e.target.value)}
+  onBlur={() => form.validate('name')}
+  error={form.errors.name}
+/>
 ```
 
-**Laravel Controller with Precognition:**
-
-```php
-// app/Http/Controllers/MemberController.php
-use Illuminate\Foundation\Http\FormRequest;
-
-final class MemberController extends Controller
-{
-    public function store(CreateMemberRequest $request, CreateMemberUseCase $useCase): RedirectResponse
-    {
-        // Precognition はバリデーションのみ実行し、早期リターン
-        // 実際のリクエストでは UseCase を実行
-        $useCase->execute(new CreateMemberInput(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-        ));
-
-        return redirect()->route('members.index')
-            ->with('success', 'メンバーを作成しました');
-    }
-}
-
-// app/Http/Requests/CreateMemberRequest.php
-final class CreateMemberRequest extends FormRequest
-{
-    // Precognition を有効化
-    protected $precognitiveRules = ['name', 'email', 'role'];
-
-    public function rules(): array
-    {
-        return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:members'],
-            'role' => ['required', 'in:admin,member,guest'],
-        ];
-    }
-}
-```
+**📖 Detailed Patterns**: [form-precognition.md](references/form-precognition.md)
 
 ---
 
-### 3. Hybrid Architecture: Static vs Dynamic Data
+### 3. Hybrid Architecture ⚠️
 
-**Pattern AI gets wrong**: Mixing static and dynamic data incorrectly
+**AI's pattern**: All data from Inertia OR all data from API → wrong data source
+
+**Correct pattern**: Inertia for static, API for dynamic
 
 ```typescript
-// ❌ AI writes: All data from Inertia (no dynamic updates)
-export default function Dashboard({ stats, notifications }: Props) {
-  // Problem: Data is stale until page reload
+// ✅ Hybrid architecture
+interface Props {
+  user: User              // Static: from Inertia
+  permissions: string[]   // Static: from Inertia
+}
+
+export default function Dashboard({ user, permissions }: Props) {
+  // Dynamic: from API
+  const { stats } = useStats()
+  const { notifications } = useNotifications()
+
   return (
-    <div>
+    <AuthenticatedLayout user={user}>
       <StatsCard stats={stats} />
       <NotificationList notifications={notifications} />
-    </div>
-  )
-}
-
-// ❌ AI writes: All data from API (unnecessary for static content)
-export default function Dashboard() {
-  const [stats, setStats] = useState(null)
-  const [notifications, setNotifications] = useState([])
-  
-  useEffect(() => {
-    fetch('/api/stats').then(...)
-    fetch('/api/notifications').then(...)
-  }, [])
-  // Problem: Static data should come from Inertia
-}
-```
-
-**Correct pattern**: Hybrid approach - Inertia for static, API for dynamic
-
-```typescript
-// ✅ Correct: Hybrid architecture
-interface Props {
-  // Static data from Inertia (rarely changes)
-  user: User
-  permissions: Permission[]
-  menuItems: MenuItem[]
-}
-
-export default function Dashboard({ user, permissions, menuItems }: Props) {
-  // Dynamic data from API (frequently changes)
-  const { stats, isLoading: statsLoading } = useStats()
-  const { notifications, refetch } = useNotifications()
-
-  return (
-    <AuthenticatedLayout user={user} menuItems={menuItems}>
-      <Head title="ダッシュボード" />
-      
-      {/* Static content - from Inertia props */}
-      <UserHeader user={user} />
-      
-      {/* Dynamic content - from API */}
-      <StatsCard stats={stats} isLoading={statsLoading} />
-      <NotificationList 
-        notifications={notifications} 
-        onMarkAsRead={() => refetch()}
-      />
     </AuthenticatedLayout>
   )
 }
-
-// Custom hook for dynamic data
-function useStats() {
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/dashboard/stats')
-      .then(res => res.json())
-      .then(setStats)
-      .finally(() => setIsLoading(false))
-  }, [])
-
-  return { stats, isLoading }
-}
-
-function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
-
-  const fetchNotifications = useCallback(() => {
-    fetch('/api/notifications')
-      .then(res => res.json())
-      .then(setNotifications)
-  }, [])
-
-  useEffect(() => {
-    fetchNotifications()
-    // ポーリングまたは WebSocket で定期更新
-    const interval = setInterval(fetchNotifications, 30000)
-    return () => clearInterval(interval)
-  }, [fetchNotifications])
-
-  return { notifications, refetch: fetchNotifications }
-}
 ```
+
+**📖 Detailed Patterns**: [hybrid-architecture.md](references/hybrid-architecture.md)
 
 ---
 
-### 4. Data Fetching Patterns
+### 4. Insufficient Props Control ⚠️
 
-**When to use Inertia props (static data):**
-- User profile and authentication state
-- Navigation menus and permissions
-- Page-specific configuration
-- SEO-critical content
-- Data that rarely changes
+**AI's pattern**: Components control their own state → cannot test from parent
 
-**When to use API (dynamic data):**
-- Real-time notifications
-- Live statistics and metrics
-- Search results with filters
-- Paginated lists with sorting
-- Data that updates frequently
+**Correct pattern**: All states controllable via props
 
 ```typescript
-// ✅ API utility with type safety
-async function apiGet<T>(url: string): Promise<T> {
-  const response = await fetch(url, {
-    headers: {
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-    credentials: 'same-origin',
-  })
-  
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
-  }
-  
-  return response.json()
+// ❌ AI writes: Internal state
+function Modal() {
+  const [isOpen, setIsOpen] = useState(false)
+  // Cannot control from parent
 }
 
-// ✅ Custom hook with SWR-like pattern
-function useApiData<T>(url: string) {
-  const [data, setData] = useState<T | null>(null)
-  const [error, setError] = useState<Error | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  const refetch = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const result = await apiGet<T>(url)
-      setData(result)
-      setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'))
-    } finally {
-      setIsLoading(false)
-    }
-  }, [url])
-
-  useEffect(() => {
-    refetch()
-  }, [refetch])
-
-  return { data, error, isLoading, refetch }
+// ✅ Correct: Props controlled
+function Modal({ isOpen, onClose }) {
+  if (!isOpen) return null
+  return <div onClick={onClose}>...</div>
 }
 ```
+
+**📖 Detailed Patterns**: [props-control.md](references/props-control.md)
 
 ---
 
-### 5. Insufficient Props Control
+### 5. Conditional Branch Extraction ⚠️
 
-**Pattern AI ALWAYS gets wrong**: Components that cannot be controlled externally
+**AI's pattern**: Nested branches in one component → hard to test
+
+**Correct pattern**: Extract each branch to separate component
 
 ```typescript
-// ❌ AI writes: Internal state cannot be tested
-function DataTable({ endpoint }: { endpoint: string }) {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
+// ❌ AI writes: Nested ternaries
+{user ? (loading ? <Spinner /> : (data ? <Content /> : <Empty />)) : <Login />}
 
-  useEffect(() => {
-    fetch(endpoint).then(...)
-  }, [endpoint])
+// ✅ Correct: Extracted branches
+if (!user) return <LoginPrompt />
+return <ContentSection />
 
-  // Cannot control loading/error states from parent
-  return loading ? <Spinner /> : <Table data={data} />
+function ContentSection() {
+  const { data, isLoading } = useData()
+  return <Content data={data} isLoading={isLoading} />
 }
 ```
 
-**Correct pattern**: Presentational component with full props control
-
-```typescript
-// ✅ Correct: Separate data fetching from presentation
-// Hook for data fetching
-function useTableData(endpoint: string) {
-  return useApiData<TableRow[]>(endpoint)
-}
-
-// Presentational Component - fully controllable
-interface DataTableProps {
-  data: TableRow[]
-  isLoading?: boolean
-  error?: Error | null
-  onRetry?: () => void
-}
-
-function DataTable({ data, isLoading, error, onRetry }: DataTableProps) {
-  if (isLoading) return <TableSkeleton />
-  if (error) return <ErrorState error={error} onRetry={onRetry} />
-  if (data.length === 0) return <EmptyState />
-
-  return <Table data={data} />
-}
-
-// Page Component - composition
-export default function MemberList() {
-  const { data, isLoading, error, refetch } = useTableData('/api/members')
-  
-  return (
-    <DataTable 
-      data={data ?? []} 
-      isLoading={isLoading} 
-      error={error}
-      onRetry={refetch}
-    />
-  )
-}
-
-// Easy to test each state
-test('shows loading skeleton', () => {
-  render(<DataTable data={[]} isLoading={true} />)
-  expect(screen.getByTestId('table-skeleton')).toBeInTheDocument()
-})
-```
+**📖 Detailed Patterns**: [conditional-branches.md](references/conditional-branches.md)
 
 ---
 
-### 6. Conditional Branch Extraction
-
-**Pattern AI ALWAYS gets wrong**: Cramming multiple branches into one component
-
-```typescript
-// ❌ AI writes: Nested conditional branches
-function Dashboard() {
-  const { user } = usePage<Props>().props
-  const { stats, isLoading } = useStats()
-
-  return (
-    <div>
-      {user ? (
-        isLoading ? (
-          <Spinner />
-        ) : stats ? (
-          <StatsCard stats={stats} />
-        ) : (
-          <NoData />
-        )
-      ) : (
-        <LoginPrompt />
-      )}
-    </div>
-  )
-}
-```
-
-**Correct pattern**: Extract each branch into separate component
-
-```typescript
-// ✅ Correct: Extracted components
-interface Props {
-  user: User | null
-}
-
-export default function Dashboard({ user }: Props) {
-  if (!user) return <LoginPrompt />
-
-  return (
-    <AuthenticatedLayout>
-      <StatsSection />
-    </AuthenticatedLayout>
-  )
-}
-
-function StatsSection() {
-  const { stats, isLoading, error } = useStats()
-
-  return (
-    <StatsCard 
-      stats={stats} 
-      isLoading={isLoading} 
-      error={error}
-    />
-  )
-}
-
-// Presentational - testable
-interface StatsCardProps {
-  stats: Stats | null
-  isLoading?: boolean
-  error?: Error | null
-}
-
-function StatsCard({ stats, isLoading, error }: StatsCardProps) {
-  if (isLoading) return <StatsSkeleton />
-  if (error) return <StatsError error={error} />
-  if (!stats) return <NoStatsData />
-
-  return (
-    <Card>
-      <CardHeader>統計情報</CardHeader>
-      <CardContent>
-        <Metric label="総会員数" value={stats.totalMembers} />
-        <Metric label="アクティブ" value={stats.activeMembers} />
-      </CardContent>
-    </Card>
-  )
-}
-```
-
----
-
-## Refactoring Principles
-
-Eight core principles guide component refactoring:
+## 8 Refactoring Principles
 
 1. **Logic Extraction** - Separate data fetching into custom hooks
 2. **Presenter Pattern** - Consolidate conditional text in presenter.ts
@@ -546,133 +180,17 @@ Eight core principles guide component refactoring:
 
 ---
 
-## Component Directory Structure
+## Component Organization
 
-### Key Rules
+| Category | Location | Export | Characteristics |
+|----------|----------|--------|-----------------|
+| **Page** | `Pages/{Module}/{Action}.tsx` | `default` | Inertia props, composition |
+| **Feature** | `Components/features/{module}/` | named | Domain-specific, may use hooks |
+| **UI** | `Components/ui/` | named | Pure presentational, no data fetching |
+| **Hooks** | `hooks/` | named | Data fetching, business logic |
+| **Layouts** | `Layouts/` | named | Wrap pages, navigation |
 
-**Page Components**:
-- Location: `resources/js/Pages/{Module}/{Action}.tsx`
-- Receive static data from Inertia props
-- Compose presentational components
-- Example: `resources/js/Pages/Members/Index.tsx`
-
-**Feature Components**:
-- Location: `resources/js/Components/features/{module}/`
-- May use custom hooks for dynamic data
-- Example: `resources/js/Components/features/members/MemberCard.tsx`
-
-**UI Components**:
-- Location: `resources/js/Components/ui/`
-- Pure presentational, no data fetching
-- Example: `resources/js/Components/ui/Button.tsx`
-
-**Custom Hooks**:
-- Location: `resources/js/hooks/`
-- Data fetching and business logic
-- Example: `resources/js/hooks/useMembers.ts`
-
----
-
-## Laravel Precognition Patterns
-
-### Form with Real-time Validation
-
-```typescript
-import { useForm } from 'laravel-precognition-react'
-
-interface FormData {
-  name: string
-  email: string
-}
-
-export function MemberForm() {
-  const form = useForm<FormData>('post', route('members.store'), {
-    name: '',
-    email: '',
-  })
-
-  return (
-    <form onSubmit={(e) => {
-      e.preventDefault()
-      form.submit()
-    }}>
-      <FormField
-        label="名前"
-        value={form.data.name}
-        onChange={(value) => form.setData('name', value)}
-        onBlur={() => form.validate('name')}
-        error={form.errors.name}
-        touched={form.touched('name')}
-      />
-      <FormField
-        label="メール"
-        value={form.data.email}
-        onChange={(value) => form.setData('email', value)}
-        onBlur={() => form.validate('email')}
-        error={form.errors.email}
-        touched={form.touched('email')}
-      />
-      <Button 
-        type="submit" 
-        disabled={form.processing || form.hasErrors}
-      >
-        {form.processing ? '送信中...' : '送信'}
-      </Button>
-    </form>
-  )
-}
-```
-
-### Edit Form with Initial Values
-
-```typescript
-interface Props {
-  member: Member // From Inertia props
-}
-
-export default function Edit({ member }: Props) {
-  const form = useForm<FormData>('put', route('members.update', member.id), {
-    name: member.name,
-    email: member.email,
-  })
-
-  // ... form implementation
-}
-```
-
----
-
-## Navigation Patterns
-
-```typescript
-import { router } from '@inertiajs/react'
-import { Link } from '@inertiajs/react'
-
-// Declarative navigation (for static links)
-<Link href={route('members.show', { id })}>詳細</Link>
-
-// Programmatic navigation (after form submit, etc.)
-router.visit(route('members.index'))
-
-// With options
-router.visit(route('members.index'), {
-  preserveState: true,
-  preserveScroll: true,
-})
-```
-
----
-
-## Quality Requirements
-
-### Non-Negotiable Standards
-
-- **Preserve external contracts** - Don't change public APIs or behavior
-- **Run checks after all work** - `bun run check:fix` and `bun run typecheck`
-- **No new `any`** - Solve issues fundamentally, document when unavoidable
-- **No new ignores** - No `@ts-ignore` or `// biome-ignore` without reason
-- **Resolve warnings** - Fix ESLint/Biome warnings
-- **Improve type safety** - Self-explanatory code
+**📖 Detailed Guide**: [component-structure.md](references/component-structure.md)
 
 ---
 
@@ -695,7 +213,7 @@ Before considering implementation complete, verify AI didn't fall into these tra
 ### Laravel Precognition ⚠️
 - [ ] useForm from 'laravel-precognition-react' for all forms
 - [ ] onBlur validation for real-time feedback
-- [ ] FormRequest with $precognitiveRules
+- [ ] FormRequest with proper validation rules
 - [ ] Proper error display with touched state
 
 ### Hybrid Architecture ⚠️
@@ -709,6 +227,14 @@ Before considering implementation complete, verify AI didn't fall into these tra
 - [ ] Presentational components for display
 - [ ] Page components for composition
 - [ ] One responsibility per component
+
+### Quality Requirements
+- [ ] Preserve external contracts
+- [ ] Run checks: `bun run check:fix && bun run typecheck`
+- [ ] No new `any` types
+- [ ] No new ignores (`@ts-ignore`, `// biome-ignore`)
+- [ ] Resolve all warnings
+- [ ] Improve type safety
 
 ---
 
@@ -732,6 +258,21 @@ AI will confidently write code that:
 - Testability (custom hooks + presentational components)
 - Props control (can parent control all states?)
 
-When in doubt, ask: **"Can I easily test this component's different states without mocking fetch?"**
+**When in doubt, ask**: "Can I easily test this component's different states without mocking fetch?"
 
 If the answer is no, extract data fetching to a custom hook and make the component purely presentational.
+
+---
+
+## Reference Documents
+
+| Document | Content | Lines |
+|----------|---------|-------|
+| [testability-patterns.md](references/testability-patterns.md) | Custom hooks + presentational components pattern | ~280 |
+| [form-precognition.md](references/form-precognition.md) | Laravel Precognition form implementation | ~330 |
+| [hybrid-architecture.md](references/hybrid-architecture.md) | Inertia props vs API data strategy | ~330 |
+| [props-control.md](references/props-control.md) | Making components controllable via props | ~330 |
+| [conditional-branches.md](references/conditional-branches.md) | Extracting conditional branches | ~280 |
+| [component-structure.md](references/component-structure.md) | Directory structure, navigation, quality | ~300 |
+
+**Total**: ~1,850 lines of detailed patterns and examples available on-demand.
