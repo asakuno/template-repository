@@ -1,11 +1,11 @@
 ---
 name: coding-guidelines
-description: Comprehensive React component coding guidelines, refactoring principles, and architectural patterns. **CRITICAL**: Focuses on patterns AI commonly fails to implement correctly, especially testability, props control, and component responsibility separation. Reference this skill when implementing or refactoring React components during Phase 2.
+description: Comprehensive React component coding guidelines for Laravel + Inertia.js applications. **CRITICAL**: Focuses on patterns AI commonly fails to implement correctly, especially testability, props control, and component responsibility separation. Reference this skill when implementing or refactoring React components during Phase 2.
 ---
 
-# Coding Guidelines - What AI Gets Wrong
+# Coding Guidelines - What AI Gets Wrong (Inertia.js Edition)
 
-This skill focuses on patterns AI commonly fails to implement correctly. Trust AI for syntax and structure, but scrutinize these critical areas where AI consistently makes mistakes.
+This skill focuses on patterns AI commonly fails to implement correctly in Laravel + Inertia.js applications. Trust AI for syntax and structure, but scrutinize these critical areas where AI consistently makes mistakes.
 
 ## ⚠️ Critical: AI's Common Failures
 
@@ -20,7 +20,16 @@ function UserProfile({ userId }: { userId: string }) {
   const [error, setError] = useState<Error | null>(null)
   const [user, setUser] = useState<User | null>(null)
 
-  // Problem 1: To test loading state, you must actually trigger fetch to set loading=true
+  useEffect(() => {
+    setLoading(true)
+    fetch(`/api/users/${userId}`)
+      .then(res => res.json())
+      .then(data => setUser(data))
+      .catch(err => setError(err))
+      .finally(() => setLoading(false))
+  }, [userId])
+
+  // Problem 1: To test loading state, you must actually trigger fetch
   // Problem 2: To test error state, you must make fetch fail
   // Problem 3: Cannot test each state independently
 
@@ -37,22 +46,34 @@ function UserProfile({ userId }: { userId: string }) {
 - To test each state, you must **actually trigger** those states
 - Mocks and stubs become complex, tests become brittle
 
-**Correct pattern**: Convert internal state to props, separate components by state
+**Correct pattern for Inertia.js**: Data comes from Laravel Controller as props
 
 ```typescript
-// ✅ Testable pattern
-type UserProfileProps = {
+// ✅ Testable pattern - Data from Laravel Controller
+// Laravel Controller:
+// return Inertia::render('Users/Show', ['user' => $user]);
+
+interface Props {
   user: User | null
 }
 
-function UserProfile({ user }: UserProfileProps) {
+export default function Show({ user }: Props) {
   if (!user) return <div>Not found</div>
+  return <UserProfile user={user} />
+}
+
+// Presentational Component - fully testable
+interface UserProfileProps {
+  user: User
+}
+
+function UserProfile({ user }: UserProfileProps) {
   return <div>{user.name}</div>
 }
 
 // Easy to test
 test('displays Not found when user is null', () => {
-  render(<UserProfile user={null} />)
+  render(<Show user={null} />)
   expect(screen.getByText('Not found')).toBeInTheDocument()
 })
 
@@ -63,22 +84,6 @@ test('displays user name', () => {
 })
 ```
 
-**Same applies to functions**:
-```typescript
-// ❌ AI writes: depends on internal state
-function validateUser() {
-  const user = getCurrentUser() // depends on global state
-  if (!user.email) return false
-  return true
-}
-
-// ✅ Correct: controllable via arguments
-function validateUser(user: User): boolean {
-  if (!user.email) return false
-  return true
-}
-```
-
 ---
 
 ### 2. Insufficient Props Control
@@ -86,7 +91,7 @@ function validateUser(user: User): boolean {
 **Pattern AI ALWAYS gets wrong**: Components hold internal state that cannot be controlled externally
 
 ```typescript
-// ❌ AI writes: trapped in internal state
+// ❌ AI writes: trapped in internal state with useEffect
 function UserCard({ userId }: { userId: string }) {
   const [user, setUser] = useState<User | null>(null)
 
@@ -95,39 +100,41 @@ function UserCard({ userId }: { userId: string }) {
   }, [userId])
 
   // Problem: Cannot control loading/error states from parent
-  // Problem: Cannot use Suspense
   // Problem: Actual fetch runs during tests
 
   return user ? <div>{user.name}</div> : <div>Loading...</div>
 }
-
-// Cannot control loading state from parent
-<UserCard userId="123" />  // Cannot change Loading display
 ```
 
-**Correct pattern**: Make everything controllable via props
+**Correct pattern for Inertia.js**: Receive data via props from Controller
 
 ```typescript
-// ✅ Correct: everything controlled via props
-type UserCardProps = {
+// ✅ Correct: Data passed from Laravel Controller
+// Laravel Controller handles data fetching
+
+// Page Component receives all data as props
+interface Props {
+  user: User | null
+  isLoading?: boolean // Can be controlled for skeleton states
+}
+
+export default function Show({ user, isLoading }: Props) {
+  return <UserCard user={user} isLoading={isLoading} />
+}
+
+// Presentational Component - fully controlled via props
+interface UserCardProps {
   user: User | null
   isLoading?: boolean
-  error?: Error | null
+  error?: string | null
 }
 
 function UserCard({ user, isLoading, error }: UserCardProps) {
   if (isLoading) return <Spinner />
-  if (error) return <ErrorMessage error={error} />
+  if (error) return <ErrorMessage message={error} />
   if (!user) return <div>Not found</div>
 
   return <div>{user.name}</div>
-}
-
-// Fully controllable from parent
-function UserPage() {
-  const { user, isLoading, error } = useUser('123')
-
-  return <UserCard user={user} isLoading={isLoading} error={error} />
 }
 
 // Easy to test
@@ -146,7 +153,7 @@ test('loading state', () => {
 ```typescript
 // ❌ AI writes: scattered conditional branches
 function Dashboard() {
-  const { user, subscription, notifications } = useData()
+  const { user, subscription, notifications } = usePage<Props>().props
 
   return (
     <div>
@@ -174,18 +181,31 @@ function Dashboard() {
     </div>
   )
 }
-
-// Problems with this design:
-// - Cannot test each conditional branch independently
-// - To test PremiumBadge display, need user + subscription.isPremium=true
-// - Combination of multiple states = test cases explode
 ```
 
 **Correct pattern**: Separate components for each conditional branch
 
 ```typescript
 // ✅ Correct: extract conditional branches into separate components
-type UserSectionProps = {
+
+// Page Component
+interface Props {
+  user: User | null
+  subscription: Subscription | null
+  notifications: Notification[]
+}
+
+export default function Dashboard({ user, subscription, notifications }: Props) {
+  return (
+    <AuthenticatedLayout>
+      <UserSection user={user} subscription={subscription} />
+      <NotificationSection notifications={notifications} />
+    </AuthenticatedLayout>
+  )
+}
+
+// Extracted Components
+interface UserSectionProps {
   user: User | null
   subscription: Subscription | null
 }
@@ -201,7 +221,7 @@ function UserSection({ user, subscription }: UserSectionProps) {
   )
 }
 
-type SubscriptionBadgeProps = {
+interface SubscriptionBadgeProps {
   subscription: Subscription | null
 }
 
@@ -210,37 +230,23 @@ function SubscriptionBadge({ subscription }: SubscriptionBadgeProps) {
   return <FreeBadge />
 }
 
-type NotificationSectionProps = {
-  notifications: Notification[]
-}
-
-function NotificationSection({ notifications }: NotificationSectionProps) {
-  if (notifications.length === 0) return <EmptyState />
-  return <NotificationList items={notifications} />
-}
-
-// Easy to test
+// Easy to test each branch
 test('displays premium badge', () => {
   const subscription = { isPremium: true }
   render(<SubscriptionBadge subscription={subscription} />)
   expect(screen.getByTestId('premium-badge')).toBeInTheDocument()
 })
-
-test('displays free badge', () => {
-  render(<SubscriptionBadge subscription={null} />)
-  expect(screen.getByTestId('free-badge')).toBeInTheDocument()
-})
 ```
 
 ---
 
-### 4. Mixing Data Fetching with UI Display
+### 4. Mixing Data Fetching with UI Display (Inertia.js Context)
 
-**Pattern AI ALWAYS gets wrong**: Data fetching with useEffect
+**Pattern AI ALWAYS gets wrong in Inertia**: Using useEffect for data fetching
 
 ```typescript
-// ❌ AI writes: data fetching with useEffect
-'use client'
+// ❌ AI writes: data fetching with useEffect (WRONG for Inertia)
+'use client' // This directive doesn't exist in Inertia
 
 function UserProfile({ userId }: { userId: string }) {
   const [user, setUser] = useState<User | null>(null)
@@ -255,27 +261,43 @@ function UserProfile({ userId }: { userId: string }) {
       })
   }, [userId])
 
-  // Problem 1: Cannot use Suspense
-  // Problem 2: Cannot SSR (becomes Client Component)
-  // Problem 3: Cannot control loading state from parent
-  // Problem 4: Must mock fetch during tests
+  // Problem: In Inertia, data should come from Laravel Controller
+  // Problem: This creates unnecessary client-side fetching
+  // Problem: Hard to test
 
   if (loading) return <Spinner />
   return <div>{user?.name}</div>
 }
 ```
 
-**Correct pattern**: Data fetching in Server Component, display in Presentational Component
+**Correct pattern for Inertia.js**: Laravel Controller handles data, component receives props
 
 ```typescript
-// ✅ Correct: Data fetching in Server Component
-async function UserProfileServer({ userId }: { userId: string }) {
-  const user = await fetchUser(userId)  // Direct async/await
-  return <UserProfile user={user} />
+// ✅ Correct: Laravel Controller fetches data
+// app/Http/Controllers/UserController.php
+// public function show(string $id) {
+//     $user = $this->userRepository->findById($id);
+//     return Inertia::render('Users/Show', [
+//         'user' => $user ? new UserResource($user) : null,
+//     ]);
+// }
+
+// Page Component - receives data as props
+interface Props {
+  user: User | null
+}
+
+export default function Show({ user }: Props) {
+  return (
+    <AuthenticatedLayout>
+      <Head title="ユーザー詳細" />
+      {user ? <UserProfile user={user} /> : <NotFound />}
+    </AuthenticatedLayout>
+  )
 }
 
 // Presentational Component
-type UserProfileProps = {
+interface UserProfileProps {
   user: User
 }
 
@@ -283,17 +305,90 @@ function UserProfile({ user }: UserProfileProps) {
   return <div>{user.name}</div>
 }
 
-// Usage: Loading management with Suspense
-<Suspense fallback={<Spinner />}>
-  <UserProfileServer userId="123" />
-</Suspense>
-
 // Easy to test (data fetching and display separated)
 test('displays user name', () => {
   const user = { name: 'Taro', id: '1' }
   render(<UserProfile user={user} />)
   expect(screen.getByText('Taro')).toBeInTheDocument()
 })
+```
+
+---
+
+### 5. Form Handling with useForm (Inertia Specific)
+
+**Pattern AI gets wrong**: Not using Inertia's useForm properly
+
+```typescript
+// ❌ AI writes: Manual form handling
+function CreateMember() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [errors, setErrors] = useState({})
+  const [processing, setProcessing] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setProcessing(true)
+    try {
+      await fetch('/api/members', {
+        method: 'POST',
+        body: JSON.stringify({ name, email }),
+      })
+    } catch (err) {
+      setErrors(err.errors)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  // Problem: Not using Inertia's built-in form handling
+  // Problem: Manual state management
+  // Problem: No automatic validation error handling
+}
+```
+
+**Correct pattern**: Use Inertia's useForm hook
+
+```typescript
+// ✅ Correct: Inertia useForm
+import { useForm } from '@inertiajs/react'
+
+interface Props {
+  errors?: Record<string, string>
+}
+
+export default function Create({ errors: serverErrors }: Props) {
+  const { data, setData, post, processing, errors, reset } = useForm({
+    name: '',
+    email: '',
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    post(route('members.store'), {
+      onSuccess: () => reset(),
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Input
+        value={data.name}
+        onChange={(e) => setData('name', e.target.value)}
+        error={errors.name}
+      />
+      <Input
+        value={data.email}
+        onChange={(e) => setData('email', e.target.value)}
+        error={errors.email}
+      />
+      <Button type="submit" disabled={processing}>
+        {processing ? <Spinner /> : '作成'}
+      </Button>
+    </form>
+  )
+}
 ```
 
 ---
@@ -307,9 +402,9 @@ Eight core principles guide component refactoring:
 3. **Conditional UI Extraction** - Extract conditional branches to components (CRITICAL)
 4. **Naming and Structure** - Use kebab-case directories, PascalCase files
 5. **Props Control** - All rendering controllable via props (CRITICAL)
-6. **Avoid useEffect for Data** - Use Server Components with async/await
+6. **Use Inertia Patterns** - useForm for forms, router for navigation
 7. **Avoid Over-Abstraction** - Don't create unnecessary wrappers
-8. **Promise Handling** - Prefer .then().catch() over try-catch
+8. **Data from Controller** - Never fetch data in useEffect, receive via props
 
 **CRITICAL** marked principles are areas where AI ALWAYS makes mistakes.
 
@@ -319,20 +414,130 @@ Eight core principles guide component refactoring:
 
 ### Key Rules
 
-**Directory Naming**:
-- Root: `kebab-case` matching component name
-- Entry point: `PascalCase` file directly inside root
-- Example: `read-only-editor/ReadOnlyEditor.tsx`
+**Page Components**:
+- Location: `resources/js/Pages/{Module}/{Action}.tsx`
+- Naming: PascalCase matching route action
+- Example: `resources/js/Pages/Members/Index.tsx`
 
-**Parent-Child Hierarchy**:
-- Child components in subdirectories under parent
-- Clear ownership: `parent-component/child-component/grandchild-component/`
-- Import paths reflect relationships
+**Feature Components**:
+- Location: `resources/js/Components/features/{module}/`
+- Example: `resources/js/Components/features/members/MemberCard.tsx`
+
+**UI Components**:
+- Location: `resources/js/Components/ui/`
+- Example: `resources/js/Components/ui/Button.tsx`
 
 **Export Strategy**:
-- Root entry point is public API
-- Re-export other files for external use
-- Direct imports of subdirectory files limited to internal use
+- Page components use default export (required by Inertia)
+- UI components use named exports
+- No barrel imports
+
+---
+
+## Inertia.js Specific Patterns
+
+### Page Component Pattern
+
+```typescript
+// resources/js/Pages/Members/Index.tsx
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
+import { Head } from '@inertiajs/react'
+import { MemberCard } from '@/Components/features/members/MemberCard'
+
+interface Member {
+  id: string
+  name: string
+  email: string
+}
+
+interface Props {
+  members: Member[]
+}
+
+export default function Index({ members }: Props) {
+  return (
+    <AuthenticatedLayout>
+      <Head title="メンバー一覧" />
+      <div className="container mx-auto">
+        {members.map((member) => (
+          <MemberCard key={member.id} member={member} />
+        ))}
+      </div>
+    </AuthenticatedLayout>
+  )
+}
+```
+
+### Form Pattern with useForm
+
+```typescript
+import { useForm } from '@inertiajs/react'
+
+export default function Create() {
+  const { data, setData, post, processing, errors } = useForm({
+    name: '',
+    email: '',
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    post(route('members.store'))
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Input
+        value={data.name}
+        onChange={(e) => setData('name', e.target.value)}
+        error={errors.name}
+      />
+      <Button type="submit" disabled={processing}>
+        {processing ? 'Processing...' : 'Submit'}
+      </Button>
+    </form>
+  )
+}
+```
+
+### Navigation Pattern
+
+```typescript
+import { router } from '@inertiajs/react'
+
+// Programmatic navigation
+router.visit(route('members.show', { id: member.id }))
+
+// With Link component
+import { Link } from '@inertiajs/react'
+<Link href={route('members.show', { id: member.id })}>
+  View Details
+</Link>
+```
+
+### Loading States
+
+```typescript
+// Option 1: useForm's processing state
+const { processing } = useForm({...})
+<Button disabled={processing}>
+  {processing ? <Spinner /> : 'Submit'}
+</Button>
+
+// Option 2: router progress
+import { router } from '@inertiajs/react'
+import { useState, useEffect } from 'react'
+
+function useRouterProgress() {
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    router.on('start', () => setLoading(true))
+    router.on('finish', () => setLoading(false))
+  }, [])
+
+  return loading
+}
+```
 
 ---
 
@@ -361,15 +566,23 @@ Before considering implementation complete, verify AI didn't fall into these tra
 - [ ] Easy to test each state independently
 
 ### Props Control ⚠️
+- [ ] Data comes from Laravel Controller as props
 - [ ] Loading states controllable from parent
 - [ ] Error states controllable from parent
 - [ ] All display variations controllable via props
-- [ ] No useEffect for data fetching in presentational components
+- [ ] No useEffect for data fetching
+
+### Inertia.js Patterns ⚠️
+- [ ] useForm for all forms
+- [ ] router/Link for navigation
+- [ ] Page components receive props from Controller
+- [ ] processing state for loading indicators
+- [ ] errors from useForm for validation display
 
 ### Component Responsibility
-- [ ] Data fetching in Server Components (not useEffect)
+- [ ] Data fetching in Laravel Controller (not React components)
 - [ ] Display logic in presenter.ts (not embedded in JSX)
-- [ ] Validation logic in utility files (not in components)
+- [ ] Validation logic in Laravel Request/UseCase (not in components)
 - [ ] One responsibility per component
 
 ### Over-Abstraction
@@ -381,100 +594,7 @@ Before considering implementation complete, verify AI didn't fall into these tra
 - [ ] No `any` types
 - [ ] Explicit type annotations on all props
 - [ ] Type guards for runtime checks
-
----
-
-## Code Examples
-
-### Quick Reference
-
-**Testable Component Pattern**:
-```typescript
-// ✅ Props control all states
-type ComponentProps = {
-  data: Data | null
-  isLoading?: boolean
-  error?: Error | null
-}
-
-function Component({ data, isLoading, error }: ComponentProps) {
-  if (isLoading) return <Spinner />
-  if (error) return <ErrorMessage error={error} />
-  if (!data) return <EmptyState />
-
-  return <Content data={data} />
-}
-```
-
-**Logic Extraction**:
-```typescript
-// Extract to userValidation.ts
-export const validateEmail = (email: string): boolean => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-}
-```
-
-**Presenter Pattern**:
-```typescript
-// presenter.ts
-export const getUserStatusText = (status: string): string => {
-  switch (status) {
-    case "active": return "Active"
-    case "inactive": return "Inactive"
-    default: return "Unknown"
-  }
-}
-```
-
----
-
-## Integration with Development Workflow
-
-This skill is primarily referenced during **Phase 2 (Implementation)** when:
-- Implementing new React components
-- Refactoring existing components
-- Extracting logic from components
-- Organizing component directory structure
-- Ensuring code quality standards
-
-After implementation, code undergoes review in Phase 2 (Code Review) using Codex MCP.
-
----
-
-## Common Patterns
-
-### Server Component Pattern
-```typescript
-// Server Component (async)
-export async function UserProfileServer({ userId }: { userId: string }) {
-  const user = await fetchUser(userId)  // Direct async/await
-  return <UserProfile user={user} />
-}
-
-// Usage with Suspense
-<Suspense fallback={<Spinner />}>
-  <UserProfileServer userId={userId} />
-</Suspense>
-```
-
-### Presenter Pattern
-```typescript
-// presenter.ts - Pure functions for display logic
-export const getUserStatusText = (status: string): string => { /* ... */ }
-export const getUserStatusColor = (status: string): string => { /* ... */ }
-
-// Component uses presenter
-<Badge color={getUserStatusColor(status)}>
-  {getUserStatusText(status)}
-</Badge>
-```
-
-### Conditional UI Extraction
-```typescript
-// Extract conditional branches to separate components
-// Instead of: {isLoading ? <Spinner /> : <Content />}
-// Create: <LoadingState /> and <ContentState /> components with props
-```
+- [ ] Props interface matches Laravel Output DTO
 
 ---
 
@@ -483,8 +603,9 @@ export const getUserStatusColor = (status: string): string => { /* ... */ }
 AI will confidently write code that:
 1. **Looks clean** but is **impossible to test** (internal state dependencies)
 2. **Works** but **can't be controlled** from parent (no props control)
-3. **Compiles** but **violates separation of concerns** (data fetching + UI mixed)
-4. **Is abstract** but **has no benefit** (unnecessary wrappers)
+3. **Uses useEffect** for data fetching (should use Controller props)
+4. **Manual form handling** instead of Inertia's useForm
+5. **Is abstract** but **has no benefit** (unnecessary wrappers)
 
 **Trust AI for**:
 - Syntax and TypeScript basics
@@ -495,6 +616,7 @@ AI will confidently write code that:
 - Testability (internal state vs props)
 - Component responsibility (one thing per component)
 - Props control (can parent control all states?)
+- Inertia patterns (useForm, router, Controller props)
 - Conditional branch extraction (separate components?)
 
 When in doubt, ask: **"Can I easily test this component's different states?"**
