@@ -23,6 +23,7 @@
       "Bash(echo:*)",
       "Bash(nc:*)",
       "Bash(mkdir:*)",
+      "Bash(mkdir -p:*)",
       "Bash(touch:*)",
       "Bash(cat:*)",
       "Bash(git add:*)",
