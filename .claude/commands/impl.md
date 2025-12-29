@@ -1,6 +1,7 @@
 ---
 description: "TDD方法論に従って新機能の実装やバグ修正を行う。RED→GREEN→REFACTORサイクルを厳格に遵守"
 argument-hint: "[タスク説明]"
+allowed-tools: ["Skill", "AskUserQuestion", "TodoWrite", "Read", "Bash", "Task", "Write", "Edit"]
 ---
 
 # /impl - TDD開発コマンド

@@ -1,6 +1,7 @@
 ---
 description: "スキルを作成し、レビュー・自動修正まで行う"
 argument-hint: "[スキル名] [スキルの説明]"
+allowed-tools: ["Skill", "AskUserQuestion", "TodoWrite", "Read", "Glob"]
 ---
 
 # /create-skill - スキル作成コマンド

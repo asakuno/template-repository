@@ -249,15 +249,42 @@ AskUserQuestion({
 -->
 ```
 
-### 実装開始
+### 次のアクション確認
 
-TODO.md承認後、自動的に /impl コマンドを実行して実装を開始します。
+AskUserQuestionツールを使用してユーザーに次のアクションを確認してください：
 
+```javascript
+AskUserQuestion({
+  questions: [
+    {
+      question: "計画が完成しました。次のアクションを選択してください。",
+      header: "次のアクション",
+      options: [
+        {
+          label: "実装開始",
+          description: "/impl コマンドで実装を開始する"
+        },
+        {
+          label: "完了",
+          description: "計画のみで終了"
+        }
+      ],
+      multiSelect: false
+    }
+  ]
+})
+```
+
+**「実装開始」を選択された場合**：
 ```javascript
 Skill({
   skill: "impl"
 })
 ```
+
+**「完了」を選択された場合**：
+- コマンドを終了
+- 「計画が完了しました。実装を開始する場合は /impl を使用してください」と表示
 
 ---
 
