@@ -29,7 +29,7 @@
       "Bash(git commit:*)"
     ],
     "deny": [
-      "Bash(rm:*)",
+      "Bash(rm:*)"
     ],
     "ask": [
       "Bash(git push:*)",
