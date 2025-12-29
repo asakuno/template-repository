@@ -7,7 +7,7 @@ allowed-tools: ["Skill", "AskUserQuestion", "TodoWrite", "Read", "Bash", "Task",
 # /impl - TDD開発コマンド
 
 このコマンドは、Kent BeckのTDD方法論と高凝集度・低結合度・コロケーションの原則に従って開発を行います。
-developingスキルを活用し、RED→GREEN→REFACTORサイクルをテストファーストアプローチで厳格に遵守します。
+RED→GREEN→REFACTORサイクルをテストファーストアプローチで厳格に遵守します。
 
 ## 使い方
 
@@ -107,7 +107,7 @@ TodoWrite({
 #### REDタスク（テスト作成）
 
 1. TodoWriteで該当タスクを`in_progress`に更新
-2. **writing-testsスキル**を使用してテストを作成
+2. テストを作成（プロジェクトのテスト規約に従う）
 3. **サブエージェントでテスト実行**（後述）して**失敗を確認**
 4. docs/TODO.mdの該当行を`[x]`に更新
 5. TodoWriteで該当タスクを`completed`に更新

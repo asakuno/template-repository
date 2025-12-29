@@ -43,7 +43,7 @@ This skill focuses on patterns AI commonly fails to implement correctly in Larav
 **Correct pattern**: Custom hook for data + presentational component
 
 ```typescript
-// ❌ AI writes: Untestable
+// ❌ AIが書くパターン: テスト不可能
 function UserProfile({ userId }) {
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState(null)
@@ -52,7 +52,7 @@ function UserProfile({ userId }) {
   return <div>{user.name}</div>
 }
 
-// ✅ Correct: Testable
+// ✅ 正しいパターン: テスト可能
 function UserProfile({ user, isLoading }) {
   if (isLoading) return <Spinner />
   return <div>{user.name}</div>
@@ -70,8 +70,8 @@ function UserProfile({ user, isLoading }) {
 **Correct pattern**: Use Laravel Precognition
 
 ```typescript
-// ❌ AI writes: import { useForm } from '@inertiajs/react'
-// ✅ Correct: import { useForm } from 'laravel-precognition-react'
+// ❌ AIが書くパターン: import { useForm } from '@inertiajs/react'
+// ✅ 正しいパターン: import { useForm } from 'laravel-precognition-react'
 
 const form = useForm('post', route('members.store'), { name: '', email: '' })
 

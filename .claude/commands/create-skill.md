@@ -6,7 +6,10 @@ allowed-tools: ["Skill", "AskUserQuestion", "TodoWrite", "Read", "Glob"]
 
 # /create-skill - スキル作成コマンド
 
-このコマンドは、skill-creatorスキルを使って新しいスキルを作成し、reviewing-skillsスキルでレビュー・自動修正を行います。
+このコマンドは、skill-creatorスキル（外部スキル: example-skills:skill-creator）を使って新しいスキルを作成し、
+reviewing-skillsスキルでレビュー・自動修正を行います。
+
+**注意**: このコマンドを実行する前に、example-skillsパッケージがインストールされていることを確認してください。
 
 ## 使い方
 

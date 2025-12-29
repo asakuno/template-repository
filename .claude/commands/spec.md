@@ -1,7 +1,7 @@
 ---
-description: "対話的計画コマンド。analyzing-requirementsとplanning-tasksスキルを統合実行してDESIGN.mdとTODO.mdを生成"
+description: "対話的計画コマンド。DESIGN.mdとTODO.mdを生成"
 argument-hint: "[タスク説明]"
-allowed-tools: ["Skill", "AskUserQuestion", "Read"]
+allowed-tools: ["Skill", "AskUserQuestion", "Read", "Write", "TodoWrite"]
 ---
 
 # /spec - 対話的計画コマンド
@@ -9,7 +9,7 @@ allowed-tools: ["Skill", "AskUserQuestion", "Read"]
 このコマンドは、Claude Code組み込みのplan modeと同等の機能を提供します。
 ユーザーのタスク説明から自動的にDESIGN.md（設計ドキュメント）とTODO.md（タスクリスト）を生成します。
 
-analyzing-requirementsとplanning-tasksスキルを統合実行し、対話的に計画を洗練します。
+対話的に計画を洗練し、TDD方法論に基づいたタスクリストを作成します。
 
 ## 使い方
 
@@ -91,25 +91,42 @@ AskUserQuestion({
 
 ---
 
-## [2/4] DESIGN.md生成（analyzing-requirements）
+## [2/4] DESIGN.md生成
 
-analyzing-requirementsスキルを実行してDESIGN.mdを生成します。
+プロジェクトのアーキテクチャガイドラインとコーディング規約に基づいてDESIGN.mdを生成します。
 
-### スキル実行
+### DESIGN.md作成
 
-以下の情報をanalyzing-requirementsスキルに渡してください：
+以下の情報を含むDESIGN.mdを作成してください：
 
+```markdown
+# 設計ドキュメント
+
+## タスク概要
+[取得したタスク説明]
+
+## システム概要
+[実装対象の機能概要]
+
+## 機能要件
+[必須機能のリスト]
+
+## アーキテクチャ設計
+[システム構成図、レイヤー構成、モジュール配置]
+
+## 技術選定
+[使用する技術スタック、ライブラリ]
+
+## データ設計
+[エンティティ、ValueObject、DTO]
+
+## インターフェース設計
+[API、コンポーネントのインターフェース]
 ```
-タスク説明: [取得したタスク説明]
-更新モード: [新規/更新]
-既存DESIGN.md: [存在する場合は内容を含める]
-```
-
-Skillツールを使用してanalyzing-requirementsスキルを実行してください。
 
 ### 生成確認
 
-スキル実行後、docs/DESIGN.mdの存在と内容を確認してください。
+Writeツールで docs/DESIGN.md を作成後、内容を確認してください。
 
 生成されたDESIGN.mdの主要セクションを表示してください：
 - システム概要
@@ -158,25 +175,43 @@ AskUserQuestion({
 
 ---
 
-## [3/4] TODO.md生成（planning-tasks）
+## [3/4] TODO.md生成
 
-planning-tasksスキルを実行してTODO.mdを生成します。
+DESIGN.mdに基づいて、TDD方法論に従ったTODO.mdを生成します。
 
-### スキル実行
+### TODO.md作成
 
-以下の情報をplanning-tasksスキルに渡してください：
+docs/DESIGN.md の内容を読み取り、以下の形式でTODO.mdを作成してください：
 
+```markdown
+# タスクリスト
+
+## タスク概要
+[DESIGN.mdから抽出したタスク説明]
+
+## フェーズ構成
+
+### フェーズ1: [機能名/モジュール名]
+
+- [ ] [RED] [テスト対象] のテスト作成
+- [ ] [GREEN] [テスト対象] の実装
+- [ ] [REFACTOR] [テスト対象] のリファクタリング
+
+（各機能ごとにRED→GREEN→REFACTORサイクルを繰り返す）
+
+### フェーズ2: [次の機能名/モジュール名]
+
+...
 ```
-DESIGN.mdの場所: docs/DESIGN.md
-更新モード: [新規/更新]
-既存TODO.md: [存在する場合は内容を含める]
-```
 
-Skillツールを使用してplanning-tasksスキルを実行してください。
+**TodoWrite でタスクを管理する場合の参考例**:
+- フェーズごとにタスクを分割
+- 各タスクは RED → GREEN → REFACTOR の順序を守る
+- テストファーストを徹底
 
 ### 生成確認
 
-スキル実行後、docs/TODO.mdの存在と内容を確認してください。
+Writeツールで docs/TODO.md を作成後、内容を確認してください。
 
 生成されたTODO.mdの主要セクションを表示してください：
 - タスク概要
@@ -290,15 +325,10 @@ Skill({
 
 ## 重要な注意事項
 
-### 依存関係
-- analyzing-requirementsスキルが必須です
-- planning-tasksスキルが必須です
-- 両スキルが正しくインストールされていることを確認してください
-
 ### エラーハンドリング
-- スキル実行エラー時は明確なエラーメッセージを表示してください
+- ファイル作成エラー時は明確なエラーメッセージを表示してください
 - ユーザーにリトライオプションを提供してください
-- 最大再試行回数: 各スキル3回まで
+- 最大再試行回数: 各フェーズ3回まで
 
 ### MUSTルール準拠
 計画ドキュメントは以下のルールに準拠します：
