@@ -67,9 +67,12 @@ story:
 	docker compose exec app npm run storybook
 
 init:
+	cp .env.example .env
 	@make up-build
 	@make composer-install
 	@make yarn-install
 	@make setup-storage
+	docker compose exec app php artisan key:generate
+	sudo chmod -fR 777 storage bootstrap
 	@make migrate
 	@make vite-build
