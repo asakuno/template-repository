@@ -56,6 +56,8 @@ vite:
 	docker compose exec app yarn dev
 vite-build:
 	docker compose exec app yarn build
+vite-kill:
+	docker compose exec app pkill -f "vite"
 
 setup-storage:
 	docker compose exec app mkdir -p storage/framework/{sessions,views,cache}

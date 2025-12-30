@@ -5,6 +5,7 @@ services:
     volumes:
       - ".:/app"
       - "./.docker/local/php/php.ini:/usr/local/etc/php/conf.d/php.ini"
+      - "./.docker/local/php-fpm/www.conf:/usr/local/etc/php-fpm.d/www.conf"
     ports:
       - "9000:9000"
       - "5173:5173"
@@ -46,6 +47,7 @@ services:
     volumes:
       - ".:/app"
       - "./.docker/local/php/php.ini:/usr/local/etc/php/conf.d/php.ini"
+      - "./.docker/local/php-fpm/www.conf:/usr/local/etc/php-fpm.d/www.conf"
     depends_on:
       - mysql
       - redis
@@ -63,7 +65,7 @@ services:
       - "./storage/mysql:/var/lib/mysql"
       - ".docker/local/mysql/mysql-docker-entrypoint.sql:/docker-entrypoint-initdb.d/mysql-docker-entrypoint.sql"
     environment:
-      MYSQL_DATABASE: database
+      MYSQL_DATABASE: laravel-template
       MYSQL_USER: user
       MYSQL_PASSWORD: password
       MYSQL_ROOT_PASSWORD: password
