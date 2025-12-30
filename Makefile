@@ -73,6 +73,5 @@ init:
 	@make yarn-install
 	@make setup-storage
 	docker compose exec app php artisan key:generate
-	sudo chmod -fR 777 storage bootstrap
 	@make migrate
 	@make vite-build
