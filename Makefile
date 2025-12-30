@@ -67,9 +67,9 @@ story:
 	docker compose exec app npm run storybook
 
 init:
+	@make up-build
 	@make composer-install
 	@make yarn-install
-	@make up
 	@make setup-storage
 	@make migrate
 	@make vite-build
