@@ -26,7 +26,7 @@ export default defineConfig({
                 '**/.git/**',
             ],
             usePolling: true,
-            interval: 1000,
+            interval: 500,
             binaryInterval: 10000,
         },
     },

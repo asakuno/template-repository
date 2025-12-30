@@ -31,10 +31,10 @@ redis:
 	docker compose exec redis /bin/bash
 
 cache-clear:
-    docker compose exec app php artisan cache:clear
-    docker compose exec app php artisan config:clear
-    docker compose exec app php artisan route:clear
-    docker compose exec app php artisan view:clear
+	docker compose exec app php artisan cache:clear
+	docker compose exec app php artisan config:clear
+	docker compose exec app php artisan route:clear
+	docker compose exec app php artisan view:clear
 composer-install:
 	docker compose run --rm app composer install
 dump-autoload:

@@ -65,10 +65,10 @@ services:
       - "./storage/mysql:/var/lib/mysql"
       - ".docker/local/mysql/mysql-docker-entrypoint.sql:/docker-entrypoint-initdb.d/mysql-docker-entrypoint.sql"
     environment:
-      MYSQL_DATABASE: laravel-template
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
 
   redis:
     image: redis:6.2-buster
@@ -81,8 +81,8 @@ services:
       - "9001:9001"
       - "9002:9002"
     environment:
-      MINIO_ROOT_USER: access_key
-      MINIO_ROOT_PASSWORD: secret_key
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --address :9001 --console-address :9002
 
   create-bucket:
@@ -92,15 +92,14 @@ services:
       - /bin/sh
       - -c
       - |
-        until (mc config host add minio http://minio:9001 access_key secret_key) do echo 'wait until add host' && sleep 1; done;
+        until (mc config host add minio http://minio:9001 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}) do echo 'wait until add host' && sleep 1; done;
         mc mb minio/public
         mc policy set public minio/public
         mc mb minio/private
         mc policy set private minio/private
-        mc policy set private minio/private
     environment:
-      MINIO_ROOT_USER: access_key
-      MINIO_ROOT_PASSWORD: secret_key
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     depends_on:
       - minio
 
