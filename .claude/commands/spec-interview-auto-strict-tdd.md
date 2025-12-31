@@ -1,17 +1,19 @@
 ---
-description: 仕様インタビュー後、厳格なTDD（機能単位）でサブエージェント自動実装を開始
+description: 仕様インタビュー後、厳格なTDD（Phase単位）でサブエージェント自動実装を開始
 allowed-tools: Read, Write, Bash, Task
 argument-hint: [機能の概要や目的]
 ---
 
 # 仕様インタビュー & 厳格TDD自動実装
 
-**このコマンドは機能単位の厳格なTDDサイクル（RED → GREEN → REFACTOR）を採用します。**
+**このコマンドはPhase単位の厳格なTDDサイクル（RED → GREEN → REFACTOR）を採用します。**
 
-各機能ごとに以下を繰り返します：
-1. RED: テスト作成 → コミット
-2. GREEN: 最小限の実装 → コミット
+各Phaseごとに以下を繰り返します：
+1. RED: Phase内の全テスト作成 → コミット
+2. GREEN: Phase内の全実装 → コミット
 3. REFACTOR: リファクタリング → コミット
+
+**コミット戦略**: Phase単位でコミット（詳細は @.claude/docs/tdd-phase-based-commit-strategy.md 参照）
 
 ## 入力された初期仕様
 ```
@@ -39,7 +41,28 @@ $ARGUMENTS
    - タイムスタンプ: !`date +%Y%m%d-%H%M%S`
    - パス: `.claude/specs/spec-{タイムスタンプ}.md`
 
-## フェーズ3: 実装方法の選択
+## フェーズ3: 計画明確化インタビュー（任意）
+
+仕様書（DESIGN.md）が作成されたら、必要に応じて計画の曖昧な点を深掘りして明確化できます。
+
+**重要**: このフェーズは **planモード** で実行してください。
+
+### 手順
+
+1. **DESIGN.md の分析**
+   - 不明確な点、曖昧な記述、決定が必要な項目を特定
+
+2. **質問の生成**
+   - **AskUserQuestionTool** で2-4個の質問を生成
+   - 各質問に2-4個の具体的な選択肢（pros/cons付き）
+
+3. **DESIGN.md の更新**
+   - 決定事項を反映
+   - アーキテクチャ決定記録（ADR）に追加
+
+詳細な手順は `.claude/commands/spec-interview-strict-tdd.md` のフェーズ3を参照してください。
+
+## フェーズ4: 実装方法の選択
 
 仕様書保存後、**AskUserQuestionTool** で実装方法を確認：
 
@@ -50,7 +73,7 @@ $ARGUMENTS
 2. **新しいセッションで手動実行** - /clear後に仕様書を参照して開始
 3. **このセッションで続行** - 現在の会話内で実装を進める
 
-## フェーズ4: 実装の実行
+## フェーズ5: 実装の実行
 
 ### 選択肢1の場合（サブエージェント）
 
@@ -74,8 +97,13 @@ $ARGUMENTS
   - コンポーネント設計（Page/Components/Layouts）
   - 実装計画書（DESIGN.md）の作成
 
-  **重要**: 実装手順は機能単位で細かく分割してください。
-  各機能がTDDサイクル（RED → GREEN → REFACTOR）で実装できる粒度にしてください。
+  **重要**: 実装手順はPhase単位で記載してください。
+  各PhaseごとにRED → GREEN → REFACTORサイクルを実行します。
+
+  例（Frontend）:
+  - **Phase 2: 基本UIコンポーネント** - Button, Input, Select 等
+  - **Phase 3: 機能固有コンポーネント** - UserForm, UserCard 等
+  - **Phase 4: ページコンポーネント** - UserList, UserDetail ページ
 
   完了したら、計画内容を報告してください。
 
@@ -91,37 +119,37 @@ git commit -m "feat(frontend): Phase 1完了 - UI/UX設計と実装計画を作�
 - ハイブリッドアーキテクチャ設計
 - コンポーネント設計
 - 実装計画書（DESIGN.md）作成
-- 機能単位の実装ステップ定義
+- Phase単位の実装ステップ定義
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
 
-**Phase 2: TDD実装サイクル（機能単位）**（Phase 1完了後に実行）
+**Phase 2以降: 各PhaseごとにTDDサイクルを実行**（Phase 1完了後に実行）
 
 **Taskツール** を使用：
 - subagent_type: "implement-review"
-- description: "Frontend Phase 2: 厳格TDD実装（機能単位）"
+- description: "Frontend Phase 2以降: 厳格TDD実装（Phase単位）"
 - prompt: |
   Phase 1で作成した実装計画書（@DESIGN.md）に基づいて、厳格なTDDサイクルで実装してください。
 
-  **重要**: 各機能ごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
+  **重要**: 各PhaseごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
 
   実装手順：
-  1. DESIGN.mdの「実装手順」から機能リストを確認
-  2. 各機能について以下のサイクルを実行：
+  1. DESIGN.mdの「実装手順」からPhaseリストを確認
+  2. 各Phaseについて以下のサイクルを実行：
 
     **RED（テスト作成）**:
-    - 機能のVitest/RTLテストを作成
+    - Phase内の全コンポーネントのVitest/RTLテストを作成
     - Storybook ストーリー作成（条件分岐・複雑なUIの場合）
     - テストが失敗することを確認（RED）
     - コミット:
       ```
       git add .
-      git commit -m "test(frontend): [機能名] - テスト作成（RED）
+      git commit -m "test(frontend): [Phase名] テスト作成 (RED)
 
-      - Vitest/RTL テスト作成
+      - [Phase内のコンポーネント名] Vitest/RTL テスト作成
       - [具体的なテスト内容]
 
       🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -129,15 +157,16 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
       Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
       ```
 
-    **GREEN（最小限の実装）**:
-    - テストをパスする最小限のコードを実装
+    **GREEN（実装）**:
+    - Phase内の全コンポーネントを実装
     - Laravel Precognition フォーム実装（必要な場合）
     - テストが成功することを確認（GREEN）
     - コミット:
       ```
       git add .
-      git commit -m "feat(frontend): [機能名] - 実装（GREEN）
+      git commit -m "feat(frontend): [Phase名] 実装完了 (GREEN)
 
+      - [Phase内のコンポーネント名] 実装完了
       - [具体的な実装内容]
       - テスト通過確認
 
@@ -154,7 +183,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
     - コミット:
       ```
       git add .
-      git commit -m "refactor(frontend): [機能名] - リファクタリング（REFACTOR）
+      git commit -m "refactor(frontend): [Phase名] リファクタリング (REFACTOR)
 
       - [具体的なリファクタリング内容]
       - テスト通過確認
@@ -164,9 +193,14 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
       Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
       ```
 
-  3. 次の機能へ進む（RED → GREEN → REFACTOR を繰り返す）
+  3. 次のPhaseへ進む（RED → GREEN → REFACTOR を繰り返す）
 
-  完了したら、実装した機能リストと全テストがパスしたことを報告してください。
+  例: Phase 2（基本UIコンポーネント）の場合
+    - RED: Button, Input, Select 全コンポーネントのテスト作成
+    - GREEN: Button, Input, Select 全コンポーネントの実装
+    - REFACTOR: コード品質改善
+
+  完了したら、実装したPhaseリストと全テストがパスしたことを報告してください。
 
 **Phase 3: Quality Checks**（Phase 2完了後に実行）
 
@@ -237,9 +271,14 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
   - Repository Interface設計
   - 実装計画書（DESIGN.md）の作成
 
-  **重要**: 実装手順は機能単位で細かく分割してください。
-  例（架空の商品管理機能の場合）: 「ProductId ValueObject」「CategoryId ValueObject」「ProductName ValueObject」など
-  各機能がTDDサイクル（RED → GREEN → REFACTOR）で実装できる粒度にしてください。
+  **重要**: 実装手順はPhase単位で記載してください。
+  各PhaseごとにRED → GREEN → REFACTORサイクルを実行します。
+
+  例（Backend）:
+  - **Phase 2: Domain層** - ProductId, CategoryId, ProductName ValueObjects, Product Entity, ProductRepositoryInterface
+  - **Phase 3: Infrastructure層** - EloquentProductRepository, Product Model
+  - **Phase 4: Application層** - CreateProductUseCase, GetProductUseCase, Input/Output DTOs
+  - **Phase 5: Presentation層** - ProductController, ProductRequest, APIルート定義
 
   完了したら、計画内容を報告してください。
 
@@ -256,36 +295,36 @@ git commit -m "feat(backend): Phase 1完了 - 4層アーキテクチャ設計と
 - UseCase設計
 - Repository Interface設計
 - 実装計画書（DESIGN.md）作成
-- 機能単位の実装ステップ定義
+- Phase単位の実装ステップ定義
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
 
-**Phase 2: TDD実装サイクル（機能単位）**（Phase 1完了後に実行）
+**Phase 2以降: 各PhaseごとにTDDサイクルを実行**（Phase 1完了後に実行）
 
 **Taskツール** を使用：
 - subagent_type: "backend-implement-review"
-- description: "Backend Phase 2: 厳格TDD実装（機能単位）"
+- description: "Backend Phase 2以降: 厳格TDD実装（Phase単位）"
 - prompt: |
   Phase 1で作成した実装計画書（@DESIGN.md）に基づいて、厳格なTDDサイクルで実装してください。
 
-  **重要**: 各機能ごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
+  **重要**: 各PhaseごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
 
   実装手順：
-  1. DESIGN.mdの「実装手順」から機能リストを確認
-  2. 各機能について以下のサイクルを実行：
+  1. DESIGN.mdの「実装手順」からPhaseリストを確認
+  2. 各Phaseについて以下のサイクルを実行：
 
     **RED（テスト作成）**:
-    - 機能のUnit/Featureテストを作成
+    - Phase内の全コンポーネント（Entity/ValueObject/UseCase等）のUnit/Featureテストを作成
     - テストが失敗することを確認（RED）
     - コミット:
       ```
       git add .
-      git commit -m "test(backend): [機能名] - テスト作成（RED）
+      git commit -m "test(backend): [Phase名] テスト作成 (RED)
 
-      - Unit/Feature テスト作成
+      - [Phase内のコンポーネント名] Unit/Feature テスト作成
       - [具体的なテスト内容]
 
       🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -293,15 +332,16 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
       Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
       ```
 
-    **GREEN（最小限の実装）**:
-    - テストをパスする最小限のコードを実装
+    **GREEN（実装）**:
+    - Phase内の全コンポーネントを実装
     - Entity/ValueObject/UseCase/Repository実装
     - テストが成功することを確認（GREEN）
     - コミット:
       ```
       git add .
-      git commit -m "feat(backend): [機能名] - 実装（GREEN）
+      git commit -m "feat(backend): [Phase名] 実装完了 (GREEN)
 
+      - [Phase内のコンポーネント名] 実装完了
       - [具体的な実装内容]
       - テスト通過確認
 
@@ -312,14 +352,16 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
     **REFACTOR（リファクタリング）**:
     - コード品質を向上（重複削除、命名改善、最適化）
+    - Laravel Pint 適用
     - Serena MCP でシンボルベース編集
     - テストが引き続き成功することを確認
     - Codex MCP でコードレビュー
     - コミット:
       ```
       git add .
-      git commit -m "refactor(backend): [機能名] - リファクタリング（REFACTOR）
+      git commit -m "refactor(backend): [Phase名] リファクタリング (REFACTOR)
 
+      - Laravel Pint 適用
       - [具体的なリファクタリング内容]
       - テスト通過確認
 
@@ -328,9 +370,14 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
       Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
       ```
 
-  3. 次の機能へ進む（RED → GREEN → REFACTOR を繰り返す）
+  3. 次のPhaseへ進む（RED → GREEN → REFACTOR を繰り返す）
 
-  完了したら、実装した機能リストと全テストがパスしたことを報告してください。
+  例: Phase 2（Domain層）の場合
+    - RED: ProductId, CategoryId, ProductName 全ValueObjectのテスト作成
+    - GREEN: ProductId, CategoryId, ProductName 全ValueObjectの実装
+    - REFACTOR: Pint適用、コード品質改善
+
+  完了したら、実装したPhaseリストと全テストがパスしたことを報告してください。
 
 **Phase 3: Quality Checks**（Phase 2完了後に実行）
 
@@ -387,25 +434,26 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 #### Fullstack実装の場合（Laravel + Inertia.js）
 
-**実行順序**: Backend（厳格TDD） → Frontend（厳格TDD）
+**実行順序**: Backend（厳格TDD - Phase単位） → Frontend（厳格TDD - Phase単位）
 
 1. **Backend Phase 1**（backend-plan-reviewer） - 計画・設計
-2. **Backend Phase 2**（backend-implement-review） - 厳格TDDサイクル（機能単位）
-   - 機能1: RED → GREEN → REFACTOR
-   - 機能2: RED → GREEN → REFACTOR
-   - ...
-3. **Backend Phase 3**（Quality Checks） - バックエンドの品質チェック
+2. **Backend Phase 2以降**（backend-implement-review） - 厳格TDDサイクル（Phase単位）
+   - Phase 2（Domain層）: RED → GREEN → REFACTOR
+   - Phase 3（Infrastructure層）: RED → GREEN → REFACTOR
+   - Phase 4（Application層）: RED → GREEN → REFACTOR
+   - Phase 5（Presentation層）: RED → GREEN → REFACTOR
+3. **Backend Quality Checks** - バックエンドの品質チェック
 4. **Frontend Phase 1**（plan-reviewer） - 計画・設計
-5. **Frontend Phase 2**（implement-review） - 厳格TDDサイクル（機能単位）
-   - 機能1: RED → GREEN → REFACTOR
-   - 機能2: RED → GREEN → REFACTOR
-   - ...
-6. **Frontend Phase 3**（Quality Checks） - フロントエンドのテスト・品質チェック
+5. **Frontend Phase 2以降**（implement-review） - 厳格TDDサイクル（Phase単位）
+   - Phase 2（基本UIコンポーネント）: RED → GREEN → REFACTOR
+   - Phase 3（機能固有コンポーネント）: RED → GREEN → REFACTOR
+   - Phase 4（ページコンポーネント）: RED → GREEN → REFACTOR
+6. **Frontend Quality Checks** - フロントエンドのテスト・品質チェック
 
 **重要事項**:
 - 各フェーズは前のフェーズの完了を待ってから実行
-- Phase 2では各機能ごとにRED → GREEN → REFACTORサイクルを厳守
-- Backend Phase 3（Quality Checks）がパスしてから Frontend Phase 1 に進む
+- 各PhaseでRED → GREEN → REFACTORサイクルを厳守（Phase内の全コンポーネントをまとめて実装）
+- Backend Quality Checks がパスしてから Frontend Phase 1 に進む
 - バックエンドAPI実装完了後、フロントエンドでそのAPIを使用
 
 ---
@@ -424,13 +472,13 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 ```
 @.claude/specs/[保存したファイル名]
-この仕様書に基づいて厳格なTDD（機能単位）で実装を開始してください。
+この仕様書に基づいて厳格なTDD（Phase単位）で実装を開始してください。
 
 実装タイプに応じて適切なagentを使用：
-- Frontend: /plan-reviewer → /implement-review（厳格TDD）
-- Backend: /backend-plan-reviewer → /backend-implement-review（厳格TDD）
+- Frontend: /plan-reviewer → /implement-review（厳格TDD - Phase単位）
+- Backend: /backend-plan-reviewer → /backend-implement-review（厳格TDD - Phase単位）
 
-各機能ごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
+各PhaseごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
 ```
 ---
 
@@ -442,4 +490,4 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 - **Backend**: backend-architecture-guidelines、backend-coding-guidelines を参照
 - **Fullstack**: Backend完了後にFrontend実装
 
-**重要**: 各機能ごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
+**重要**: 各PhaseごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
