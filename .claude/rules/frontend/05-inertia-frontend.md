@@ -1,82 +1,16 @@
-# Inertia.js + React 統合
+# Inertia.js フロントエンド実装
 
 ## 概要
 
-Inertia.jsは、SPAのようなユーザー体験を提供しながら、サーバーサイドルーティングとコントローラーを維持できるモダンなアプローチである。APIを別途構築する必要がなく、Laravel側のコントローラーから直接Reactコンポーネントにデータを渡すことができる。
+Inertia.jsを使用することで、SPAのようなユーザー体験を提供しながら、サーバーサイドルーティングを維持できる。React コンポーネントは Laravel Controller から渡される props を受け取り、動的データは API 経由で取得する。
 
 ---
 
-## 基本概念
+## ページコンポーネントの基本
 
-### データの受け渡しパターン
+### Props の受け取り
 
-#### パターン1: Web Controllers（Inertia.js）
-
-**目的**: 初期ページ描画のみを担当。静的なマスターデータのみを提供。
-
-```
-Web Request → Web Controller → Inertia::render() → React Component
-                                                         ↓
-                                             （動的データが必要な場合）
-                                                         ↓
-                                                  API Request
-```
-
-#### パターン2: API Controllers（REST API）
-
-**目的**: CRUD操作、動的データの取得・更新を担当。
-
-```
-API Request → API Controller → Form Request → Use Case → Repository
-                                                                ↓
-                                                          JSON Response
-```
-
----
-
-## Web Controllers（ページ描画用）
-
-### 基本実装
-
-**Controller側**
-
-```php
-// app/Http/Controllers/Web/WeeklyReportPageController.php
-namespace App\Http\Controllers\Web;
-
-use App\Enums\ReportStatus;
-use Inertia\Inertia;
-use Inertia\Response;
-
-class WeeklyReportPageController extends Controller
-{
-    public function index(Request $request): Response
-    {
-        return Inertia::render('WeeklyReport/Index', [
-            'statusOptions' => ReportStatus::toSelectArray(), // 静的マスターデータ
-            'filters' => $request->only(['q', 'status']),    // クエリパラメータ
-        ]);
-        // 週報一覧データは React 側から API 経由で取得
-    }
-
-    public function create(): Response
-    {
-        return Inertia::render('WeeklyReport/Create', [
-            'reportStatuses' => ReportStatus::toSelectArray(),
-        ]);
-    }
-
-    public function edit(int $id): Response
-    {
-        return Inertia::render('WeeklyReport/Edit', [
-            'weeklyReportId' => $id,
-            'reportStatuses' => ReportStatus::toSelectArray(),
-        ]);
-    }
-}
-```
-
-**React側**
+Laravel Controller から渡される props を受け取る。props の型は明示的に定義する。
 
 ```tsx
 // resources/js/pages/WeeklyReport/Index.tsx
@@ -111,53 +45,9 @@ export default WeeklyReportIndex;
 
 ---
 
-## 遅延取得（Lazy Loading）
+## 共有データの使用
 
-コントローラー側で `fn ()` でくるむと、必要な時にのみ関数が実行される。
-
-```php
-return Inertia::render('WeeklyReport/Index', [
-    'posts' => fn () => Post::with('tags')->get(),  // 遅延実行
-    'users' => fn () => User::all(),                // 遅延実行
-]);
-```
-
-**React側での取得**
-
-```tsx
-import { router } from '@inertiajs/react';
-
-// 特定のpropsのみリロード
-router.reload({
-  only: ['posts'],  // posts のみ再取得
-});
-```
-
----
-
-## 共有データ（HandleInertiaRequests）
-
-全てのページで共有するデータは、HandleInertiaRequestsミドルウェアで定義する。
-
-**app/Http/Middleware/HandleInertiaRequests.php**
-
-```php
-public function share(Request $request): array
-{
-    return [
-        ...parent::share($request),
-        'app' => [
-            'name' => config('app.name'),
-        ],
-        'auth' => [
-            'user' => $request->user(),
-        ],
-        'toast' => fn () => $request->session()->get('toast'),
-    ];
-}
-```
-
-**TypeScript型定義**
+### TypeScript型定義
 
 ```typescript
 // resources/js/types/index.d.ts
@@ -174,7 +64,7 @@ export interface AppPageProps<T extends Record<string, unknown> = Record<string,
 }
 ```
 
-**React側での使用**
+### React側での使用
 
 ```tsx
 import { usePage } from '@inertiajs/react';
@@ -306,7 +196,8 @@ console.log(index({ query: { baz: ['aaa', 'bbb', 'ccc'] } }));
 // resources/js/pages/WeeklyReport/Create.tsx
 import { FC } from 'react';
 import { useForm } from 'laravel-precognition-react';
-import { store } from '@/routes/weekly-reports';
+import { router } from '@inertiajs/react';
+import { store, index } from '@/routes/weekly-reports';
 
 interface Props {
   reportStatuses: Array<{ value: string; label: string }>;
@@ -382,6 +273,12 @@ export default WeeklyReportCreate;
 ```tsx
 import { router } from '@inertiajs/react';
 
+// 特定のpropsのみリロード
+router.reload({
+  only: ['posts'],  // posts のみ再取得
+});
+
+// フォーム送信時の部分リロード
 const handleSubmit = () => {
   form.submit('post', store().url, {
     only: ['posts', 'toast'],  // posts と toast のみ再取得
@@ -393,13 +290,6 @@ const handleSubmit = () => {
 ---
 
 ## トースト通知
-
-### Controller側
-
-```php
-return redirect()->back()
-    ->with('toast', '保存しました。');
-```
 
 ### React側（レイアウトでの実装）
 
@@ -461,29 +351,7 @@ router.visit(index().url, {
 
 ## ベストプラクティス
 
-### 1. Web Controllers は静的データのみ
-
-動的データは API 経由で取得する。
-
-```php
-// ✅ Good: 静的データのみ
-public function index(): Response
-{
-    return Inertia::render('WeeklyReport/Index', [
-        'statusOptions' => ReportStatus::toSelectArray(),
-    ]);
-}
-
-// ❌ Bad: 動的データを含む
-public function index(): Response
-{
-    return Inertia::render('WeeklyReport/Index', [
-        'reports' => WeeklyReport::paginate(20),  // API経由で取得すべき
-    ]);
-}
-```
-
-### 2. Precognition でリアルタイムバリデーション
+### 1. Precognition でリアルタイムバリデーション
 
 `@inertiajs/react` の `useForm` は使用禁止。
 
@@ -497,7 +365,7 @@ const form = useForm<App.Data.CreateWeeklyReportData>('post', store().url, { ...
 import { useForm } from '@inertiajs/react';  // 使用禁止
 ```
 
-### 3. 型安全なルーティング
+### 2. 型安全なルーティング
 
 Wayfinder を使用して型安全なルーティングを実現する。
 
@@ -510,7 +378,7 @@ import { show } from '@/routes/weekly-reports';
 <Link href="/weekly-reports/1">View</Link>
 ```
 
-### 4. 部分リロードの活用
+### 3. 部分リロードの活用
 
 不要なデータの再取得を避ける。
 
@@ -524,7 +392,7 @@ router.visit(index().url, {
 router.visit(index().url);
 ```
 
-### 5. レイアウトの共通化
+### 4. レイアウトの共通化
 
 ページごとにレイアウトを設定する。
 
@@ -539,6 +407,27 @@ const WeeklyReportIndex = () => {
       {/* ... */}
     </BaseLayout>
   );
+};
+```
+
+### 5. Props の型定義
+
+すべての props に明示的な型定義を行う。
+
+```tsx
+// ✅ Good: 明示的な型定義
+interface Props {
+  statusOptions: Array<{ value: string; label: string }>;
+  filters: { q?: string; status?: string };
+}
+
+const WeeklyReportIndex: FC<Props> = ({ statusOptions, filters }) => {
+  // ...
+};
+
+// ❌ Bad: 型定義なし
+const WeeklyReportIndex = ({ statusOptions, filters }) => {
+  // ...
 };
 ```
 
@@ -558,29 +447,7 @@ import { useForm } from '@inertiajs/react';
 import { useForm } from 'laravel-precognition-react';
 ```
 
-### 2. Web Controllers での動的データ提供禁止
-
-動的データは API 経由で取得する。
-
-```php
-// ❌ 禁止
-public function index(): Response
-{
-    return Inertia::render('WeeklyReport/Index', [
-        'reports' => WeeklyReport::all(),  // 動的データ
-    ]);
-}
-
-// ✅ 推奨
-public function index(): Response
-{
-    return Inertia::render('WeeklyReport/Index', [
-        'statusOptions' => ReportStatus::toSelectArray(),  // 静的データ
-    ]);
-}
-```
-
-### 3. ハードコードされたURL禁止
+### 2. ハードコードされたURL禁止
 
 Wayfinder を使用する。
 
@@ -591,4 +458,78 @@ Wayfinder を使用する。
 // ✅ 推奨
 import { show } from '@/routes/weekly-reports';
 <Link href={show(1).url}>View</Link>
+```
+
+### 3. 型定義の省略禁止
+
+すべての props、state、関数に型を明示する。
+
+```tsx
+// ❌ 禁止
+const handleSubmit = (e) => {  // 型なし
+  // ...
+};
+
+// ✅ 推奨
+const handleSubmit = (e: React.FormEvent) => {
+  // ...
+};
+```
+
+### 4. グローバル状態の濫用禁止
+
+Inertia の shared data または props で管理できるデータは、グローバル状態管理ライブラリを使用しない。
+
+```tsx
+// ❌ 禁止: 不要なグローバル状態
+const [user, setUser] = useGlobalState('user');  // shared data で十分
+
+// ✅ 推奨: shared data を使用
+const { auth } = usePage<AppPageProps>().props;
+```
+
+---
+
+## API データ取得パターン
+
+動的データは API 経由で取得する。カスタムフックに分離する。
+
+```tsx
+// hooks/useWeeklyReports.ts
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+
+interface Filters {
+  q?: string;
+  status?: string;
+}
+
+export const useFetchWeeklyReports = (filters: Filters) => {
+  return useQuery({
+    queryKey: ['weekly-reports', filters],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/weekly-reports', {
+        params: filters,
+      });
+      return data;
+    },
+  });
+};
+```
+
+```tsx
+// pages/WeeklyReport/Index.tsx
+const WeeklyReportIndex: FC<Props> = ({ statusOptions, filters }) => {
+  const { data: reports, isLoading } = useFetchWeeklyReports(filters);
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      {reports.map((report) => (
+        <ReportCard key={report.id} report={report} />
+      ))}
+    </div>
+  );
+};
 ```
