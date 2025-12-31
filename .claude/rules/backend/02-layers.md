@@ -512,6 +512,85 @@ public function register(): void
 }
 ```
 
+### Repository 実装の判断基準
+
+#### Interface のみで十分なケース
+
+以下の場合は Implementation クラスを作成せず、Interface のみで開始することを推奨する。
+
+- **シンプルな CRUD 操作**のみを実装する場合
+- **Eloquent の標準メソッド**（`find()`, `create()`, `update()` 等）で実現できる場合
+- **プロジェクト初期段階**で実装を柔軟に保ちたい場合
+- **テスト時にモック**を使用する場合（Interface があれば十分）
+
+**実装例（Interface のみ）**:
+
+```php
+// UseCase で Interface を型宣言
+public function __construct(
+    private PostRepositoryInterface $postRepository,
+) {}
+
+// AppServiceProvider でバインディング不要
+// Laravel の自動解決により Eloquent Model が直接使用される
+```
+
+#### Implementation クラスが必要なケース
+
+以下の場合は Implementation クラスを作成する。
+
+| ケース | 理由 | 例 |
+|--------|------|-----|
+| **複雑なクエリ** | Eloquent のリレーションや集計が複雑 | 多段階の join, サブクエリ |
+| **複数DB対応** | MySQL/PostgreSQL で異なる実装が必要 | DB固有の関数使用時 |
+| **外部データソース** | DB以外のデータソースを使用 | API、CSV、Redis |
+| **キャッシュ層の追加** | Repository 内でキャッシュを管理 | 頻繁にアクセスされるマスターデータ |
+| **トランザクション制御** | 複数テーブルへの書き込み | リレーション先の同時更新 |
+| **テスト用スタブ** | テスト環境専用の実装を提供 | インメモリ実装 |
+
+**実装例（Implementation クラス使用）**:
+
+```php
+// 複雑なクエリの例
+class PostRepository implements PostRepositoryInterface
+{
+    public function findPopularPosts(int $limit = 10): Collection
+    {
+        return Post::query()
+            ->withCount('likes')
+            ->withAvg('reviews', 'rating')
+            ->having('likes_count', '>', 100)
+            ->orderByDesc('likes_count')
+            ->limit($limit)
+            ->get();
+    }
+
+    // キャッシュ層の例
+    public function findById(int $id): ?Post
+    {
+        return Cache::remember(
+            "post:{$id}",
+            3600,
+            fn () => Post::find($id)
+        );
+    }
+}
+```
+
+#### 実装方針
+
+**推奨フロー**:
+
+1. **プロジェクト初期**: Interface のみで開始
+2. **複雑化の兆候**: 実装が複雑になってきたら Implementation クラスを検討
+3. **リファクタリング**: 必要に応じて Interface のみから Implementation クラスへ移行
+
+**判断基準**:
+
+- UseCase 内で **3行以上の Repository メソッド呼び出し**がある → Implementation クラスを検討
+- **同じクエリパターンが3箇所以上**で使用される → Repository に集約
+- **DB固有の機能**を使用する → Implementation クラスで抽象化
+
 ---
 
 ## 6. Model Layer（Eloquent Models）
