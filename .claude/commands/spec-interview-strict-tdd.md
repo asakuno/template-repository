@@ -183,8 +183,24 @@ Phase 2: 各機能ごとにTDDサイクルを実行
   ... (すべての機能について繰り返す)
 
 Phase 3: Quality Checks を実行
+  以下のコマンドをすべて実行し、すべてのチェックがパスすることを確認：
+  ```bash
   bun run typecheck && bun run check && bun run test && bun run build
-  → すべてパス後、修正があればコミット
+  ```
+
+  **重要**: すべてのチェックがパスするまで次に進まない。
+
+  **エラーが発生した場合**:
+  1. エラーメッセージを確認
+  2. 該当箇所を修正
+  3. 再度 Quality Checks を実行
+  4. すべてパスしたら修正をコミット
+
+  **よくあるエラーと対処法**:
+  - `typecheck` 失敗: 型定義の不足 → 適切な型を追加
+  - `check` 失敗: Biome lint エラー → `bun run check --apply` で自動修正
+  - `test` 失敗: テストケースの不足または実装のバグ → 修正して再実行
+  - `build` 失敗: import エラーやビルド設定の問題 → エラーログを確認
 
 コミットメッセージ例:
 - RED: test(frontend): Button コンポーネント - テスト作成（RED）
@@ -215,8 +231,24 @@ Phase 2: 各機能ごとにTDDサイクルを実行
   ... (すべての機能について繰り返す)
 
 Phase 3: Quality Checks を実行
+  以下のコマンドをすべて実行し、すべてのチェックがパスすることを確認：
+  ```bash
   ./vendor/bin/phpstan analyse && ./vendor/bin/pint --test && ./vendor/bin/phpunit && ./vendor/bin/deptrac
-  → すべてパス後、修正があればコミット
+  ```
+
+  **重要**: すべてのチェックがパスするまで次に進まない。
+
+  **エラーが発生した場合**:
+  1. エラーメッセージを確認
+  2. 該当箇所を修正
+  3. 再度 Quality Checks を実行
+  4. すべてパスしたら修正をコミット
+
+  **よくあるエラーと対処法**:
+  - `phpstan` 失敗: 型定義の不足、潜在的バグ → 適切な型を追加、コードを修正
+  - `pint` 失敗: コーディング規約違反 → `./vendor/bin/pint` で自動修正
+  - `phpunit` 失敗: テストケースの不足または実装のバグ → 修正して再実行
+  - `deptrac` 失敗: 依存関係の違反 → 4層アーキテクチャに従って修正
 
 コミットメッセージ例:
 - RED: test(backend): ProductId ValueObject - テスト作成（RED）
