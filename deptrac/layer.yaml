@@ -75,12 +75,12 @@ deptrac:
       - Data
 
     # UseCase Layer（Business Logic）の依存
+    # Model への直接依存は禁止 - Repository 経由必須
     UseCase:
       - Repository
       - Service
       - Policy
       - Data
-      - Model
 
     # Service Layer（Shared Logic）の依存
     Service:
