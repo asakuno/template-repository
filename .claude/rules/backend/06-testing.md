@@ -75,3 +75,38 @@ final class MemberControllerTest extends TestCase
 ## テストメソッド命名
 
 日本語でテスト内容を記述する。`test_` プレフィックスを使用する。
+
+## コードカバレッジ基準
+
+テストカバレッジの最低基準を設定し、品質を担保する。
+
+### カバレッジ目標
+
+- **Domain 層**: 80%以上（ビジネスロジックの核心）
+- **Application 層**: 70%以上（ユースケース）
+- **Infrastructure 層**: 60%以上（Repository 実装）
+- **Presentation 層**: 60%以上（Controller）
+
+### カバレッジの確認
+
+```bash
+./vendor/bin/phpunit --coverage-text
+```
+
+詳細なHTMLレポートを生成する場合：
+
+```bash
+./vendor/bin/phpunit --coverage-html coverage
+```
+
+カバレッジレポートは `coverage/` ディレクトリに生成される。
+
+### カバレッジ不足時の対応
+
+1. 未テストのブランチを特定
+2. エッジケースのテストを追加
+3. 例外ハンドリングのテストを追加
+4. バリデーションロジックのテストを追加
+5. カバレッジ基準を満たすまで追加テストを作成
+
+**重要**: カバレッジ基準を満たさない場合は、次のフェーズに進まない。特に Domain 層は 80%以上を必須とする。
