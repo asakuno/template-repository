@@ -16,11 +16,11 @@
 
 ## アーキテクチャ
 
-### バックエンド: 4層アーキテクチャ
+### バックエンド: 7層レイヤードアーキテクチャ
 ```
-Presentation → Application → Domain ← Infrastructure
+Presentation (Controllers) → Request (FormRequest) → UseCase → Service/Repository → Model → Resource
 ```
-詳細: `Skill('backend-architecture-guidelines')`, `Skill('backend-coding-guidelines')`
+詳細: `.claude/rules/backend/` または `.claude/docs/architecture.md`
 
 ### フロントエンド: ハイブリッドアーキテクチャ
 - **静的データ**: Inertia Props（認証情報、メニュー、権限、SEO コンテンツ）
@@ -59,9 +59,10 @@ bun run typecheck && bun run check && bun run test && bun run build
 コードカバレッジの最低基準を設定し、品質を担保する。
 
 **バックエンド**:
-- **Domain 層**: 80%以上（ビジネスロジックの核心）
-- **Application 層**: 70%以上（ユースケース）
-- **Infrastructure/Presentation 層**: 60%以上
+- **UseCase 層**: 80%以上（ビジネスロジックの核心）
+- **Repository 層**: 70%以上（データアクセス）
+- **Controller 層**: 70%以上（API/Web）
+- **Service 層**: 70%以上（共通ロジック）
 
 ```bash
 ./vendor/bin/phpunit --coverage-text
@@ -82,29 +83,36 @@ bun run test --coverage
 
 ```
 project/
-├── app/Http/Controllers/         # Inertia/API Controllers
-├── modules/                      # ビジネスロジック (4層)
-│   ├── Contract/{Module}/        # モジュール間公開 API
-│   └── {Module}/
-│       ├── Presentation/
-│       ├── Application/
-│       ├── Domain/
-│       └── Infrastructure/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Api/              # API Controllers（REST API）
+│   │   │   └── Web/              # Web Controllers（Inertia.js用）
+│   │   ├── Requests/             # FormRequests（バリデーション）
+│   │   └── Resources/            # API Resources（JSONレスポンス）
+│   ├── UseCases/                 # UseCases（ビジネスロジック）
+│   ├── Services/                 # Services（共通ロジック）
+│   ├── Repositories/             # Repositories（データアクセス）
+│   ├── Data/                     # DTOs（Laravel Data）
+│   ├── Models/                   # Eloquent Models
+│   ├── Policies/                 # Policies（認可）
+│   └── Enums/                    # Enums（列挙型）
 ├── resources/js/
-│   ├── Pages/                    # ページコンポーネント
-│   ├── Components/
-│   │   ├── ui/                   # 汎用 UI
-│   │   └── features/             # 機能固有
-│   ├── Layouts/
+│   ├── pages/                    # Inertia Pages（Reactコンポーネント）
+│   ├── components/               # 共通コンポーネント
+│   ├── layouts/                  # レイアウト
 │   ├── hooks/                    # カスタムフック（API データ取得）
-│   ├── types/
-│   └── lib/
+│   ├── types/                    # TypeScript型定義
+│   │   ├── generated.d.ts        # 自動生成（Laravel Data）
+│   │   └── model.d.ts            # 自動生成（modeltyper）
+│   ├── actions/                  # Wayfinder Actions（自動生成）
+│   └── routes/                   # Wayfinder Routes（自動生成）
 ├── routes/
 │   ├── web.php                   # Inertia routes
 │   └── api.php                   # API routes
 └── tests/
-    ├── Unit/
-    └── Feature/
+    ├── Unit/                     # ユニットテスト
+    └── Feature/                  # フィーチャーテスト
 ```
 
 ## 利用可能なツール
@@ -117,7 +125,7 @@ project/
 | `implement-review` | Frontend Phase 2: 実装、コードレビュー |
 | `test-review` | Frontend テスト・Storybook 作成（任意） |
 | `backend-plan-reviewer` | Backend Phase 1: 調査、アーキテクチャレビュー、計画作成 |
-| `backend-implement-review` | Backend Phase 2: Entity/UseCase 実装、レビュー |
+| `backend-implement-review` | Backend Phase 2: UseCase/Repository 実装、レビュー |
 | `backend-test-review` | Backend PHPUnit テスト作成（任意） |
 
 ### Skills（知識参照）
@@ -128,9 +136,9 @@ project/
 | `test-guidelines` | Vitest/RTL テスト規約、AAA パターン |
 | `storybook-guidelines` | Storybook ストーリー作成規約 |
 | `ui-design-guidelines` | UI/UX 原則、アクセシビリティ |
-| `backend-coding-guidelines` | Entity/ValueObject、UseCase、Repository パターン |
+| `backend-coding-guidelines` | UseCase、Repository、DTO パターン |
 | `backend-test-guidelines` | PHPUnit テスト規約 |
-| `backend-architecture-guidelines` | 4層設計、モジュール分離、Contract パターン |
+| `backend-architecture-guidelines` | 7層設計、レイヤー分離、TypeScript型生成 |
 
 ### MCPs
 
@@ -155,10 +163,10 @@ project/
 - Page コンポーネントのみ `export default` 許可、その他は名前付きエクスポート
 
 ### バックエンド
-- Entity/ValueObject はファクトリメソッド（`create()`, `reconstruct()`）で生成
-- UseCase は Input/Output DTO を使用
-- モジュール間通信は Contract 経由のみ
-- Domain 層は Laravel に依存しない
+- UseCase は Laravel Data の DTO を使用
+- Repository は Interface 経由でアクセス
+- Controller は UseCase のみを呼び出し、ビジネスロジックを含まない
+- TypeScript型は自動生成（`php artisan typescript:transform`）
 
 ## 重要な原則
 
