@@ -25,7 +25,7 @@
 
 ```php
 // ✅ Good: 明示的な型宣言
-public function execute(CreateWeeklyReportData $data): WeeklyReport
+public function execute(CreatePostData $data): Post
 {
     // ...
 }
@@ -44,7 +44,7 @@ PHPDoc で配列の型を明示する。
 ```php
 /**
  * @param array<int> $ids
- * @return array<WeeklyReport>
+ * @return array<Post>
  */
 public function findByIds(array $ids): array
 {
@@ -58,15 +58,15 @@ Nullable な引数・戻り値は `?` を使用する。
 
 ```php
 // ✅ Good
-public function findById(int $id): ?WeeklyReport
+public function findById(int $id): ?Post
 {
-    return WeeklyReport::find($id);
+    return Post::find($id);
 }
 
 // ❌ Bad
-public function findById(int $id): WeeklyReport|null  // 非推奨
+public function findById(int $id): Post|null  // 非推奨
 {
-    return WeeklyReport::find($id);
+    return Post::find($id);
 }
 ```
 
@@ -80,13 +80,13 @@ Eager Loading を必ず使用する。
 
 ```php
 // ❌ Bad: N+1問題
-$reports = WeeklyReport::all();
+$reports = Post::all();
 foreach ($reports as $report) {
     echo $report->user->name; // ループごとにクエリ実行
 }
 
 // ✅ Good: Eager Loading
-$reports = WeeklyReport::with('user')->get();
+$reports = Post::with('user')->get();
 foreach ($reports as $report) {
     echo $report->user->name; // 1回のクエリで取得済み
 }
@@ -97,7 +97,7 @@ foreach ($reports as $report) {
 適切な型定義と制約を設定する。
 
 ```php
-Schema::create('weekly_reports', function (Blueprint $table) {
+Schema::create('posts', function (Blueprint $table) {
     $table->id();
     $table->foreignId('user_id')->constrained()->cascadeOnDelete();
     $table->date('week_start_date');
@@ -121,30 +121,30 @@ Schema::create('weekly_reports', function (Blueprint $table) {
 
 ```php
 // ✅ Good: トランザクション使用
-public function create(...): WeeklyReport
+public function create(...): Post
 {
     return DB::transaction(function () use (...) {
-        $weeklyReport = WeeklyReport::create([...]);
+        $post = Post::create([...]);
 
-        foreach ($kpiValues as $kpiValue) {
-            $weeklyReport->kpiValues()->create($kpiValue);
+        foreach ($tagValues as $tagValue) {
+            $post->tagValues()->create($tagValue);
         }
 
-        return $weeklyReport->fresh(['kpiValues']);
+        return $post->fresh(['tagValues']);
     });
 }
 
 // ❌ Bad: トランザクションなし
-public function create(...): WeeklyReport
+public function create(...): Post
 {
-    $weeklyReport = WeeklyReport::create([...]);
+    $post = Post::create([...]);
 
-    foreach ($kpiValues as $kpiValue) {
-        $weeklyReport->kpiValues()->create($kpiValue);
+    foreach ($tagValues as $tagValue) {
+        $post->tagValues()->create($tagValue);
         // エラー発生時にロールバックされない
     }
 
-    return $weeklyReport;
+    return $post;
 }
 ```
 
@@ -158,20 +158,20 @@ public function create(...): WeeklyReport
 
 ```php
 // Controller
-public function show(WeeklyReport $weeklyReport): JsonResponse
+public function show(Post $post): JsonResponse
 {
-    $this->authorize('view', $weeklyReport); // Policy チェック
+    $this->authorize('view', $post); // Policy チェック
 
     return response()->json([
-        'data' => new WeeklyReportResource($weeklyReport),
+        'data' => new PostResource($post),
     ]);
 }
 
 // Policy
-public function view(User $user, WeeklyReport $weeklyReport): bool
+public function view(User $user, Post $post): bool
 {
-    return $weeklyReport->user_id === $user->id
-        || $weeklyReport->sharedUsers()->where('user_id', $user->id)->exists();
+    return $post->user_id === $user->id
+        || $post->sharedUsers()->where('user_id', $user->id)->exists();
 }
 ```
 
@@ -196,13 +196,13 @@ Eloquent ORM または Query Builder を使用する。
 
 ```php
 // ✅ Good: Eloquent使用
-$reports = WeeklyReport::where('user_id', $userId)->get();
+$reports = Post::where('user_id', $userId)->get();
 
 // ✅ Good: パラメータバインディング
-$reports = DB::select('SELECT * FROM weekly_reports WHERE user_id = ?', [$userId]);
+$reports = DB::select('SELECT * FROM posts WHERE user_id = ?', [$userId]);
 
 // ❌ Bad: 文字列連結（危険）
-$reports = DB::select("SELECT * FROM weekly_reports WHERE user_id = $userId");
+$reports = DB::select("SELECT * FROM posts WHERE user_id = $userId");
 ```
 
 ### XSS対策
@@ -237,15 +237,15 @@ React では JSX のデフォルト動作を活用する。
 
 ```php
 // マスターデータのキャッシュ
-public function getAllKpiItems(): Collection
+public function getAllTags(): Collection
 {
-    return Cache::remember('kpi_items', 3600, function () {
-        return KpiItem::all();
+    return Cache::remember('tags', 3600, function () {
+        return Tag::all();
     });
 }
 
 // キャッシュクリア
-Cache::forget('kpi_items');
+Cache::forget('tags');
 ```
 
 ### ページネーション
@@ -256,10 +256,10 @@ Cache::forget('kpi_items');
 // ✅ Good: ページネーション
 public function index(): JsonResponse
 {
-    $reports = WeeklyReport::paginate(20);
+    $reports = Post::paginate(20);
 
     return response()->json([
-        'data' => WeeklyReportResource::collection($reports),
+        'data' => PostResource::collection($reports),
         'meta' => [
             'current_page' => $reports->currentPage(),
             'total' => $reports->total(),
@@ -268,7 +268,7 @@ public function index(): JsonResponse
 }
 
 // ❌ Bad: 全件取得
-$reports = WeeklyReport::all(); // メモリ枯渇の危険性
+$reports = Post::all(); // メモリ枯渇の危険性
 ```
 
 ### Lazy Loading の回避
@@ -277,10 +277,10 @@ $reports = WeeklyReport::all(); // メモリ枯渇の危険性
 
 ```php
 // ✅ Good: Eager Loading
-$reports = WeeklyReport::with(['user', 'kpiValues.kpiItem'])->get();
+$reports = Post::with(['user', 'tagValues.tag'])->get();
 
 // ❌ Bad: Lazy Loading（N+1問題）
-$reports = WeeklyReport::all();
+$reports = Post::all();
 foreach ($reports as $report) {
     echo $report->user->name; // 個別にクエリ実行
 }
@@ -292,14 +292,14 @@ foreach ($reports as $report) {
 
 ```php
 // ✅ Good: チャンク処理
-WeeklyReport::chunk(100, function ($reports) {
+Post::chunk(100, function ($reports) {
     foreach ($reports as $report) {
         // 処理
     }
 });
 
 // ❌ Bad: 全件取得
-$reports = WeeklyReport::all(); // メモリ枯渇の危険性
+$reports = Post::all(); // メモリ枯渇の危険性
 foreach ($reports as $report) {
     // 処理
 }
@@ -315,7 +315,7 @@ foreach ($reports as $report) {
 return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Domain exception handlers
-        $exceptions->renderable(function (WeeklyReportNotFoundException $e, Request $request) {
+        $exceptions->renderable(function (PostNotFoundException $e, Request $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => $e->getMessage()], $e->getCode());
             }
@@ -338,10 +338,10 @@ return Application::configure(basePath: dirname(__DIR__))
 ### Domain Exception の定義
 
 ```php
-// app/Exceptions/Domain/WeeklyReportNotFoundException.php
+// app/Exceptions/Domain/PostNotFoundException.php
 namespace App\Exceptions\Domain;
 
-class WeeklyReportNotFoundException extends \Exception
+class PostNotFoundException extends \Exception
 {
     public function __construct(int $id)
     {
@@ -351,7 +351,7 @@ class WeeklyReportNotFoundException extends \Exception
 
 // 使用例
 if (!$report) {
-    throw new WeeklyReportNotFoundException($id);
+    throw new PostNotFoundException($id);
 }
 ```
 

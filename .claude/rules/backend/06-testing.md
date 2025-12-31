@@ -65,11 +65,11 @@ tests/
 ```php
 namespace Tests\Unit\Models;
 
-use App\Models\WeeklyReport;
-use App\Enums\ReportStatus;
+use App\Models\Post;
+use App\Enums\PostStatus;
 use PHPUnit\Framework\TestCase;
 
-class WeeklyReportTest extends TestCase
+class PostTest extends TestCase
 {
     public function test_scopeByStatus_filters_reports_by_status(): void
     {
@@ -80,12 +80,12 @@ class WeeklyReportTest extends TestCase
 
     public function test_status_enum_is_correctly_cast(): void
     {
-        $report = new WeeklyReport([
+        $report = new Post([
             'status' => 'draft',
         ]);
 
-        $this->assertInstanceOf(ReportStatus::class, $report->status);
-        $this->assertEquals(ReportStatus::Draft, $report->status);
+        $this->assertInstanceOf(PostStatus::class, $report->status);
+        $this->assertEquals(PostStatus::Draft, $report->status);
     }
 }
 ```
@@ -93,42 +93,42 @@ class WeeklyReportTest extends TestCase
 ### UseCase テスト（Repository モック）
 
 ```php
-namespace Tests\Unit\UseCases\WeeklyReport;
+namespace Tests\Unit\UseCases\Post;
 
-use App\UseCases\WeeklyReport\CreateWeeklyReportUseCase;
-use App\Repositories\WeeklyReport\WeeklyReportRepositoryInterface;
-use App\Data\WeeklyReport\CreateWeeklyReportData;
-use App\Enums\ReportStatus;
+use App\UseCases\Post\CreatePostUseCase;
+use App\Repositories\Post\PostRepositoryInterface;
+use App\Data\Post\CreatePostData;
+use App\Enums\PostStatus;
 use PHPUnit\Framework\TestCase;
 
-class CreateWeeklyReportUseCaseTest extends TestCase
+class CreatePostUseCaseTest extends TestCase
 {
-    public function test_can_create_weekly_report(): void
+    public function test_can_create_post(): void
     {
         // Repository のモック作成
-        $repository = $this->createMock(WeeklyReportRepositoryInterface::class);
+        $repository = $this->createMock(PostRepositoryInterface::class);
         $repository->expects($this->once())
             ->method('create')
-            ->willReturn(new \App\Models\WeeklyReport());
+            ->willReturn(new \App\Models\Post());
 
         // UseCase インスタンス化
-        $useCase = new CreateWeeklyReportUseCase($repository);
+        $useCase = new CreatePostUseCase($repository);
 
         // DTO作成
-        $data = new CreateWeeklyReportData(
+        $data = new CreatePostData(
             userId: 1,
             weekStartDate: '2025-10-13',
             title: 'Test Report',
             memo: null,
-            status: ReportStatus::Draft,
-            kpiValues: []
+            status: PostStatus::Draft,
+            tagValues: []
         );
 
         // 実行
         $result = $useCase->execute($data);
 
         // 検証
-        $this->assertInstanceOf(\App\Models\WeeklyReport::class, $result);
+        $this->assertInstanceOf(\App\Models\Post::class, $result);
     }
 }
 ```
@@ -143,19 +143,19 @@ class CreateWeeklyReportUseCaseTest extends TestCase
 namespace Tests\Feature\Http\Controllers\Api;
 
 use App\Models\User;
-use App\Models\WeeklyReport;
-use App\Models\KpiItem;
+use App\Models\Post;
+use App\Models\Tag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class WeeklyReportControllerTest extends TestCase
+class PostControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_can_list_weekly_reports(): void
+    public function test_can_list_posts(): void
     {
         $user = User::factory()->create();
-        WeeklyReport::factory()->count(3)->create(['user_id' => $user->id]);
+        Post::factory()->count(3)->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->getJson('/api/weekly-reports');
 
@@ -179,19 +179,19 @@ class WeeklyReportControllerTest extends TestCase
             ]);
     }
 
-    public function test_can_create_weekly_report(): void
+    public function test_can_create_post(): void
     {
         $user = User::factory()->create();
-        $kpiItem = KpiItem::factory()->create(['user_id' => $user->id]);
+        $tag = Tag::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->postJson('/api/weekly-reports', [
             'week_start_date' => '2025-10-13',
             'title' => 'Week 42 Report',
             'memo' => 'Test memo',
             'status' => 'submitted',
-            'kpi_values' => [
+            'tag_values' => [
                 [
-                    'kpi_item_id' => $kpiItem->id,
+                    'tag_id' => $tag->id,
                     'value' => '1000000',
                 ],
             ],
@@ -201,19 +201,19 @@ class WeeklyReportControllerTest extends TestCase
             ->assertJsonPath('data.title', 'Week 42 Report')
             ->assertJsonPath('data.status', 'submitted');
 
-        $this->assertDatabaseHas('weekly_reports', [
+        $this->assertDatabaseHas('posts', [
             'title' => 'Week 42 Report',
             'user_id' => $user->id,
         ]);
     }
 
-    public function test_cannot_create_duplicate_weekly_report(): void
+    public function test_cannot_create_duplicate_post(): void
     {
         $user = User::factory()->create();
         $weekStartDate = '2025-10-13';
 
         // 既存のレポート作成
-        WeeklyReport::factory()->create([
+        Post::factory()->create([
             'user_id' => $user->id,
             'week_start_date' => $weekStartDate,
         ]);
@@ -223,44 +223,44 @@ class WeeklyReportControllerTest extends TestCase
             'week_start_date' => $weekStartDate,
             'title' => 'Duplicate Report',
             'status' => 'draft',
-            'kpi_values' => [],
+            'tag_values' => [],
         ]);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['week_start_date']);
     }
 
-    public function test_can_update_weekly_report(): void
+    public function test_can_update_post(): void
     {
         $user = User::factory()->create();
-        $report = WeeklyReport::factory()->create(['user_id' => $user->id]);
+        $report = Post::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->putJson("/api/weekly-reports/{$report->id}", [
             'week_start_date' => $report->week_start_date->format('Y-m-d'),
             'title' => 'Updated Title',
             'status' => 'submitted',
-            'kpi_values' => [],
+            'tag_values' => [],
         ]);
 
         $response->assertOk()
             ->assertJsonPath('data.title', 'Updated Title');
 
-        $this->assertDatabaseHas('weekly_reports', [
+        $this->assertDatabaseHas('posts', [
             'id' => $report->id,
             'title' => 'Updated Title',
         ]);
     }
 
-    public function test_can_delete_weekly_report(): void
+    public function test_can_delete_post(): void
     {
         $user = User::factory()->create();
-        $report = WeeklyReport::factory()->create(['user_id' => $user->id]);
+        $report = Post::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->deleteJson("/api/weekly-reports/{$report->id}");
 
         $response->assertNoContent();
 
-        $this->assertDatabaseMissing('weekly_reports', [
+        $this->assertDatabaseMissing('posts', [
             'id' => $report->id,
         ]);
     }
@@ -269,7 +269,7 @@ class WeeklyReportControllerTest extends TestCase
     {
         $owner = User::factory()->create();
         $otherUser = User::factory()->create();
-        $report = WeeklyReport::factory()->create(['user_id' => $owner->id]);
+        $report = Post::factory()->create(['user_id' => $owner->id]);
 
         $response = $this->actingAs($otherUser)->putJson("/api/weekly-reports/{$report->id}", [
             'title' => 'Unauthorized Update',
@@ -286,12 +286,12 @@ class WeeklyReportControllerTest extends TestCase
 namespace Tests\Feature\Http\Controllers\Web;
 
 use App\Models\User;
-use App\Enums\ReportStatus;
+use App\Enums\PostStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Inertia\Testing\AssertableInertia as Assert;
 
-class WeeklyReportPageControllerTest extends TestCase
+class PostPageControllerTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -303,7 +303,7 @@ class WeeklyReportPageControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('WeeklyReport/Index')
+            ->component('Post/Index')
             ->has('statusOptions')
             ->has('filters')
         );
@@ -317,7 +317,7 @@ class WeeklyReportPageControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('WeeklyReport/Create')
+            ->component('Post/Create')
             ->has('reportStatuses')
         );
     }
@@ -325,14 +325,14 @@ class WeeklyReportPageControllerTest extends TestCase
     public function test_edit_page_returns_report_id(): void
     {
         $user = User::factory()->create();
-        $report = \App\Models\WeeklyReport::factory()->create(['user_id' => $user->id]);
+        $report = \App\Models\Post::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->get("/weekly-reports/{$report->id}/edit");
 
         $response->assertOk();
         $response->assertInertia(fn (Assert $page) => $page
-            ->component('WeeklyReport/Edit')
-            ->where('weeklyReportId', $report->id)
+            ->component('Post/Edit')
+            ->where('postId', $report->id)
             ->has('reportStatuses')
         );
     }
@@ -345,18 +345,18 @@ class WeeklyReportPageControllerTest extends TestCase
 namespace Tests\Feature\Policies;
 
 use App\Models\User;
-use App\Models\WeeklyReport;
+use App\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class WeeklyReportPolicyTest extends TestCase
+class PostPolicyTest extends TestCase
 {
     use RefreshDatabase;
 
     public function test_owner_can_view_own_report(): void
     {
         $user = User::factory()->create();
-        $report = WeeklyReport::factory()->create(['user_id' => $user->id]);
+        $report = Post::factory()->create(['user_id' => $user->id]);
 
         $this->assertTrue($user->can('view', $report));
     }
@@ -365,7 +365,7 @@ class WeeklyReportPolicyTest extends TestCase
     {
         $owner = User::factory()->create();
         $sharedUser = User::factory()->create();
-        $report = WeeklyReport::factory()->create(['user_id' => $owner->id]);
+        $report = Post::factory()->create(['user_id' => $owner->id]);
         $report->sharedUsers()->attach($sharedUser->id);
 
         $this->assertTrue($sharedUser->can('view', $report));
@@ -375,7 +375,7 @@ class WeeklyReportPolicyTest extends TestCase
     {
         $owner = User::factory()->create();
         $otherUser = User::factory()->create();
-        $report = WeeklyReport::factory()->create(['user_id' => $owner->id]);
+        $report = Post::factory()->create(['user_id' => $owner->id]);
 
         $this->assertFalse($otherUser->can('view', $report));
     }
@@ -383,7 +383,7 @@ class WeeklyReportPolicyTest extends TestCase
     public function test_owner_can_update_own_report(): void
     {
         $user = User::factory()->create();
-        $report = WeeklyReport::factory()->create(['user_id' => $user->id]);
+        $report = Post::factory()->create(['user_id' => $user->id]);
 
         $this->assertTrue($user->can('update', $report));
     }
@@ -392,7 +392,7 @@ class WeeklyReportPolicyTest extends TestCase
     {
         $owner = User::factory()->create();
         $sharedUser = User::factory()->create();
-        $report = WeeklyReport::factory()->create(['user_id' => $owner->id]);
+        $report = Post::factory()->create(['user_id' => $owner->id]);
         $report->sharedUsers()->attach($sharedUser->id);
 
         $this->assertFalse($sharedUser->can('update', $report));
@@ -401,7 +401,7 @@ class WeeklyReportPolicyTest extends TestCase
     public function test_owner_can_delete_own_report(): void
     {
         $user = User::factory()->create();
-        $report = WeeklyReport::factory()->create(['user_id' => $user->id]);
+        $report = Post::factory()->create(['user_id' => $user->id]);
 
         $this->assertTrue($user->can('delete', $report));
     }
@@ -419,7 +419,7 @@ class WeeklyReportPolicyTest extends TestCase
 ```php
 // ✅ Good: Factory使用
 $user = User::factory()->create();
-$report = WeeklyReport::factory()->create(['user_id' => $user->id]);
+$report = Post::factory()->create(['user_id' => $user->id]);
 
 // ❌ Bad: 手動作成
 $user = new User();
@@ -435,7 +435,7 @@ $user->save();
 ```php
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class WeeklyReportControllerTest extends TestCase
+class PostControllerTest extends TestCase
 {
     use RefreshDatabase;  // 必須
 
@@ -449,7 +449,7 @@ class WeeklyReportControllerTest extends TestCase
 
 ```php
 // ✅ Good
-public function test_can_create_weekly_report(): void
+public function test_can_create_post(): void
 public function test_cannot_update_other_users_report(): void
 
 // ❌ Bad
@@ -462,11 +462,11 @@ public function test1(): void
 テストコードを3段階で構造化する。
 
 ```php
-public function test_can_create_weekly_report(): void
+public function test_can_create_post(): void
 {
     // Given（前提条件）
     $user = User::factory()->create();
-    $kpiItem = KpiItem::factory()->create(['user_id' => $user->id]);
+    $tag = Tag::factory()->create(['user_id' => $user->id]);
 
     // When（実行）
     $response = $this->actingAs($user)->postJson('/api/weekly-reports', [
@@ -476,7 +476,7 @@ public function test_can_create_weekly_report(): void
 
     // Then（検証）
     $response->assertCreated();
-    $this->assertDatabaseHas('weekly_reports', ['title' => 'Test Report']);
+    $this->assertDatabaseHas('posts', ['title' => 'Test Report']);
 }
 ```
 
@@ -486,10 +486,10 @@ public function test_can_create_weekly_report(): void
 
 ```bash
 # 特定のテストメソッドのみ実行
-php artisan test --filter=test_can_create_weekly_report
+php artisan test --filter=test_can_create_post
 
 # 特定のファイルのみ実行
-php artisan test tests/Feature/Http/Controllers/Api/WeeklyReportControllerTest.php
+php artisan test tests/Feature/Http/Controllers/Api/PostControllerTest.php
 
 # 特定のグループのみ実行
 php artisan test --group=api

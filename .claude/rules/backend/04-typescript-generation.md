@@ -233,7 +233,7 @@ return [
 ### PHP Enum定義
 
 ```php
-enum ReportStatus: string
+enum PostStatus: string
 {
     case Draft = 'draft';
     case Submitted = 'submitted';
@@ -252,7 +252,7 @@ enum ReportStatus: string
 
 ```typescript
 declare namespace App.Enums {
-  export type ReportStatus = 'draft' | 'submitted';
+  export type PostStatus = 'draft' | 'submitted';
 }
 ```
 
@@ -296,7 +296,7 @@ declare namespace App.Models {
 }
 
 declare namespace App.Enums {
-  export type ReportStatus = 'draft' | 'submitted';
+  export type PostStatus = 'draft' | 'submitted';
 }
 ```
 
@@ -310,21 +310,21 @@ declare namespace App.Enums {
 import { FC } from 'react';
 
 interface Props {
-  weeklyReport: App.Models.WeeklyReport;
-  statuses: App.Enums.ReportStatus[];
+  post: App.Models.Post;
+  statuses: App.Enums.PostStatus[];
 }
 
-const WeeklyReportDetail: FC<Props> = ({ weeklyReport, statuses }) => {
+const PostDetail: FC<Props> = ({ post, statuses }) => {
   return (
     <div>
-      <h1>{weeklyReport.title}</h1>
-      <p>Status: {weeklyReport.status}</p>
-      <p>Owner: {weeklyReport.user.name}</p>
+      <h1>{post.title}</h1>
+      <p>Status: {post.status}</p>
+      <p>Owner: {post.user.name}</p>
     </div>
   );
 };
 
-export default WeeklyReportDetail;
+export default PostDetail;
 ```
 
 ### フォームでの使用
@@ -333,8 +333,8 @@ export default WeeklyReportDetail;
 import { useForm } from 'laravel-precognition-react';
 import { store } from '@/routes/weekly-reports';
 
-const WeeklyReportCreate = () => {
-  const form = useForm<App.Data.CreateWeeklyReportData>(
+const PostCreate = () => {
+  const form = useForm<App.Data.CreatePostData>(
     'post',
     store().url,
     {
@@ -343,7 +343,7 @@ const WeeklyReportCreate = () => {
       title: '',
       memo: undefined,
       status: 'draft',
-      kpiValues: [],
+      tagValues: [],
     }
   );
 
@@ -369,7 +369,7 @@ const WeeklyReportCreate = () => {
   );
 };
 
-export default WeeklyReportCreate;
+export default PostCreate;
 ```
 
 ---
@@ -447,12 +447,12 @@ memo?: string;
 PHPDoc で配列の型を明示する。
 
 ```php
-/** @var array<KpiValueData> */
-#[DataCollectionOf(KpiValueData::class)]
-public readonly array $kpiValues,
+/** @var array<TagValueData> */
+#[DataCollectionOf(TagValueData::class)]
+public readonly array $tagValues,
 
 // TypeScript
-kpi_values: Array<App.Data.KpiValueData>;
+tag_values: Array<App.Data.TagValueData>;
 ```
 
 ### 4. Enum型の使用
@@ -461,7 +461,7 @@ kpi_values: Array<App.Data.KpiValueData>;
 
 ```php
 // ✅ Good: Enum使用
-public readonly ReportStatus $status,
+public readonly PostStatus $status,
 
 // ❌ Bad: 文字列
 public readonly string $status,
@@ -489,7 +489,7 @@ CI/CDパイプラインに組み込む。
 
 ```php
 #[TypeScript()]  // 必須
-class WeeklyReport extends Model
+class Post extends Model
 ```
 
 2. **Transformerの順序を確認**

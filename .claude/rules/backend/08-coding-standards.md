@@ -11,10 +11,10 @@
 
 declare(strict_types=1);
 
-namespace App\UseCases\WeeklyReport;
+namespace App\UseCases\Post;
 
-use App\Data\WeeklyReport\CreateWeeklyReportData;
-use App\Models\WeeklyReport;
+use App\Data\Post\CreatePostData;
+use App\Models\Post;
 // ...
 ```
 
@@ -26,66 +26,66 @@ use App\Models\WeeklyReport;
 
 | 種類 | 命名規則 | 例 |
 |------|---------|-----|
-| **Web Controller** | `[Resource]PageController` | `WeeklyReportPageController` |
-| **API Controller** | `[Resource]Controller` | `WeeklyReportController` |
+| **Web Controller** | `[Resource]PageController` | `PostPageController` |
+| **API Controller** | `[Resource]Controller` | `PostController` |
 
 ```php
 // ✅ Good
-class WeeklyReportPageController extends Controller { }
-class WeeklyReportController extends Controller { }
+class PostPageController extends Controller { }
+class PostController extends Controller { }
 
 // ❌ Bad
-class WeeklyReportWebController extends Controller { }
-class WeeklyReportApiController extends Controller { }
+class PostWebController extends Controller { }
+class PostApiController extends Controller { }
 ```
 
 ### Form Requests
 
 | 用途 | 命名規則 | 例 |
 |------|---------|-----|
-| **作成** | `Store[Resource]Request` | `StoreWeeklyReportRequest` |
-| **更新** | `Update[Resource]Request` | `UpdateWeeklyReportRequest` |
-| **検索** | `Search[Resource]sRequest` | `SearchWeeklyReportsRequest` |
+| **作成** | `Store[Resource]Request` | `StorePostRequest` |
+| **更新** | `Update[Resource]Request` | `UpdatePostRequest` |
+| **検索** | `Search[Resource]sRequest` | `SearchPostsRequest` |
 
 ```php
 // ✅ Good
-class StoreWeeklyReportRequest extends FormRequest { }
-class UpdateWeeklyReportRequest extends FormRequest { }
+class StorePostRequest extends FormRequest { }
+class UpdatePostRequest extends FormRequest { }
 
 // ❌ Bad
-class CreateWeeklyReportRequest extends FormRequest { }
-class WeeklyReportStoreRequest extends FormRequest { }
+class CreatePostRequest extends FormRequest { }
+class PostStoreRequest extends FormRequest { }
 ```
 
 ### Use Cases
 
 | 用途 | 命名規則 | 例 |
 |------|---------|-----|
-| **作成** | `Create[Resource]UseCase` | `CreateWeeklyReportUseCase` |
-| **更新** | `Update[Resource]UseCase` | `UpdateWeeklyReportUseCase` |
-| **削除** | `Delete[Resource]UseCase` | `DeleteWeeklyReportUseCase` |
-| **取得** | `Get[Resource]sUseCase` | `GetWeeklyReportsUseCase` |
+| **作成** | `Create[Resource]UseCase` | `CreatePostUseCase` |
+| **更新** | `Update[Resource]UseCase` | `UpdatePostUseCase` |
+| **削除** | `Delete[Resource]UseCase` | `DeletePostUseCase` |
+| **取得** | `Get[Resource]sUseCase` | `GetPostsUseCase` |
 
 ```php
 // ✅ Good
-class CreateWeeklyReportUseCase { }
-class GetWeeklyReportsUseCase { }
+class CreatePostUseCase { }
+class GetPostsUseCase { }
 
 // ❌ Bad
-class WeeklyReportCreateUseCase { }
-class WeeklyReportGetter { }
+class PostCreateUseCase { }
+class PostGetter { }
 ```
 
 ### Services
 
 | 命名規則 | 例 |
 |---------|-----|
-| `[Resource][Function]Service` | `WeeklyReportExportService` |
+| `[Resource][Function]Service` | `PostExportService` |
 | | `DashboardDataService` |
 
 ```php
 // ✅ Good
-class WeeklyReportExportService { }
+class PostExportService { }
 class DashboardDataService { }
 
 // ❌ Bad
@@ -97,102 +97,102 @@ class DataService { }
 
 | 種類 | 命名規則 | 例 |
 |------|---------|-----|
-| **Interface** | `[Resource]RepositoryInterface` | `WeeklyReportRepositoryInterface` |
-| **Implementation** | `[Resource]Repository` | `WeeklyReportRepository` |
+| **Interface** | `[Resource]RepositoryInterface` | `PostRepositoryInterface` |
+| **Implementation** | `[Resource]Repository` | `PostRepository` |
 
 ```php
 // ✅ Good: Interface
-interface WeeklyReportRepositoryInterface { }
+interface PostRepositoryInterface { }
 
 // ✅ Good: Implementation
-class WeeklyReportRepository implements WeeklyReportRepositoryInterface { }
+class PostRepository implements PostRepositoryInterface { }
 
 // ❌ Bad
-interface IWeeklyReportRepository { }
-class EloquentWeeklyReportRepository { }
+interface IPostRepository { }
+class EloquentPostRepository { }
 ```
 
 ### DTOs（Laravel Data）
 
 | 用途 | 命名規則 | 例 |
 |------|---------|-----|
-| **作成** | `Create[Resource]Data` | `CreateWeeklyReportData` |
-| **更新** | `Update[Resource]Data` | `UpdateWeeklyReportData` |
-| **検索** | `Search[Resource]sData` | `SearchWeeklyReportsData` |
-| **ネスト** | `[Property]Data` | `KpiValueData` |
+| **作成** | `Create[Resource]Data` | `CreatePostData` |
+| **更新** | `Update[Resource]Data` | `UpdatePostData` |
+| **検索** | `Search[Resource]sData` | `SearchPostsData` |
+| **ネスト** | `[Property]Data` | `TagValueData` |
 
 ```php
 // ✅ Good
-class CreateWeeklyReportData extends Data { }
-class KpiValueData extends Data { }
+class CreatePostData extends Data { }
+class TagValueData extends Data { }
 
 // ❌ Bad
-class WeeklyReportCreateDTO { }
-class WeeklyReportData { }  // 用途が不明確
+class PostCreateDTO { }
+class PostData { }  // 用途が不明確
 ```
 
 ### Models
 
 | 命名規則 | 例 |
 |---------|-----|
-| `[Resource]` | `WeeklyReport` |
-| | `KpiItem` |
+| `[Resource]` | `Post` |
+| | `Tag` |
 
 ```php
 // ✅ Good
-class WeeklyReport extends Model { }
-class KpiItem extends Model { }
+class Post extends Model { }
+class Tag extends Model { }
 
 // ❌ Bad
-class WeeklyReportModel extends Model { }
-class KpiItemEntity extends Model { }
+class PostModel extends Model { }
+class TagEntity extends Model { }
 ```
 
 ### Resources
 
 | 命名規則 | 例 |
 |---------|-----|
-| `[Resource]Resource` | `WeeklyReportResource` |
+| `[Resource]Resource` | `PostResource` |
 
 ```php
 // ✅ Good
-class WeeklyReportResource extends JsonResource { }
+class PostResource extends JsonResource { }
 
 // ❌ Bad
-class WeeklyReportApiResource extends JsonResource { }
+class PostApiResource extends JsonResource { }
 ```
 
 ### Policies
 
 | 命名規則 | 例 |
 |---------|-----|
-| `[Resource]Policy` | `WeeklyReportPolicy` |
+| `[Resource]Policy` | `PostPolicy` |
 
 ```php
 // ✅ Good
-class WeeklyReportPolicy { }
+class PostPolicy { }
 
 // ❌ Bad
-class WeeklyReportAccessPolicy { }
+class PostAccessPolicy { }
 ```
 
 ### Enums
 
 | 命名規則 | 例 |
 |---------|-----|
-| `[Status/Type]` | `ReportStatus` |
-| | `KpiDataType` |
+| `[Status/Type]` | `PostStatus` |
+| | `TagDataType` |
 
 ```php
 // ✅ Good
-enum ReportStatus: string
+enum PostStatus: string
 {
     case Draft = 'draft';
     case Submitted = 'submitted';
 }
 
 // ❌ Bad
-enum WeeklyReportStatus: string { }
+enum PostStatus: string { }
 enum Status: string { }  // 不明確
 ```
 
@@ -214,32 +214,32 @@ enum Status: string { }  // 不明確
 
 ```php
 // ✅ Good
-public function findById(int $id): ?WeeklyReport;
-public function findByUserAndWeek(int $userId, string $weekStartDate): ?WeeklyReport;
-public function create(...): WeeklyReport;
+public function findById(int $id): ?Post;
+public function findByUserAndWeek(int $userId, string $weekStartDate): ?Post;
+public function create(...): Post;
 
 // ❌ Bad
-public function getById(int $id): ?WeeklyReport;
-public function fetchByUserAndWeek(int $userId, string $weekStartDate): ?WeeklyReport;
-public function save(...): WeeklyReport;  // 作成か更新か不明確
+public function getById(int $id): ?Post;
+public function fetchByUserAndWeek(int $userId, string $weekStartDate): ?Post;
+public function save(...): Post;  // 作成か更新か不明確
 ```
 
 ### UseCase メソッド
 
 | 命名規則 | 例 |
 |---------|-----|
-| `execute` | `execute(CreateWeeklyReportData $data): WeeklyReport` |
+| `execute` | `execute(CreatePostData $data): Post` |
 
 ```php
 // ✅ Good
-public function execute(CreateWeeklyReportData $data): WeeklyReport
+public function execute(CreatePostData $data): Post
 {
     // ...
 }
 
 // ❌ Bad
-public function handle(CreateWeeklyReportData $data): WeeklyReport { }
-public function run(CreateWeeklyReportData $data): WeeklyReport { }
+public function handle(CreatePostData $data): Post { }
+public function run(CreatePostData $data): Post { }
 ```
 
 ### Service メソッド
@@ -248,13 +248,13 @@ public function run(CreateWeeklyReportData $data): WeeklyReport { }
 
 ```php
 // ✅ Good
-public function exportToCsv(WeeklyReport $report): string;
-public function exportToPdf(WeeklyReport $report): string;
-public function calculateTotalKpi(WeeklyReport $report): float;
+public function exportToCsv(Post $report): string;
+public function exportToPdf(Post $report): string;
+public function calculateTotalTag(Post $report): float;
 
 // ❌ Bad
-public function process(WeeklyReport $report): string;
-public function handle(WeeklyReport $report): string;
+public function process(Post $report): string;
+public function handle(Post $report): string;
 ```
 
 ---
@@ -269,12 +269,12 @@ public function handle(WeeklyReport $report): string;
 
 ```php
 // ✅ Good: final使用
-final class CreateWeeklyReportUseCase { }
-final class WeeklyReportRepository implements WeeklyReportRepositoryInterface { }
-final class WeeklyReportExportService { }
+final class CreatePostUseCase { }
+final class PostRepository implements PostRepositoryInterface { }
+final class PostExportService { }
 
 // ❌ Bad: final なし
-class CreateWeeklyReportUseCase { }  // 継承されるべきでない
+class CreatePostUseCase { }  // 継承されるべきでない
 ```
 
 **例外**: 以下のクラスには `final` を付与しない:
@@ -289,7 +289,7 @@ DTOには `readonly` を付与する。
 ```php
 // ✅ Good: readonly使用
 #[TypeScript()]
-final readonly class CreateWeeklyReportData extends Data
+final readonly class CreatePostData extends Data
 {
     public function __construct(
         public readonly int $userId,
@@ -298,7 +298,7 @@ final readonly class CreateWeeklyReportData extends Data
 }
 
 // ❌ Bad: readonly なし
-class CreateWeeklyReportData extends Data
+class CreatePostData extends Data
 {
     public function __construct(
         public int $userId,        // 可変
@@ -315,7 +315,7 @@ DTO以外で Factory パターンを使用する場合、コンストラクタ�
 
 ```php
 // ✅ Good: Factory パターン
-final class WeeklyReportExportService
+final class PostExportService
 {
     private function __construct(
         private readonly StorageManager $storage,
@@ -330,7 +330,7 @@ final class WeeklyReportExportService
 }
 
 // DTO は public コンストラクタ
-final readonly class CreateWeeklyReportData extends Data
+final readonly class CreatePostData extends Data
 {
     public function __construct(  // public のまま
         public readonly int $userId,
@@ -348,12 +348,12 @@ final readonly class CreateWeeklyReportData extends Data
 
 ```php
 // ✅ Good: 完全な型宣言
-public function execute(CreateWeeklyReportData $data): WeeklyReport
+public function execute(CreatePostData $data): Post
 {
     // ...
 }
 
-public function findById(int $id): ?WeeklyReport
+public function findById(int $id): ?Post
 {
     // ...
 }
@@ -376,9 +376,9 @@ Nullable な引数・戻り値は `?` を使用する。
 
 ```php
 // ✅ Good: ?型使用
-public function findById(int $id): ?WeeklyReport
+public function findById(int $id): ?Post
 {
-    return WeeklyReport::find($id);
+    return Post::find($id);
 }
 
 public function getMemo(): ?string
@@ -387,9 +387,9 @@ public function getMemo(): ?string
 }
 
 // ❌ Bad: Union型（非推奨）
-public function findById(int $id): WeeklyReport|null
+public function findById(int $id): Post|null
 {
-    return WeeklyReport::find($id);
+    return Post::find($id);
 }
 ```
 
@@ -400,17 +400,17 @@ public function findById(int $id): WeeklyReport|null
 ```php
 /**
  * @param array<int> $ids
- * @return array<WeeklyReport>
+ * @return array<Post>
  */
 public function findByIds(array $ids): array
 {
-    return WeeklyReport::whereIn('id', $ids)->get()->all();
+    return Post::whereIn('id', $ids)->get()->all();
 }
 
 /**
  * @param array<string, mixed> $data
  */
-public function create(array $data): WeeklyReport
+public function create(array $data): Post
 {
     // ...
 }
@@ -590,11 +590,11 @@ try {
 /**
  * 週報を作成する
  *
- * @param CreateWeeklyReportData $data 作成データ
- * @return WeeklyReport 作成された週報
+ * @param CreatePostData $data 作成データ
+ * @return Post 作成された週報
  * @throws ValidationException バリデーションエラー時
  */
-public function execute(CreateWeeklyReportData $data): WeeklyReport
+public function execute(CreatePostData $data): Post
 {
     // ...
 }
@@ -605,7 +605,7 @@ public function execute(CreateWeeklyReportData $data): WeeklyReport
 複雑なロジックには日本語でコメントを記述する。
 
 ```php
-public function execute(CreateWeeklyReportData $data): WeeklyReport
+public function execute(CreatePostData $data): Post
 {
     // 1. 重複チェック
     $existingReport = $this->repository->findByUserAndWeek(
@@ -620,7 +620,7 @@ public function execute(CreateWeeklyReportData $data): WeeklyReport
     }
 
     // 2. ビジネスルールのバリデーション
-    if ($data->status === ReportStatus::Submitted) {
+    if ($data->status === PostStatus::Submitted) {
         $this->validateSubmission($data);
     }
 

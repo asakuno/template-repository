@@ -174,17 +174,17 @@ API Request → API Controller → Form Request → Use Case
 
 | 種類 | 命名規則 | 例 |
 |------|---------|-----|
-| **Web Controller** | `[Resource]PageController.php` | `WeeklyReportPageController.php` |
-| **API Controller** | `[Resource]Controller.php` | `WeeklyReportController.php` |
-| **Form Request** | `Store/Update[Resource]Request.php` | `StoreWeeklyReportRequest.php` |
-| **Use Case** | `[Action][Resource]UseCase.php` | `CreateWeeklyReportUseCase.php` |
-| **Service** | `[Resource][Function]Service.php` | `WeeklyReportExportService.php` |
-| **Repository Interface** | `[Resource]RepositoryInterface.php` | `WeeklyReportRepositoryInterface.php` |
-| **Repository** | `[Resource]Repository.php` | `WeeklyReportRepository.php` |
-| **DTO** | `Create/Update[Resource]Data.php` | `CreateWeeklyReportData.php` |
-| **Model** | `[Resource].php` | `WeeklyReport.php` |
-| **Resource** | `[Resource]Resource.php` | `WeeklyReportResource.php` |
-| **Policy** | `[Resource]Policy.php` | `WeeklyReportPolicy.php` |
+| **Web Controller** | `[Resource]PageController.php` | `PostPageController.php` |
+| **API Controller** | `[Resource]Controller.php` | `PostController.php` |
+| **Form Request** | `Store/Update[Resource]Request.php` | `StorePostRequest.php` |
+| **Use Case** | `[Action][Resource]UseCase.php` | `CreatePostUseCase.php` |
+| **Service** | `[Resource][Function]Service.php` | `PostExportService.php` |
+| **Repository Interface** | `[Resource]RepositoryInterface.php` | `PostRepositoryInterface.php` |
+| **Repository** | `[Resource]Repository.php` | `PostRepository.php` |
+| **DTO** | `Create/Update[Resource]Data.php` | `CreatePostData.php` |
+| **Model** | `[Resource].php` | `Post.php` |
+| **Resource** | `[Resource]Resource.php` | `PostResource.php` |
+| **Policy** | `[Resource]Policy.php` | `PostPolicy.php` |
 
 ---
 

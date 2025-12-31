@@ -40,7 +40,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-class CreateWeeklyReportData extends Data
+class CreatePostData extends Data
 {
     public function __construct(
         #[Exists(User::class, 'id')]
@@ -50,10 +50,10 @@ class CreateWeeklyReportData extends Data
         public readonly string $title,
         #[Max(1000)]
         public readonly ?string $memo,
-        public readonly ReportStatus $status,
-        /** @var array<KpiValueData> */
-        #[DataCollectionOf(KpiValueData::class)]
-        public readonly array $kpiValues,
+        public readonly PostStatus $status,
+        /** @var array<TagValueData> */
+        #[DataCollectionOf(TagValueData::class)]
+        public readonly array $tagValues,
     ) {}
 }
 ```
@@ -62,11 +62,11 @@ class CreateWeeklyReportData extends Data
 
 ```php
 #[TypeScript()]
-class KpiValueData extends Data
+class TagValueData extends Data
 {
     public function __construct(
-        #[Exists(KpiItem::class, 'id')]
-        public int $kpiItemId,
+        #[Exists(Tag::class, 'id')]
+        public int $tagId,
         #[Max(255)]
         public string $value,
     ) {}
@@ -82,7 +82,7 @@ class KpiValueData extends Data
 **FormRequest**でバリデーションを実施し、**DTO変換メソッド**で Laravel Data に変換する。
 
 ```php
-class StoreWeeklyReportRequest extends FormRequest
+class StorePostRequest extends FormRequest
 {
     public function rules(): array
     {
@@ -90,27 +90,27 @@ class StoreWeeklyReportRequest extends FormRequest
             'week_start_date' => ['required', 'date'],
             'title' => ['required', 'string', 'max:255'],
             'memo' => ['nullable', 'string'],
-            'status' => ['required', Rule::enum(ReportStatus::class)],
-            'kpi_values' => ['required', 'array', 'min:1'],
-            'kpi_values.*.kpi_item_id' => ['required', 'integer', 'exists:kpi_items,id'],
-            'kpi_values.*.value' => ['required'],
+            'status' => ['required', Rule::enum(PostStatus::class)],
+            'tag_values' => ['required', 'array', 'min:1'],
+            'tag_values.*.tag_id' => ['required', 'integer', 'exists:tags,id'],
+            'tag_values.*.value' => ['required'],
         ];
     }
 
     /**
      * DTOへの変換メソッド
      */
-    public function getCreateWeeklyReportData(): CreateWeeklyReportData
+    public function getCreatePostData(): CreatePostData
     {
-        return CreateWeeklyReportData::from([
+        return CreatePostData::from([
             'user_id' => auth()->id(),
             'week_start_date' => $this->input('week_start_date'),
             'title' => $this->input('title'),
             'memo' => $this->input('memo'),
             'status' => $this->input('status'),
-            'kpi_values' => array_map(
-                fn (array $kpiValue) => KpiValueData::from($kpiValue),
-                $this->input('kpi_values', [])
+            'tag_values' => array_map(
+                fn (array $tagValue) => TagValueData::from($tagValue),
+                $this->input('tag_values', [])
             ),
         ]);
     }
@@ -120,13 +120,13 @@ class StoreWeeklyReportRequest extends FormRequest
 **Controller**:
 
 ```php
-public function store(StoreWeeklyReportRequest $request): JsonResponse
+public function store(StorePostRequest $request): JsonResponse
 {
-    $data = $request->getCreateWeeklyReportData();
-    $weeklyReport = $this->createWeeklyReportUseCase->execute($data);
+    $data = $request->getCreatePostData();
+    $post = $this->createPostUseCase->execute($data);
 
     return response()->json([
-        'data' => new WeeklyReportResource($weeklyReport),
+        'data' => new PostResource($post),
     ], 201);
 }
 ```
@@ -140,7 +140,7 @@ use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 
 #[TypeScript()]
-class CreateWeeklyReportData extends Data
+class CreatePostData extends Data
 {
     public function __construct(
         #[Required, Exists(User::class, 'id')]
@@ -156,7 +156,7 @@ class CreateWeeklyReportData extends Data
 
 ```php
 // routes/api.php
-Route::post('/weekly-reports', function (CreateWeeklyReportData $data) {
+Route::post('/weekly-reports', function (CreatePostData $data) {
     // バリデーションは自動的に実行される
     // $data は型安全な DTO インスタンス
     return response()->json($data->toArray());
@@ -201,17 +201,17 @@ php artisan typescript:transform
 ```typescript
 // resources/js/types/generated.d.ts
 declare namespace App.Data {
-  export type CreateWeeklyReportData = {
+  export type CreatePostData = {
     user_id: number;
     week_start_date: string;
     title: string;
     memo?: string;
-    status: App.Enums.ReportStatus;
-    kpi_values: Array<App.Data.KpiValueData>;
+    status: App.Enums.PostStatus;
+    tag_values: Array<App.Data.TagValueData>;
   };
 
-  export type KpiValueData = {
-    kpi_item_id: number;
+  export type TagValueData = {
+    tag_id: number;
     value: string;
   };
 }
@@ -225,7 +225,7 @@ declare namespace App.Data {
 
 ```php
 #[MapName(SnakeCaseMapper::class)]
-class CreateWeeklyReportData extends Data
+class CreatePostData extends Data
 {
     public function __construct(
         public readonly int $userId,      // PHP: camelCase
@@ -260,19 +260,19 @@ const data = {
 
 ```php
 // 配列から生成
-$data = CreateWeeklyReportData::from([
+$data = CreatePostData::from([
     'user_id' => 1,
     'title' => 'Test',
-    'kpi_values' => [
-        ['kpi_item_id' => 1, 'value' => '100'],
+    'tag_values' => [
+        ['tag_id' => 1, 'value' => '100'],
     ],
 ]);
 
 // リクエストから生成
-$data = CreateWeeklyReportData::from($request);
+$data = CreatePostData::from($request);
 
 // Modelから生成
-$data = CreateWeeklyReportData::from($weeklyReport);
+$data = CreatePostData::from($post);
 ```
 
 ### 部分的なデータ取得
@@ -282,7 +282,7 @@ $data = CreateWeeklyReportData::from($weeklyReport);
 $partial = $data->only('title', 'memo');
 
 // 一部のプロパティを除外
-$rest = $data->except('kpi_values');
+$rest = $data->except('tag_values');
 ```
 
 ### 配列/JSON変換
@@ -369,7 +369,7 @@ class CarbonCast implements Cast
 use Spatie\LaravelData\Attributes\WithCast;
 
 #[TypeScript()]
-class WeeklyReportData extends Data
+class PostData extends Data
 {
     public function __construct(
         #[WithCast(CarbonCast::class)]
@@ -386,10 +386,10 @@ class WeeklyReportData extends Data
 
 | 種類 | 命名規則 | 例 |
 |------|---------|-----|
-| **作成用** | `Create[Resource]Data` | `CreateWeeklyReportData` |
-| **更新用** | `Update[Resource]Data` | `UpdateWeeklyReportData` |
-| **検索用** | `Search[Resource]sData` | `SearchWeeklyReportsData` |
-| **ネストDTO** | `[Property]Data` | `KpiValueData` |
+| **作成用** | `Create[Resource]Data` | `CreatePostData` |
+| **更新用** | `Update[Resource]Data` | `UpdatePostData` |
+| **検索用** | `Search[Resource]sData` | `SearchPostsData` |
+| **ネストDTO** | `[Property]Data` | `TagValueData` |
 
 ---
 
@@ -434,9 +434,9 @@ public function __construct(
 
 ```php
 public function __construct(
-    /** @var array<KpiValueData> */
-    #[DataCollectionOf(KpiValueData::class)]
-    public readonly array $kpiValues,    // ✅ Good
+    /** @var array<TagValueData> */
+    #[DataCollectionOf(TagValueData::class)]
+    public readonly array $tagValues,    // ✅ Good
 ) {}
 ```
 
@@ -446,7 +446,7 @@ public function __construct(
 
 ```php
 #[TypeScript()]
-class CreateWeeklyReportData extends Data
+class CreatePostData extends Data
 {
     // ...
 }
@@ -459,19 +459,19 @@ class CreateWeeklyReportData extends Data
 ### Precognition対応のFormRequest
 
 ```php
-class StoreWeeklyReportRequest extends FormRequest
+class StorePostRequest extends FormRequest
 {
     public function rules(): array
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'status' => ['required', Rule::enum(ReportStatus::class)],
+            'status' => ['required', Rule::enum(PostStatus::class)],
         ];
     }
 
-    public function getCreateWeeklyReportData(): CreateWeeklyReportData
+    public function getCreatePostData(): CreatePostData
     {
-        return CreateWeeklyReportData::from([
+        return CreatePostData::from([
             'user_id' => auth()->id(),
             'title' => $this->input('title'),
             'status' => $this->input('status'),
@@ -485,14 +485,14 @@ class StoreWeeklyReportRequest extends FormRequest
 ```tsx
 import { useForm } from 'laravel-precognition-react';
 
-const form = useForm<App.Data.CreateWeeklyReportData>(
+const form = useForm<App.Data.CreatePostData>(
     'post',
     route('weekly-reports.store'),
     {
         userId: 0,
         title: '',
         status: 'draft',
-        kpiValues: [],
+        tagValues: [],
     }
 );
 

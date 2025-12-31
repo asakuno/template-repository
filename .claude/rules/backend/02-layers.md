@@ -20,12 +20,12 @@
 **提供データ**: 静的マスターデータ、Enumオプション、クエリパラメータ
 
 ```php
-class WeeklyReportPageController extends Controller
+class PostPageController extends Controller
 {
     public function index(Request $request): Response
     {
-        return Inertia::render('WeeklyReport/Index', [
-            'statusOptions' => ReportStatus::toSelectArray(), // 静的データ
+        return Inertia::render('Post/Index', [
+            'statusOptions' => PostStatus::toSelectArray(), // 静的データ
             'filters' => $request->only(['q', 'status']),
         ]);
         // 週報一覧データは React 側から API 経由で取得
@@ -33,16 +33,16 @@ class WeeklyReportPageController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('WeeklyReport/Create', [
-            'reportStatuses' => ReportStatus::toSelectArray(),
+        return Inertia::render('Post/Create', [
+            'reportStatuses' => PostStatus::toSelectArray(),
         ]);
     }
 
     public function edit(int $id): Response
     {
-        return Inertia::render('WeeklyReport/Edit', [
-            'weeklyReportId' => $id,
-            'reportStatuses' => ReportStatus::toSelectArray(),
+        return Inertia::render('Post/Edit', [
+            'postId' => $id,
+            'reportStatuses' => PostStatus::toSelectArray(),
         ]);
     }
 }
@@ -57,72 +57,72 @@ class WeeklyReportPageController extends Controller
 **RESTful設計**: `index`, `store`, `show`, `update`, `destroy`
 
 ```php
-class WeeklyReportController extends Controller
+class PostController extends Controller
 {
     public function __construct(
-        private GetWeeklyReportsUseCase $getWeeklyReportsUseCase,
-        private CreateWeeklyReportUseCase $createWeeklyReportUseCase,
-        private UpdateWeeklyReportUseCase $updateWeeklyReportUseCase,
-        private DeleteWeeklyReportUseCase $deleteWeeklyReportUseCase,
+        private GetPostsUseCase $getPostsUseCase,
+        private CreatePostUseCase $createPostUseCase,
+        private UpdatePostUseCase $updatePostUseCase,
+        private DeletePostUseCase $deletePostUseCase,
     ) {}
 
-    public function index(SearchWeeklyReportsRequest $request): JsonResponse
+    public function index(SearchPostsRequest $request): JsonResponse
     {
-        $weeklyReports = $this->getWeeklyReportsUseCase->execute(
-            $request->getSearchWeeklyReportsData()
+        $posts = $this->getPostsUseCase->execute(
+            $request->getSearchPostsData()
         );
 
         return response()->json([
-            'data' => WeeklyReportResource::collection($weeklyReports),
+            'data' => PostResource::collection($posts),
             'meta' => [
-                'current_page' => $weeklyReports->currentPage(),
-                'last_page' => $weeklyReports->lastPage(),
-                'per_page' => $weeklyReports->perPage(),
-                'total' => $weeklyReports->total(),
+                'current_page' => $posts->currentPage(),
+                'last_page' => $posts->lastPage(),
+                'per_page' => $posts->perPage(),
+                'total' => $posts->total(),
             ],
         ]);
     }
 
-    public function store(StoreWeeklyReportRequest $request): JsonResponse
+    public function store(StorePostRequest $request): JsonResponse
     {
-        $data = $request->getCreateWeeklyReportData();
-        $weeklyReport = $this->createWeeklyReportUseCase->execute($data);
+        $data = $request->getCreatePostData();
+        $post = $this->createPostUseCase->execute($data);
 
         return response()->json([
-            'data' => new WeeklyReportResource($weeklyReport),
+            'data' => new PostResource($post),
         ], 201);
     }
 
-    public function show(WeeklyReport $weeklyReport): JsonResponse
+    public function show(Post $post): JsonResponse
     {
-        $this->authorize('view', $weeklyReport);
+        $this->authorize('view', $post);
 
-        $weeklyReport->load(['user', 'kpiValues.kpiItem']);
+        $post->load(['user', 'tagValues.tag']);
 
         return response()->json([
-            'data' => new WeeklyReportResource($weeklyReport),
+            'data' => new PostResource($post),
         ]);
     }
 
     public function update(
-        UpdateWeeklyReportRequest $request,
-        WeeklyReport $weeklyReport
+        UpdatePostRequest $request,
+        Post $post
     ): JsonResponse {
-        $this->authorize('update', $weeklyReport);
+        $this->authorize('update', $post);
 
-        $data = $request->getUpdateWeeklyReportData();
-        $updatedReport = $this->updateWeeklyReportUseCase->execute($data, auth()->id());
+        $data = $request->getUpdatePostData();
+        $updatedReport = $this->updatePostUseCase->execute($data, auth()->id());
 
         return response()->json([
-            'data' => new WeeklyReportResource($updatedReport),
+            'data' => new PostResource($updatedReport),
         ]);
     }
 
-    public function destroy(WeeklyReport $weeklyReport): JsonResponse
+    public function destroy(Post $post): JsonResponse
     {
-        $this->authorize('delete', $weeklyReport);
+        $this->authorize('delete', $post);
 
-        $this->deleteWeeklyReportUseCase->execute($weeklyReport->id, auth()->id());
+        $this->deletePostUseCase->execute($post->id, auth()->id());
 
         return response()->json([
             'message' => 'Resource deleted successfully.',
@@ -150,7 +150,7 @@ class WeeklyReportController extends Controller
 ### 実装例
 
 ```php
-class StoreWeeklyReportRequest extends FormRequest
+class StorePostRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -163,10 +163,10 @@ class StoreWeeklyReportRequest extends FormRequest
             'week_start_date' => ['required', 'date'],
             'title' => ['required', 'string', 'max:255'],
             'memo' => ['nullable', 'string'],
-            'status' => ['required', Rule::enum(ReportStatus::class)],
-            'kpi_values' => ['required', 'array', 'min:1'],
-            'kpi_values.*.kpi_item_id' => ['required', 'integer', 'exists:kpi_items,id'],
-            'kpi_values.*.value' => ['required'],
+            'status' => ['required', Rule::enum(PostStatus::class)],
+            'tag_values' => ['required', 'array', 'min:1'],
+            'tag_values.*.tag_id' => ['required', 'integer', 'exists:tags,id'],
+            'tag_values.*.value' => ['required'],
         ];
     }
 
@@ -175,24 +175,24 @@ class StoreWeeklyReportRequest extends FormRequest
         return [
             'week_start_date.required' => 'Week start date is required.',
             'title.required' => 'Title is required.',
-            'kpi_values.min' => 'At least one KPI value is required.',
+            'tag_values.min' => 'At least one KPI value is required.',
         ];
     }
 
     /**
      * DTOへの変換メソッド
      */
-    public function getCreateWeeklyReportData(): CreateWeeklyReportData
+    public function getCreatePostData(): CreatePostData
     {
-        return CreateWeeklyReportData::from([
+        return CreatePostData::from([
             'user_id' => auth()->id(),
             'week_start_date' => $this->input('week_start_date'),
             'title' => $this->input('title'),
             'memo' => $this->input('memo'),
             'status' => $this->input('status'),
-            'kpi_values' => array_map(
-                fn (array $kpiValue) => KpiValueData::from($kpiValue),
-                $this->input('kpi_values', [])
+            'tag_values' => array_map(
+                fn (array $tagValue) => TagValueData::from($tagValue),
+                $this->input('tag_values', [])
             ),
         ]);
     }
@@ -220,20 +220,20 @@ class StoreWeeklyReportRequest extends FormRequest
 ### 実装例
 
 ```php
-class CreateWeeklyReportUseCase
+class CreatePostUseCase
 {
     public function __construct(
-        private WeeklyReportRepositoryInterface $weeklyReportRepository,
-        private KpiItemRepositoryInterface $kpiItemRepository,
+        private PostRepositoryInterface $postRepository,
+        private TagRepositoryInterface $tagRepository,
     ) {}
 
     /**
      * @throws ValidationException
      */
-    public function execute(CreateWeeklyReportData $data): WeeklyReport
+    public function execute(CreatePostData $data): Post
     {
         // 1. ドメインバリデーション（重複チェック）
-        $existingReport = $this->weeklyReportRepository->findByUserAndWeek(
+        $existingReport = $this->postRepository->findByUserAndWeek(
             $data->userId,
             $data->weekStartDate
         );
@@ -245,37 +245,37 @@ class CreateWeeklyReportUseCase
         }
 
         // 2. ビジネスルールのバリデーション（提出時の必須チェック）
-        if ($data->status === ReportStatus::Submitted) {
+        if ($data->status === PostStatus::Submitted) {
             $this->validateSubmission($data);
         }
 
         // 3. 所有権チェック
-        $this->validateKpiItemOwnership($data);
+        $this->validateTagOwnership($data);
 
         // 4. データ作成（トランザクションはRepository内で管理）
-        $kpiValuesArray = array_map(function ($kpiValue) {
+        $tagValuesArray = array_map(function ($tagValue) {
             return [
-                'kpi_item_id' => $kpiValue->kpiItemId,
-                'value' => $kpiValue->value,
+                'tag_id' => $tagValue->tagId,
+                'value' => $tagValue->value,
             ];
-        }, $data->kpiValues);
+        }, $data->tagValues);
 
-        return $this->weeklyReportRepository->create(
+        return $this->postRepository->create(
             $data->userId,
             $data->weekStartDate,
             $data->title,
             $data->memo,
             $data->status,
-            $kpiValuesArray
+            $tagValuesArray
         );
     }
 
-    private function validateSubmission(CreateWeeklyReportData $data): void
+    private function validateSubmission(CreatePostData $data): void
     {
         // ビジネスルールのバリデーション実装
     }
 
-    private function validateKpiItemOwnership(CreateWeeklyReportData $data): void
+    private function validateTagOwnership(CreatePostData $data): void
     {
         // 所有権チェックの実装
     }
@@ -295,30 +295,30 @@ class CreateWeeklyReportUseCase
 ### 命名規則
 
 - `[Resource][Function]Service.php`
-  - 例: `WeeklyReportExportService.php`
+  - 例: `PostExportService.php`
   - 例: `DashboardDataService.php`
 
 ### 実装例
 
 ```php
-class WeeklyReportExportService
+class PostExportService
 {
     /**
      * Export report to CSV (UTF-8 BOM)
      */
-    public function exportToCsv(WeeklyReport $report): string
+    public function exportToCsv(Post $report): string
     {
-        $report->load(['kpiValues.kpiItem', 'user']);
+        $report->load(['tagValues.tag', 'user']);
 
-        $filename = 'exports/weekly_report_'.$report->id.'_'.time().'.csv';
+        $filename = 'exports/post_'.$report->id.'_'.time().'.csv';
 
         // UTF-8 BOM for Excel compatibility
         $csv = "\xEF\xBB\xBF";
 
         // Headers
         $headers = ['Week', 'Title', 'Status'];
-        foreach ($report->kpiValues as $kpiValue) {
-            $headers[] = $kpiValue->kpiItem->name;
+        foreach ($report->tagValues as $tagValue) {
+            $headers[] = $tagValue->tag->name;
         }
         $headers[] = 'Memo';
 
@@ -331,8 +331,8 @@ class WeeklyReportExportService
             $report->status->label(),
         ];
 
-        foreach ($report->kpiValues as $kpiValue) {
-            $row[] = $kpiValue->value;
+        foreach ($report->tagValues as $tagValue) {
+            $row[] = $tagValue->value;
         }
 
         $row[] = $report->memo ?? '';
@@ -376,29 +376,29 @@ class WeeklyReportExportService
 **Interface定義**:
 
 ```php
-interface WeeklyReportRepositoryInterface
+interface PostRepositoryInterface
 {
-    public function findById(int $id): ?WeeklyReport;
+    public function findById(int $id): ?Post;
 
-    public function findByUserAndWeek(int $userId, string $weekStartDate): ?WeeklyReport;
+    public function findByUserAndWeek(int $userId, string $weekStartDate): ?Post;
 
     public function create(
         int $userId,
         string $weekStartDate,
         string $title,
         ?string $memo,
-        ReportStatus $status,
-        array $kpiValues
-    ): WeeklyReport;
+        PostStatus $status,
+        array $tagValues
+    ): Post;
 
     public function update(
         int $id,
         string $weekStartDate,
         string $title,
         ?string $memo,
-        ReportStatus $status,
-        array $kpiValues
-    ): WeeklyReport;
+        PostStatus $status,
+        array $tagValues
+    ): Post;
 
     public function delete(int $id): bool;
 }
@@ -407,11 +407,11 @@ interface WeeklyReportRepositoryInterface
 **Implementation**（必要に応じて）:
 
 ```php
-class WeeklyReportRepository implements WeeklyReportRepositoryInterface
+class PostRepository implements PostRepositoryInterface
 {
-    public function findById(int $id): ?WeeklyReport
+    public function findById(int $id): ?Post
     {
-        return WeeklyReport::find($id);
+        return Post::find($id);
     }
 
     public function create(
@@ -419,18 +419,18 @@ class WeeklyReportRepository implements WeeklyReportRepositoryInterface
         string $weekStartDate,
         string $title,
         ?string $memo,
-        ReportStatus $status,
-        array $kpiValues
-    ): WeeklyReport {
+        PostStatus $status,
+        array $tagValues
+    ): Post {
         return DB::transaction(function () use (
             $userId,
             $weekStartDate,
             $title,
             $memo,
             $status,
-            $kpiValues
+            $tagValues
         ) {
-            $weeklyReport = WeeklyReport::create([
+            $post = Post::create([
                 'user_id' => $userId,
                 'week_start_date' => $weekStartDate,
                 'title' => $title,
@@ -438,11 +438,11 @@ class WeeklyReportRepository implements WeeklyReportRepositoryInterface
                 'status' => $status,
             ]);
 
-            foreach ($kpiValues as $kpiValue) {
-                $weeklyReport->kpiValues()->create($kpiValue);
+            foreach ($tagValues as $tagValue) {
+                $post->tagValues()->create($tagValue);
             }
 
-            return $weeklyReport->fresh(['kpiValues.kpiItem']);
+            return $post->fresh(['tagValues.tag']);
         });
     }
 }
@@ -455,8 +455,8 @@ class WeeklyReportRepository implements WeeklyReportRepositoryInterface
 public function register(): void
 {
     $this->app->bind(
-        WeeklyReportRepositoryInterface::class,
-        WeeklyReportRepository::class
+        PostRepositoryInterface::class,
+        PostRepository::class
     );
 }
 ```
@@ -478,7 +478,7 @@ public function register(): void
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript()]
-class WeeklyReport extends Model
+class Post extends Model
 {
     use HasFactory;
 
@@ -497,7 +497,7 @@ class WeeklyReport extends Model
     {
         return [
             'week_start_date' => 'date',
-            'status' => ReportStatus::class,
+            'status' => PostStatus::class,
         ];
     }
 
@@ -509,21 +509,21 @@ class WeeklyReport extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function kpiValues(): HasMany
+    public function tagValues(): HasMany
     {
-        return $this->hasMany(KpiValue::class);
+        return $this->hasMany(TagValue::class);
     }
 
     public function sharedUsers(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'weekly_report_shares')
+        return $this->belongsToMany(User::class, 'post_shares')
             ->withTimestamps();
     }
 
     /**
      * Query Scopes
      */
-    public function scopeByStatus(Builder $query, ReportStatus $status): Builder
+    public function scopeByStatus(Builder $query, PostStatus $status): Builder
     {
         return $query->where('status', $status);
     }
@@ -552,7 +552,7 @@ class WeeklyReport extends Model
 ### 実装例
 
 ```php
-class WeeklyReportResource extends JsonResource
+class PostResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -576,15 +576,15 @@ class WeeklyReportResource extends JsonResource
             'is_owner' => $request->user()?->id === $this->user_id,
 
             // Nested relationships
-            'kpi_values' => $this->whenLoaded('kpiValues', fn () =>
-                $this->kpiValues->map(fn ($kpiValue) => [
-                    'kpi_item' => [
-                        'id' => $kpiValue->kpiItem->id,
-                        'name' => $kpiValue->kpiItem->name,
-                        'data_type' => $kpiValue->kpiItem->data_type->value,
-                        'unit' => $kpiValue->kpiItem->unit,
+            'tag_values' => $this->whenLoaded('tagValues', fn () =>
+                $this->tagValues->map(fn ($tagValue) => [
+                    'tag' => [
+                        'id' => $tagValue->tag->id,
+                        'name' => $tagValue->tag->name,
+                        'data_type' => $tagValue->tag->data_type->value,
+                        'unit' => $tagValue->tag->unit,
                     ],
-                    'value' => $kpiValue->value,
+                    'value' => $tagValue->value,
                 ])
             ),
 

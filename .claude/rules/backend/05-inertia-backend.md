@@ -39,19 +39,19 @@ API Request → API Controller → Form Request → Use Case → Repository
 Web Controllersは静的なマスターデータのみを提供する。動的データはReact側からAPI経由で取得する。
 
 ```php
-// app/Http/Controllers/Web/WeeklyReportPageController.php
+// app/Http/Controllers/Web/PostPageController.php
 namespace App\Http\Controllers\Web;
 
-use App\Enums\ReportStatus;
+use App\Enums\PostStatus;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class WeeklyReportPageController extends Controller
+class PostPageController extends Controller
 {
     public function index(Request $request): Response
     {
-        return Inertia::render('WeeklyReport/Index', [
-            'statusOptions' => ReportStatus::toSelectArray(), // 静的マスターデータ
+        return Inertia::render('Post/Index', [
+            'statusOptions' => PostStatus::toSelectArray(), // 静的マスターデータ
             'filters' => $request->only(['q', 'status']),    // クエリパラメータ
         ]);
         // 週報一覧データは React 側から API 経由で取得
@@ -59,16 +59,16 @@ class WeeklyReportPageController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('WeeklyReport/Create', [
-            'reportStatuses' => ReportStatus::toSelectArray(),
+        return Inertia::render('Post/Create', [
+            'reportStatuses' => PostStatus::toSelectArray(),
         ]);
     }
 
     public function edit(int $id): Response
     {
-        return Inertia::render('WeeklyReport/Edit', [
-            'weeklyReportId' => $id,
-            'reportStatuses' => ReportStatus::toSelectArray(),
+        return Inertia::render('Post/Edit', [
+            'postId' => $id,
+            'reportStatuses' => PostStatus::toSelectArray(),
         ]);
     }
 }
@@ -80,12 +80,12 @@ Web Controllers は `{Resource}PageController` の命名を使用する。
 
 ```php
 // ✅ Good
-class WeeklyReportPageController extends Controller { }
+class PostPageController extends Controller { }
 class DashboardPageController extends Controller { }
 
 // ❌ Bad
-class WeeklyReportWebController extends Controller { }
-class WeeklyReportController extends Controller { }  // API Controller と区別できない
+class PostWebController extends Controller { }
+class PostController extends Controller { }  // API Controller と区別できない
 ```
 
 ---
@@ -95,7 +95,7 @@ class WeeklyReportController extends Controller { }  // API Controller と区別
 コントローラー側で `fn ()` でくるむと、必要な時にのみ関数が実行される。
 
 ```php
-return Inertia::render('WeeklyReport/Index', [
+return Inertia::render('Post/Index', [
     'posts' => fn () => Post::with('tags')->get(),  // 遅延実行
     'users' => fn () => User::all(),                // 遅延実行
 ]);
@@ -186,16 +186,16 @@ return redirect()->back()
 // ✅ Good: 静的データのみ
 public function index(): Response
 {
-    return Inertia::render('WeeklyReport/Index', [
-        'statusOptions' => ReportStatus::toSelectArray(),
+    return Inertia::render('Post/Index', [
+        'statusOptions' => PostStatus::toSelectArray(),
     ]);
 }
 
 // ❌ Bad: 動的データを含む
 public function index(): Response
 {
-    return Inertia::render('WeeklyReport/Index', [
-        'reports' => WeeklyReport::paginate(20),  // API経由で取得すべき
+    return Inertia::render('Post/Index', [
+        'reports' => Post::paginate(20),  // API経由で取得すべき
     ]);
 }
 ```
@@ -244,16 +244,16 @@ public function index(): Response
 // ❌ 禁止
 public function index(): Response
 {
-    return Inertia::render('WeeklyReport/Index', [
-        'reports' => WeeklyReport::all(),  // 動的データ
+    return Inertia::render('Post/Index', [
+        'reports' => Post::all(),  // 動的データ
     ]);
 }
 
 // ✅ 推奨
 public function index(): Response
 {
-    return Inertia::render('WeeklyReport/Index', [
-        'statusOptions' => ReportStatus::toSelectArray(),  // 静的データ
+    return Inertia::render('Post/Index', [
+        'statusOptions' => PostStatus::toSelectArray(),  // 静的データ
     ]);
 }
 ```
@@ -276,14 +276,14 @@ DTO または配列で返す。
 
 ```php
 // ❌ 禁止
-return Inertia::render('WeeklyReport/Edit', [
-    'report' => WeeklyReport::find($id),  // Eloquent Model
+return Inertia::render('Post/Edit', [
+    'report' => Post::find($id),  // Eloquent Model
 ]);
 
 // ✅ 推奨
-return Inertia::render('WeeklyReport/Edit', [
+return Inertia::render('Post/Edit', [
     'reportId' => $id,
-    'reportStatuses' => ReportStatus::toSelectArray(),
+    'reportStatuses' => PostStatus::toSelectArray(),
 ]);
 ```
 
@@ -303,19 +303,19 @@ return Inertia::render('WeeklyReport/Edit', [
 ```php
 // routes/web.php（ページ描画）
 Route::middleware(['auth'])->group(function () {
-    Route::get('/weekly-reports', [WeeklyReportPageController::class, 'index'])
+    Route::get('/weekly-reports', [PostPageController::class, 'index'])
         ->name('weekly-reports.index');
-    Route::get('/weekly-reports/create', [WeeklyReportPageController::class, 'create'])
+    Route::get('/weekly-reports/create', [PostPageController::class, 'create'])
         ->name('weekly-reports.create');
-    Route::get('/weekly-reports/{id}/edit', [WeeklyReportPageController::class, 'edit'])
+    Route::get('/weekly-reports/{id}/edit', [PostPageController::class, 'edit'])
         ->name('weekly-reports.edit');
 });
 
 // routes/api.php（データ操作）
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/weekly-reports', [WeeklyReportController::class, 'index']);
-    Route::post('/weekly-reports', [WeeklyReportController::class, 'store']);
-    Route::put('/weekly-reports/{id}', [WeeklyReportController::class, 'update']);
-    Route::delete('/weekly-reports/{id}', [WeeklyReportController::class, 'destroy']);
+    Route::get('/weekly-reports', [PostController::class, 'index']);
+    Route::post('/weekly-reports', [PostController::class, 'store']);
+    Route::put('/weekly-reports/{id}', [PostController::class, 'update']);
+    Route::delete('/weekly-reports/{id}', [PostController::class, 'destroy']);
 });
 ```
