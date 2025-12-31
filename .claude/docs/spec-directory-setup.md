@@ -12,8 +12,13 @@ mkdir -p .claude/specs
 
 以下の形式でファイル名を生成してください：
 
-- **タイムスタンプ**: !`date +%Y%m%d-%H%M%S`
+- **タイムスタンプ**: `$(date +%Y%m%d-%H%M%S)`（Bashで実行）
 - **スラグ**: $ARGUMENTSから生成（小文字、ハイフン区切り）
 - **パス**: `.claude/specs/{タイムスタンプ}-{slug}.md`
 
-例: `.claude/specs/20251231-123456-user-management-feature.md`
+実行例:
+```bash
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+SLUG="user-management-feature"
+FILENAME=".claude/specs/${TIMESTAMP}-${SLUG}.md"
+```

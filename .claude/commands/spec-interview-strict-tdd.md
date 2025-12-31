@@ -216,9 +216,28 @@ $ARGUMENTS
       git commit -m "refactor: [Phase名] リファクタリング (REFACTOR)"
 
 例: Backend Phase 1（Domain層）の場合
-  - RED: Email, Password, UserId, Name 全ValueObjectのテスト作成
-  - GREEN: Email, Password, UserId, Name 全ValueObjectの実装
-  - REFACTOR: Pint適用、コード品質改善
+
+**作業順序**:
+1. 全ValueObjectのテストファイルを作成（RED）
+   - EmailTest.php を作成 → テスト失敗を確認
+   - PasswordTest.php を作成 → テスト失敗を確認
+   - UserIdTest.php を作成 → テスト失敗を確認
+   - NameTest.php を作成 → テスト失敗を確認
+   - 一括コミット: `test(auth): Domain層テスト作成 (RED)`
+
+2. 全ValueObjectを実装（GREEN）
+   - Email.php を実装 → EmailTest.php がパス
+   - Password.php を実装 → PasswordTest.php がパス
+   - UserId.php を実装 → UserIdTest.php がパス
+   - Name.php を実装 → NameTest.php がパス
+   - 全テストがパスすることを確認
+   - 一括コミット: `feat(auth): Domain層実装完了 (GREEN)`
+
+3. リファクタリング（REFACTOR）
+   - Laravel Pint 適用
+   - コーディング規約統一
+   - 全テストが引き続きパスすることを確認
+   - コミット: `refactor(auth): Domain層リファクタリング (REFACTOR)`
 
 Phase 3: Quality Checks を実行
   以下のコマンドをすべて実行し、すべてのチェックがパスすることを確認：
@@ -276,10 +295,41 @@ Phase 3: Quality Checks を実行
     → コミット:
       git commit -m "refactor(backend): [Phase名] リファクタリング (REFACTOR)"
 
+**Phase 4: Presentation層（セキュリティ重要）**
+
+実装前に以下のセキュリティガイドラインを確認:
+- @.claude/rules/security/01-injection.md（SQLインジェクション対策）
+- @.claude/rules/security/02-xss.md（XSS対策）
+- @.claude/rules/security/03-csrf-session.md（CSRF対策）
+- @.claude/rules/security/05-access-control.md（認可制御）
+
+実装時の必須事項:
+- FormRequestでバリデーション実装
+- Eloquent ORMまたはQuery Builderを使用（Raw SQL禁止）
+- Laravel Policyで認可チェック実装
+- レート制限の設定（例: throttle:5,1）
+
 例: Phase 1（Domain層）の場合
-  - RED: ProductId, CategoryId, ProductName 全ValueObjectのテスト作成
-  - GREEN: ProductId, CategoryId, ProductName 全ValueObjectの実装
-  - REFACTOR: Pint適用、コード品質改善
+
+**作業順序**:
+1. 全ValueObjectのテストファイルを作成（RED）
+   - ProductIdTest.php を作成 → テスト失敗を確認
+   - CategoryIdTest.php を作成 → テスト失敗を確認
+   - ProductNameTest.php を作成 → テスト失敗を確認
+   - 一括コミット: `test(product): Domain層テスト作成 (RED)`
+
+2. 全ValueObjectを実装（GREEN）
+   - ProductId.php を実装 → ProductIdTest.php がパス
+   - CategoryId.php を実装 → CategoryIdTest.php がパス
+   - ProductName.php を実装 → ProductNameTest.php がパス
+   - 全テストがパスすることを確認
+   - 一括コミット: `feat(product): Domain層実装完了 (GREEN)`
+
+3. リファクタリング（REFACTOR）
+   - Laravel Pint 適用
+   - コーディング規約統一
+   - 全テストが引き続きパスすることを確認
+   - コミット: `refactor(product): Domain層リファクタリング (REFACTOR)`
 
 Phase 3: Quality Checks を実行
   以下のコマンドをすべて実行し、すべてのチェックがパスすることを確認：
@@ -334,6 +384,23 @@ Phase 3: Quality Checks を実行
 
 3. Backend Quality Checks
    → コミット: chore(backend): Quality Checks通過
+
+**Backend Phase 3完了後（Frontend Phase 1開始前）**
+
+API動作確認:
+```bash
+# Postmanまたはcurlでエンドポイントをテスト
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"password"}'
+```
+
+確認事項:
+- [ ] APIレスポンスが期待通り
+- [ ] CSRFトークンが正しく発行されている
+- [ ] セッションが適切に管理されている
+
+確認完了後、Frontend Phase 1に進む。
 
 【Frontend（厳格TDD - Phase単位）】
 4. Frontend Phase 1: plan-reviewer
