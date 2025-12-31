@@ -84,21 +84,17 @@ $ARGUMENTS
 
 #### Fullstack実装の場合（Laravel + Inertia.js）
 
-**実行順序**: Backend（TDD: 4段階） → Frontend（TDD: 4段階）
+**実行順序**: Backend → Frontend
 
-1. **Backend Phase 1**（backend-plan-reviewer） - 計画・設計
-2. **Backend Phase 2a**（backend-test-review） - テスト作成（RED）
-3. **Backend Phase 2b**（backend-implement-review） - 実装・リファクタリング（GREEN & REFACTOR）
-4. **Backend Phase 3**（Quality Checks） - バックエンドの品質チェック
-5. **Frontend Phase 1**（plan-reviewer） - 計画・設計
-6. **Frontend Phase 2a**（test-review） - テスト作成（RED）
-7. **Frontend Phase 2b**（implement-review） - 実装・リファクタリング（GREEN & REFACTOR）
-8. **Frontend Phase 3**（Quality Checks） - フロントエンドのテスト・品質チェック
+**1. Backend実装**:
+
+@.claude/docs/phase-execution-backend.md
+
+**2. Frontend実装**（Backend完了後）:
+
+@.claude/docs/phase-execution-frontend.md
 
 **重要事項**:
-- 各フェーズは前のフェーズの完了を待ってから実行
-- Backend Phase 2a（テスト作成）→ Phase 2b（実装）の順序を厳守（TDD）
-- Frontend Phase 2a（テスト作成）→ Phase 2b（実装）の順序を厳守（TDD）
 - Backend Phase 3（Quality Checks）がパスしてから Frontend Phase 1 に進む
 - バックエンドAPI実装完了後、フロントエンドでそのAPIを使用
 
@@ -109,7 +105,7 @@ $ARGUMENTS
 以下のメッセージを表示：
 
 ---
-📝 **仕様書を保存しました**
+**仕様書を保存しました**
 
 新しいセッションを開始するには：
 

@@ -463,7 +463,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 以下のメッセージを表示：
 
 ---
-📝 **仕様書を保存しました**
+**仕様書を保存しました**
 
 新しいセッションを開始するには：
 
