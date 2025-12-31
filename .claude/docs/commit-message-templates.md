@@ -12,7 +12,7 @@ feat(frontend): Phase 1完了 - UI/UX設計と実装計画を作成
 - コンポーネント設計
 - 実装計画書（DESIGN.md）作成
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -28,7 +28,7 @@ test(frontend): Phase 2a完了 - TDD RED フェーズ テスト作成
 - Storybook ストーリー作成
 - テストケース設計完了
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -45,7 +45,7 @@ feat(frontend): Phase 2b完了 - TDD GREEN & REFACTOR フェーズ 実装完了
 - リファクタリング実施（REFACTOR）
 - コードレビュー実施
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -60,7 +60,7 @@ chore(frontend): Phase 3完了 - Quality Checks通過
 - Vitest テスト実行成功
 - Vite ビルド確認完了
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -80,7 +80,7 @@ feat(backend): Phase 1完了 - 4層アーキテクチャ設計と実装計画を
 - Repository Interface設計
 - 実装計画書（DESIGN.md）作成
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -95,7 +95,7 @@ test(backend): Phase 2a完了 - TDD RED フェーズ テスト作成
 - テストケース設計完了
 - Repository Interface モック実装
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -113,7 +113,7 @@ feat(backend): Phase 2b完了 - TDD GREEN & REFACTOR フェーズ 実装完了
 - リファクタリング実施（REFACTOR）
 - コードレビュー実施
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -128,7 +128,7 @@ chore(backend): Phase 3完了 - Quality Checks通過
 - PHPUnit テスト実行成功
 - Deptrac 依存関係チェック通過
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -146,7 +146,7 @@ test([scope]): [Phase名] テスト作成 (RED)
 - [テストファイル2]
 - [テストファイル3]
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -160,7 +160,7 @@ test(backend): Domain層 テスト作成 (RED)
 - UserIdTest.php
 - NameTest.php
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -175,7 +175,7 @@ feat([scope]): [Phase名] 実装完了 (GREEN)
 - [実装ファイル3]
 - 全テスト通過
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -190,7 +190,7 @@ feat(backend): Domain層 実装完了 (GREEN)
 - Name.php
 - 全テストがパス
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -205,7 +205,7 @@ refactor([scope]): [Phase名] リファクタリング (REFACTOR)
 - [その他の改善内容]
 - 全テスト引き続きパス
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -219,7 +219,7 @@ refactor(backend): Domain層 リファクタリング (REFACTOR)
 - PHPDoc コメント追加
 - 全テスト引き続きパス
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -235,7 +235,7 @@ fix([scope]): Phase [X]修正 - [修正内容]
 
 [前Phase実装中に発見した問題を修正]
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -247,7 +247,7 @@ fix([scope]): Quality Checks修正 - [修正内容]
 
 [エラー詳細や修正理由]
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
@@ -290,7 +290,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 - プロジェクト内で統一されたフォーマットを使用
 - Claude Code署名とCo-Authored-Byは必ず含める
-- 絵文字（🤖）も統一して使用
+- CLAUDE.mdに従い、絵文字は使用しない
 
 ### コミットメッセージの品質
 

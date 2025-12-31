@@ -1,14 +1,14 @@
 ---
-description: 最小限の仕様からインタビューで詳細を収集し、厳格なTDD（機能単位）で実装セッションを開始
+description: 最小限の仕様からインタビューで詳細を収集し、厳格なTDD（Phase単位）で実装セッションを開始
 allowed-tools: Read, Write, Bash, Task
 argument-hint: [機能の概要や目的]
 ---
 
 # 仕様インタビュー & 厳格TDD実装セッション作成
 
-**このコマンドは機能単位の厳格なTDDサイクル（RED → GREEN → REFACTOR）を採用します。**
+**このコマンドはPhase単位の厳格なTDDサイクル（RED → GREEN → REFACTOR）を採用します。**
 
-各機能ごとに以下を繰り返します：
+各Phaseごとに以下を繰り返します：
 1. RED: テスト作成 → コミット
 2. GREEN: 最小限の実装 → コミット
 3. REFACTOR: リファクタリング → コミット
@@ -428,7 +428,7 @@ curl -X POST http://localhost:8000/api/auth/login \
 - **Frontend**: ui-design-guidelines、coding-guidelines
 - **Backend**: backend-architecture-guidelines、backend-coding-guidelines
 
-**重要**: 各機能ごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
+**重要**: 各PhaseごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
 
 ---
 

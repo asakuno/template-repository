@@ -1,0 +1,161 @@
+name: Security Audit
+
+on:
+  # 毎週月曜日 9:00 (JST) に実行
+  schedule:
+    - cron: '0 0 * * 1'
+  # プルリクエスト時にも実行
+  pull_request:
+    branches: [main, develop]
+  # 手動実行も可能
+  workflow_dispatch:
+
+jobs:
+  frontend-security:
+    name: Frontend Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run npm audit
+        run: |
+          echo "::group::Frontend Security Audit"
+          bun audit || EXIT_CODE=$?
+          echo "::endgroup::"
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error::Frontend dependencies have security vulnerabilities"
+            exit 1
+          fi
+
+      - name: Check for outdated packages
+        run: |
+          echo "::group::Outdated Packages Check"
+          bun outdated || true
+          echo "::endgroup::"
+
+  backend-security:
+    name: Backend Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, mysql
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run Composer audit
+        run: |
+          echo "::group::Backend Security Audit"
+          composer audit || EXIT_CODE=$?
+          echo "::endgroup::"
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error::Backend dependencies have security vulnerabilities"
+            exit 1
+          fi
+
+      - name: Check for outdated packages
+        run: |
+          echo "::group::Outdated Packages Check"
+          composer outdated || true
+          echo "::endgroup::"
+
+  csp-check:
+    name: Content Security Policy Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check CSP Configuration
+        run: |
+          echo "::group::CSP Configuration Check"
+
+          # SecurityHeadersMiddleware の存在確認
+          if [ ! -f "app/Http/Middleware/SecurityHeadersMiddleware.php" ]; then
+            echo "::error::SecurityHeadersMiddleware.php not found"
+            exit 1
+          fi
+
+          # CSP設定の確認
+          if ! grep -q "Content-Security-Policy" app/Http/Middleware/SecurityHeadersMiddleware.php; then
+            echo "::error::Content-Security-Policy header not found in SecurityHeadersMiddleware"
+            exit 1
+          fi
+
+          # X-Frame-Options の確認
+          if ! grep -q "X-Frame-Options" app/Http/Middleware/SecurityHeadersMiddleware.php; then
+            echo "::error::X-Frame-Options header not found"
+            exit 1
+          fi
+
+          # X-Content-Type-Options の確認
+          if ! grep -q "X-Content-Type-Options" app/Http/Middleware/SecurityHeadersMiddleware.php; then
+            echo "::error::X-Content-Type-Options header not found"
+            exit 1
+          fi
+
+          echo "✅ All required security headers are configured"
+          echo "::endgroup::"
+
+      - name: Check for dangerous CSP directives
+        run: |
+          echo "::group::Dangerous CSP Directives Check"
+
+          # unsafe-eval の使用チェック（本番環境では非推奨）
+          if grep -q "'unsafe-eval'" app/Http/Middleware/SecurityHeadersMiddleware.php; then
+            echo "::warning::CSP contains 'unsafe-eval' directive (not recommended for production)"
+          fi
+
+          # * (wildcard) の使用チェック
+          if grep -q "default-src '\*'" app/Http/Middleware/SecurityHeadersMiddleware.php; then
+            echo "::error::CSP contains wildcard '*' in default-src (security risk)"
+            exit 1
+          fi
+
+          echo "✅ No dangerous CSP directives found"
+          echo "::endgroup::"
+
+  security-summary:
+    name: Security Audit Summary
+    runs-on: ubuntu-latest
+    needs: [frontend-security, backend-security, csp-check]
+    if: always()
+
+    steps:
+      - name: Check job results
+        run: |
+          echo "::group::Security Audit Summary"
+          echo "Frontend Security: ${{ needs.frontend-security.result }}"
+          echo "Backend Security: ${{ needs.backend-security.result }}"
+          echo "CSP Check: ${{ needs.csp-check.result }}"
+          echo "::endgroup::"
+
+          if [ "${{ needs.frontend-security.result }}" != "success" ] || \
+             [ "${{ needs.backend-security.result }}" != "success" ] || \
+             [ "${{ needs.csp-check.result }}" != "success" ]; then
+            echo "::error::Security audit failed. Please review the errors above."
+            exit 1
+          fi
+
+          echo "✅ All security checks passed!"

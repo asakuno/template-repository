@@ -103,7 +103,7 @@ git commit -m "feat(frontend): Phase 1完了 - UI/UX設計と実装計画を作�
 - コンポーネント設計
 - 実装計画書（DESIGN.md）作成
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -145,7 +145,7 @@ git commit -m "test(frontend): Phase 2a完了 - TDD RED フェーズ テスト�
 - Storybook ストーリー作成
 - テストケース設計完了
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -189,7 +189,7 @@ git commit -m "feat(frontend): Phase 2b完了 - TDD GREEN & REFACTOR フェー�
 - リファクタリング実施（REFACTOR）
 - コードレビュー実施
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -224,7 +224,7 @@ git commit -m "chore(frontend): Phase 3完了 - Quality Checks通過
 - Vitest テスト実行成功
 - Vite ビルド確認完了
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -268,7 +268,7 @@ git commit -m "feat(backend): Phase 1完了 - 4層アーキテクチャ設計と
 - Repository Interface設計
 - 実装計画書（DESIGN.md）作成
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -309,7 +309,7 @@ git commit -m "test(backend): Phase 2a完了 - TDD RED フェーズ テスト作
 - テストケース設計完了
 - Repository Interface モック実装
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -354,7 +354,7 @@ git commit -m "feat(backend): Phase 2b完了 - TDD GREEN & REFACTOR フェーズ
 - リファクタリング実施（REFACTOR）
 - コードレビュー実施
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -392,7 +392,7 @@ git commit -m "chore(backend): Phase 3完了 - Quality Checks通過
 - PHPUnit テスト実行成功
 - Deptrac 依存関係チェック通過
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```

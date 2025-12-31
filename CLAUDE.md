@@ -54,6 +54,30 @@ bun run typecheck && bun run check && bun run test && bun run build
 ./vendor/bin/phpstan analyse && ./vendor/bin/pint --test && ./vendor/bin/phpunit && ./vendor/bin/deptrac
 ```
 
+### テストカバレッジ基準
+
+コードカバレッジの最低基準を設定し、品質を担保する。
+
+**バックエンド**:
+- **Domain 層**: 80%以上（ビジネスロジックの核心）
+- **Application 層**: 70%以上（ユースケース）
+- **Infrastructure/Presentation 層**: 60%以上
+
+```bash
+./vendor/bin/phpunit --coverage-text
+```
+
+**フロントエンド**:
+- **UI コンポーネント**: 70%以上
+- **カスタムフック**: 80%以上
+- **ユーティリティ関数**: 80%以上
+
+```bash
+bun run test --coverage
+```
+
+**重要**: カバレッジ基準を満たさない場合は、追加テストを作成してから次のフェーズに進む。
+
 ## ディレクトリ構成
 
 ```

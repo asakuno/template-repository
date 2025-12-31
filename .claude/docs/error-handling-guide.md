@@ -56,7 +56,7 @@ git commit -m "fix(backend): Phase X修正 - [修正内容]
 
 前Phase実装中に発見した問題を修正
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
@@ -112,7 +112,7 @@ bun run test
 git add .
 git commit -m "fix(frontend): Quality Checks修正 - [修正内容]
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -156,7 +156,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 git add .
 git commit -m "fix(backend): Quality Checks修正 - [修正内容]
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -226,3 +226,192 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 3. **型定義を確認**
    - インターフェースやクラスの定義が正しいか
    - プロパティ名やメソッド名が一致しているか
+
+---
+
+## エラーログの読み方
+
+### PHPStan エラー出力例
+
+```
+------ -----------------------------------------------------------------
+Line   modules/Auth/Domain/ValueObjects/Email.php
+------ -----------------------------------------------------------------
+ 12     Parameter #1 $value of method Email::create() expects string,
+        int given.
+ 24     Property Email::$value type has no value type specified in
+        iterable type array.
+------ -----------------------------------------------------------------
+```
+
+**読み方**:
+- `Line 12`: エラーが発生した行番号
+- `Parameter #1 $value expects string, int given`: 型の不一致（string期待、intが渡された）
+- **対処法**: メソッド呼び出し側で正しい型を渡す、またはメソッドのシグネチャを修正
+
+### Biome エラー出力例
+
+```
+error[lint/suspicious/noExplicitAny]: Do not use the any type.
+   ┌─ src/Components/Button.tsx:5:12
+   │
+ 5 │   onClick: any;
+   │            ^^^
+   │
+   = Unsafe fix: Use unknown instead.
+```
+
+**読み方**:
+- `lint/suspicious/noExplicitAny`: ルール名
+- `5:12`: ファイルの5行目、12文字目
+- `any`: 問題のある型
+- **対処法**: `any` を `unknown` または適切な型に変更
+
+### PHPUnit エラー出力例
+
+```
+1) Tests\Unit\Modules\Auth\Domain\ValueObjects\EmailTest::test_無効なメールアドレスは例外が発生する
+Failed asserting that exception of type "InvalidArgumentException" is thrown.
+
+/home/user/project/tests/Unit/Modules/Auth/Domain/ValueObjects/EmailTest.php:28
+```
+
+**読み方**:
+- `1)`: テストケース番号
+- `EmailTest::test_無効なメールアドレスは例外が発生する`: 失敗したテスト
+- `Failed asserting that exception of type "InvalidArgumentException" is thrown`: 期待した例外が発生しなかった
+- **対処法**: 実装側で例外を投げるロジックを追加、またはテストの期待値を修正
+
+---
+
+## ロールバック戦略
+
+### コミット前のロールバック
+
+#### 作業ディレクトリの変更を破棄
+
+```bash
+# すべての変更を破棄
+git restore .
+
+# 特定のファイルのみ破棄
+git restore path/to/file.php
+```
+
+#### ステージングエリアから取り消し
+
+```bash
+# すべてのステージングを取り消し（ファイルは保持）
+git restore --staged .
+
+# 特定のファイルのみ取り消し
+git restore --staged path/to/file.php
+```
+
+### コミット後のロールバック
+
+#### git revert（推奨：履歴を残す）
+
+```bash
+# 直前のコミットを取り消す新しいコミットを作成
+git revert HEAD
+
+# 特定のコミットを取り消す
+git revert <commit-hash>
+
+# 複数のコミットを取り消す
+git revert HEAD~3..HEAD
+```
+
+**メリット**:
+- コミット履歴が保持される
+- チームメンバーと履歴を共有できる
+- 本番環境にプッシュ済みでも安全
+
+**デメリット**:
+- 履歴が冗長になる
+
+#### git reset（注意：履歴を削除）
+
+```bash
+# 直前のコミットを取り消し（変更は保持）
+git reset --soft HEAD~1
+
+# 直前のコミットを取り消し（ステージングも取り消し）
+git reset HEAD~1
+
+# 直前のコミットを完全に削除（変更も破棄）
+git reset --hard HEAD~1
+```
+
+**メリット**:
+- 履歴がクリーンに保たれる
+- ローカルでの作業のやり直しに便利
+
+**デメリット**:
+- プッシュ済みの場合は使用不可（force pushが必要）
+- チーム開発では避けるべき
+
+### プッシュ後のロールバック
+
+#### リモートにプッシュ済みの場合
+
+```bash
+# git revert を使用（推奨）
+git revert HEAD
+git push origin <branch-name>
+
+# git reset + force push（非推奨：チーム開発では避ける）
+git reset --hard HEAD~1
+git push --force origin <branch-name>
+```
+
+**重要**: `main` / `master` ブランチへの force push は**絶対に禁止**。
+
+### Phase実装中の問題対応
+
+#### Phase 2でPhase 1の問題を発見した場合
+
+```bash
+# 現在の作業を一時保存
+git stash
+
+# Phase 1のファイルを修正
+# 修正後、Phase 1の修正コミット
+git add modules/Auth/Domain/
+git commit -m "fix(backend): Phase 1修正 - Entity設計の不備を修正
+
+Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+
+# 作業を復元
+git stash pop
+
+# Phase 2の作業を継続
+```
+
+---
+
+## トラブルシューティング FAQ
+
+### よくあるエラーと解決策
+
+| エラー内容 | 原因 | 解決策 |
+|----------|------|--------|
+| **Module not found** (Frontend) | import パスの誤り | パスエイリアス（`@/`）を確認、相対パスを修正 |
+| **Class not found** (Backend) | namespace または use 文の誤り | `composer dump-autoload` を実行、namespace を確認 |
+| **Property does not exist** | 型定義の不一致 | interface/type 定義を確認、プロパティ名を修正 |
+| **Undefined variable** | 変数のスコープ誤り | 変数の定義位置を確認、パラメータとして渡す |
+| **Test timeout** | 非同期処理の await 忘れ | `async/await` を追加、`waitFor` を使用 |
+| **Database connection failed** | .env 設定誤り | `.env` のDB設定を確認、`php artisan migrate` を実行 |
+| **Memory limit exceeded** | テストで大量データ生成 | Factory の生成数を削減、`RefreshDatabase` を使用 |
+| **Circular dependency** | モジュール間の循環参照 | Contract パターンで依存を逆転、アーキテクチャを見直す |
+
+### 緊急時の対応フロー
+
+1. **エラーの特定**: エラーメッセージをよく読み、発生箇所を特定
+2. **ログの確認**: ブラウザコンソール、Laravelログ（`storage/logs/laravel.log`）
+3. **ガイドライン参照**: プロジェクトの規約を確認
+4. **ロールバック検討**: 修正が困難な場合は `git revert` でロールバック
+5. **Issue作成**: 複雑な問題は Issue を作成して記録

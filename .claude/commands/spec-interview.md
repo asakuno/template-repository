@@ -128,7 +128,7 @@ Phase 1: plan-reviewer で実装計画を作成
 - コンポーネント設計
 - 実装計画書（DESIGN.md）作成
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
@@ -142,7 +142,7 @@ Phase 2a: test-review でテスト作成（RED）
 - Storybook ストーリー作成
 - テストケース設計完了
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
@@ -157,7 +157,7 @@ Phase 2b: implement-review で実装・リファクタリング（GREEN & REFACT
 - リファクタリング実施（REFACTOR）
 - コードレビュー実施
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
@@ -171,7 +171,7 @@ Phase 3: Quality Checks を実行
 - Vitest テスト実行成功
 - Vite ビルド確認完了
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
@@ -192,7 +192,7 @@ Phase 1: backend-plan-reviewer で実装計画を作成
 - Repository Interface設計
 - 実装計画書（DESIGN.md）作成
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
@@ -205,7 +205,7 @@ Phase 2a: backend-test-review でテスト作成（RED）
 - テストケース設計完了
 - Repository Interface モック実装
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
@@ -221,7 +221,7 @@ Phase 2b: backend-implement-review で実装・リファクタリング（GREEN 
 - リファクタリング実施（REFACTOR）
 - コードレビュー実施
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
@@ -235,7 +235,7 @@ Phase 3: Quality Checks を実行
 - PHPUnit テスト実行成功
 - Deptrac 依存関係チェック通過
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ```
