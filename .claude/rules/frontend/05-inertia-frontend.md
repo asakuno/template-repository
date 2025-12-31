@@ -13,7 +13,7 @@ Inertia.jsを使用することで、SPAのようなユーザー体験を提供�
 Laravel Controller から渡される props を受け取る。props の型は明示的に定義する。
 
 ```tsx
-// resources/js/pages/WeeklyReport/Index.tsx
+// resources/js/pages/Post/Index.tsx
 import { FC } from 'react';
 
 interface Props {
@@ -21,13 +21,13 @@ interface Props {
   filters: { q?: string; status?: string };
 }
 
-const WeeklyReportIndex: FC<Props> = ({ statusOptions, filters }) => {
+const PostIndex: FC<Props> = ({ statusOptions, filters }) => {
   // API経由で動的データを取得
-  const { data: reports } = useFetchWeeklyReports(filters);
+  const { data: posts } = useFetchPosts(filters);
 
   return (
     <div>
-      <h1>Weekly Reports</h1>
+      <h1>Posts</h1>
       <select defaultValue={filters.status}>
         {statusOptions.map((option) => (
           <option key={option.value} value={option.value}>
@@ -40,7 +40,7 @@ const WeeklyReportIndex: FC<Props> = ({ statusOptions, filters }) => {
   );
 };
 
-export default WeeklyReportIndex;
+export default PostIndex;
 ```
 
 ---
@@ -114,16 +114,16 @@ export default BaseLayout;
 ### ページでのレイアウト指定
 
 ```tsx
-// resources/js/pages/WeeklyReport/Index.tsx
+// resources/js/pages/Post/Index.tsx
 import BaseLayout from '@/layouts/BaseLayout';
 
-const WeeklyReportIndex = ({ statusOptions }: Props) => {
+const PostIndex = ({ statusOptions }: Props) => {
   // ...
 };
 
-WeeklyReportIndex.layout = (page: ReactNode) => <BaseLayout>{page}</BaseLayout>;
+PostIndex.layout = (page: ReactNode) => <BaseLayout>{page}</BaseLayout>;
 
-export default WeeklyReportIndex;
+export default PostIndex;
 ```
 
 ---
@@ -146,11 +146,11 @@ php artisan wayfinder:generate
 ### 使用例
 
 ```tsx
-// resources/js/pages/WeeklyReport/Index.tsx
+// resources/js/pages/Post/Index.tsx
 import { Link } from '@inertiajs/react';
-import { show, store } from '@/routes/weekly-reports';
+import { show, store } from '@/routes/posts';
 
-const WeeklyReportIndex = () => {
+const PostIndex = () => {
   return (
     <div>
       {/* リンク */}
@@ -168,20 +168,20 @@ const WeeklyReportIndex = () => {
 ### QueryParameter の使い方
 
 ```tsx
-import { index } from '@/routes/weekly-reports';
+import { index } from '@/routes/posts';
 
 // 基本的なクエリパラメータ
 console.log(index({ query: { foo: 1, bar: 'test' } }));
-// => { url: '/weekly-reports?foo=1&bar=test', method: 'get' }
+// => { url: '/posts?foo=1&bar=test', method: 'get' }
 
 // 現在のURLのパラメータとマージ
 console.log(index({ mergeQuery: { foo: 1 } }));
-// 現在のURL: /weekly-reports?baz=add の場合
-// => { url: '/weekly-reports?baz=add&foo=1', method: 'get' }
+// 現在のURL: /posts?baz=add の場合
+// => { url: '/posts?baz=add&foo=1', method: 'get' }
 
 // 配列形式
 console.log(index({ query: { baz: ['aaa', 'bbb', 'ccc'] } }));
-// => { url: '/weekly-reports?baz[]=aaa&baz[]=bbb&baz[]=ccc', method: 'get' }
+// => { url: '/posts?baz[]=aaa&baz[]=bbb&baz[]=ccc', method: 'get' }
 ```
 
 ---
@@ -193,18 +193,18 @@ console.log(index({ query: { baz: ['aaa', 'bbb', 'ccc'] } }));
 **重要**: `@inertiajs/react` の `useForm` は**使用禁止**。Laravel Precognition を使用する。
 
 ```tsx
-// resources/js/pages/WeeklyReport/Create.tsx
+// resources/js/pages/Post/Create.tsx
 import { FC } from 'react';
 import { useForm } from 'laravel-precognition-react';
 import { router } from '@inertiajs/react';
-import { store, index } from '@/routes/weekly-reports';
+import { store, index } from '@/routes/posts';
 
 interface Props {
-  reportStatuses: Array<{ value: string; label: string }>;
+  statusOptions: Array<{ value: string; label: string }>;
 }
 
-const WeeklyReportCreate: FC<Props> = ({ reportStatuses }) => {
-  const form = useForm<App.Data.CreateWeeklyReportData>(
+const PostCreate: FC<Props> = ({ statusOptions }) => {
+  const form = useForm<App.Data.CreatePostData>(
     'post',
     store().url,
     {
@@ -213,7 +213,7 @@ const WeeklyReportCreate: FC<Props> = ({ reportStatuses }) => {
       title: '',
       memo: undefined,
       status: 'draft',
-      kpiValues: [],
+      tagValues: [],
     }
   );
 
@@ -244,9 +244,9 @@ const WeeklyReportCreate: FC<Props> = ({ reportStatuses }) => {
         <label>Status</label>
         <select
           value={form.data.status}
-          onChange={(e) => form.setData('status', e.target.value as App.Enums.ReportStatus)}
+          onChange={(e) => form.setData('status', e.target.value as App.Enums.PostStatus)}
         >
-          {reportStatuses.map((status) => (
+          {statusOptions.map((status) => (
             <option key={status.value} value={status.value}>
               {status.label}
             </option>
@@ -261,7 +261,7 @@ const WeeklyReportCreate: FC<Props> = ({ reportStatuses }) => {
   );
 };
 
-export default WeeklyReportCreate;
+export default PostCreate;
 ```
 
 ---
@@ -359,7 +359,7 @@ router.visit(index().url, {
 // ✅ Good: Laravel Precognition
 import { useForm } from 'laravel-precognition-react';
 
-const form = useForm<App.Data.CreateWeeklyReportData>('post', store().url, { ... });
+const form = useForm<App.Data.CreatePostData>('post', store().url, { ... });
 
 // ❌ Bad: @inertiajs/react の useForm
 import { useForm } from '@inertiajs/react';  // 使用禁止
@@ -371,11 +371,11 @@ Wayfinder を使用して型安全なルーティングを実現する。
 
 ```tsx
 // ✅ Good: Wayfinder
-import { show } from '@/routes/weekly-reports';
+import { show } from '@/routes/posts';
 <Link href={show(1).url}>View</Link>
 
 // ❌ Bad: ハードコードされたURL
-<Link href="/weekly-reports/1">View</Link>
+<Link href="/posts/1">View</Link>
 ```
 
 ### 3. 部分リロードの活用
@@ -385,7 +385,7 @@ import { show } from '@/routes/weekly-reports';
 ```tsx
 // ✅ Good: 必要なpropsのみリロード
 router.visit(index().url, {
-  only: ['reports', 'toast'],
+  only: ['posts', 'toast'],
 });
 
 // ❌ Bad: 全propsをリロード
@@ -398,10 +398,10 @@ router.visit(index().url);
 
 ```tsx
 // ✅ Good: レイアウト指定
-WeeklyReportIndex.layout = (page) => <BaseLayout>{page}</BaseLayout>;
+PostIndex.layout = (page) => <BaseLayout>{page}</BaseLayout>;
 
 // ❌ Bad: ページ内でレイアウト実装
-const WeeklyReportIndex = () => {
+const PostIndex = () => {
   return (
     <BaseLayout>
       {/* ... */}
@@ -421,12 +421,12 @@ interface Props {
   filters: { q?: string; status?: string };
 }
 
-const WeeklyReportIndex: FC<Props> = ({ statusOptions, filters }) => {
+const PostIndex: FC<Props> = ({ statusOptions, filters }) => {
   // ...
 };
 
 // ❌ Bad: 型定義なし
-const WeeklyReportIndex = ({ statusOptions, filters }) => {
+const PostIndex = ({ statusOptions, filters }) => {
   // ...
 };
 ```
@@ -495,7 +495,7 @@ const { auth } = usePage<AppPageProps>().props;
 動的データは API 経由で取得する。カスタムフックに分離する。
 
 ```tsx
-// hooks/useWeeklyReports.ts
+// hooks/usePosts.ts
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 
@@ -504,11 +504,11 @@ interface Filters {
   status?: string;
 }
 
-export const useFetchWeeklyReports = (filters: Filters) => {
+export const useFetchPosts = (filters: Filters) => {
   return useQuery({
-    queryKey: ['weekly-reports', filters],
+    queryKey: ['posts', filters],
     queryFn: async () => {
-      const { data } = await axios.get('/api/weekly-reports', {
+      const { data } = await axios.get('/api/posts', {
         params: filters,
       });
       return data;
@@ -518,16 +518,16 @@ export const useFetchWeeklyReports = (filters: Filters) => {
 ```
 
 ```tsx
-// pages/WeeklyReport/Index.tsx
-const WeeklyReportIndex: FC<Props> = ({ statusOptions, filters }) => {
-  const { data: reports, isLoading } = useFetchWeeklyReports(filters);
+// pages/Post/Index.tsx
+const PostIndex: FC<Props> = ({ statusOptions, filters }) => {
+  const { data: posts, isLoading } = useFetchPosts(filters);
 
   if (isLoading) return <div>Loading...</div>;
 
   return (
     <div>
-      {reports.map((report) => (
-        <ReportCard key={report.id} report={report} />
+      {posts.map((post) => (
+        <PostCard key={post.id} post={post} />
       ))}
     </div>
   );

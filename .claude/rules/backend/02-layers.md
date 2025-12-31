@@ -28,7 +28,7 @@ class PostPageController extends Controller
             'statusOptions' => PostStatus::toSelectArray(), // 静的データ
             'filters' => $request->only(['q', 'status']),
         ]);
-        // 週報一覧データは React 側から API 経由で取得
+        // 投稿一覧データは React 側から API 経由で取得
     }
 
     public function create(): Response
@@ -97,7 +97,7 @@ class PostController extends Controller
     {
         $this->authorize('view', $post);
 
-        $post->load(['user', 'tagValues.tag']);
+        $post->load(['user', 'tags']);
 
         return response()->json([
             'data' => new PostResource($post),
@@ -111,10 +111,10 @@ class PostController extends Controller
         $this->authorize('update', $post);
 
         $data = $request->getUpdatePostData();
-        $updatedReport = $this->updatePostUseCase->execute($data, auth()->id());
+        $updatedPost = $this->updatePostUseCase->execute($data, auth()->id());
 
         return response()->json([
-            'data' => new PostResource($updatedReport),
+            'data' => new PostResource($updatedPost),
         ]);
     }
 
@@ -304,21 +304,21 @@ class CreatePostUseCase
 class PostExportService
 {
     /**
-     * Export report to CSV (UTF-8 BOM)
+     * Export post to CSV (UTF-8 BOM)
      */
-    public function exportToCsv(Post $report): string
+    public function exportToCsv(Post $post): string
     {
-        $report->load(['tagValues.tag', 'user']);
+        $post->load(['tags', 'user']);
 
-        $filename = 'exports/post_'.$report->id.'_'.time().'.csv';
+        $filename = 'exports/post_'.$post->id.'_'.time().'.csv';
 
         // UTF-8 BOM for Excel compatibility
         $csv = "\xEF\xBB\xBF";
 
         // Headers
         $headers = ['Week', 'Title', 'Status'];
-        foreach ($report->tagValues as $tagValue) {
-            $headers[] = $tagValue->tag->name;
+        foreach ($post->tags as $tag) {
+            $headers[] = $tag->name;
         }
         $headers[] = 'Memo';
 
@@ -326,16 +326,16 @@ class PostExportService
 
         // Data row
         $row = [
-            $report->week_start_date->format('Y-m-d'),
-            $report->title,
-            $report->status->label(),
+            $post->week_start_date->format('Y-m-d'),
+            $post->title,
+            $post->status->label(),
         ];
 
-        foreach ($report->tagValues as $tagValue) {
-            $row[] = $tagValue->value;
+        foreach ($post->tags as $tag) {
+            $row[] = $tag->pivot->value ?? '';
         }
 
-        $row[] = $report->memo ?? '';
+        $row[] = $post->memo ?? '';
         $csv .= $this->arrayToCsvLine($row);
 
         Storage::disk('local')->put($filename, $csv);
@@ -370,6 +370,57 @@ class PostExportService
 
 - Interface: `[Resource]RepositoryInterface.php`
 - Implementation: `[Resource]Repository.php`（必要に応じて）
+
+### Implementation 実装の判断基準
+
+#### Implementation が必要なケース
+
+以下のいずれかに該当する場合、Repository の具体的な実装クラスを作成する。
+
+- **複雑なクエリロジック**: 複数のテーブル結合、サブクエリ、集計処理など
+- **トランザクション制御**: 複数のDB操作を1つのトランザクションで管理
+- **複数モデルの操作**: 1つのメソッドで複数のモデルを操作する必要がある
+- **キャッシュ制御**: クエリ結果のキャッシュが必要
+- **外部サービス連携**: データアクセス時に外部APIを呼び出す必要がある
+
+```php
+// ✅ Implementation が必要な例: トランザクション制御
+class PostRepository implements PostRepositoryInterface
+{
+    public function create(...): Post {
+        return DB::transaction(function () use (...) {
+            $post = Post::create([...]);
+            $post->tags()->attach(...);
+            return $post->fresh(['tags']);
+        });
+    }
+}
+```
+
+#### Interface のみで良いケース
+
+以下の条件をすべて満たす場合、Implementation を作成せず、UseCase 内で直接 Model を使用できる。
+
+- **Eloquent の標準機能のみ**: `Model::find()`, `Model::where()`, `Model::create()` 等の単純なクエリ
+- **単一モデルの操作**: 1つのメソッドで1つのモデルのみを操作
+- **トランザクション不要**: 単一のDB操作で完結
+
+```php
+// ✅ Interface のみ（実装なし）の例: 単純なクエリ
+class GetPostsUseCase
+{
+    public function execute(SearchPostsData $data): Collection
+    {
+        // Interface を介さず、直接 Model を使用
+        return Post::where('user_id', $data->userId)
+            ->where('status', $data->status)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+}
+```
+
+**推奨**: プロジェクト初期は Interface のみで開始し、必要に応じて Implementation を追加する。
 
 ### 実装パターン
 
@@ -438,11 +489,11 @@ class PostRepository implements PostRepositoryInterface
                 'status' => $status,
             ]);
 
-            foreach ($tagValues as $tagValue) {
-                $post->tagValues()->create($tagValue);
+            foreach ($tagValues as $tagData) {
+                $post->tags()->attach($tagData['tag_id'], ['value' => $tagData['value']]);
             }
 
-            return $post->fresh(['tagValues.tag']);
+            return $post->fresh(['tags']);
         });
     }
 }
@@ -509,9 +560,11 @@ class Post extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function tagValues(): HasMany
+    public function tags(): BelongsToMany
     {
-        return $this->hasMany(TagValue::class);
+        return $this->belongsToMany(Tag::class, 'post_tag')
+            ->withPivot('value')
+            ->withTimestamps();
     }
 
     public function sharedUsers(): BelongsToMany
@@ -576,15 +629,11 @@ class PostResource extends JsonResource
             'is_owner' => $request->user()?->id === $this->user_id,
 
             // Nested relationships
-            'tag_values' => $this->whenLoaded('tagValues', fn () =>
-                $this->tagValues->map(fn ($tagValue) => [
-                    'tag' => [
-                        'id' => $tagValue->tag->id,
-                        'name' => $tagValue->tag->name,
-                        'data_type' => $tagValue->tag->data_type->value,
-                        'unit' => $tagValue->tag->unit,
-                    ],
-                    'value' => $tagValue->value,
+            'tags' => $this->whenLoaded('tags', fn () =>
+                $this->tags->map(fn ($tag) => [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'value' => $tag->pivot->value,
                 ])
             ),
 
