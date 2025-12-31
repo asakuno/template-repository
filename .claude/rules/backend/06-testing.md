@@ -501,10 +501,10 @@ php artisan test --group=api
 
 ### カバレッジ基準
 
-- **Domain / UseCase**: 80%以上（ビジネスロジックの核心）
-- **Repository**: 70%以上（データアクセス）
-- **Controller**: 70%以上（API/Web）
-- **Service**: 70%以上（共通ロジック）
+- **UseCase 層**: 80%以上（ビジネスロジックの核心）
+- **Repository 層**: 70%以上（データアクセス）
+- **Controller 層**: 70%以上（API/Web）
+- **Service 層**: 70%以上（共通ロジック）
 
 ### カバレッジ確認
 

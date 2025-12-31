@@ -34,7 +34,7 @@ class PostPageController extends Controller
     public function create(): Response
     {
         return Inertia::render('Post/Create', [
-            'reportStatuses' => PostStatus::toSelectArray(),
+            'statusOptions' => PostStatus::toSelectArray(),
         ]);
     }
 
@@ -42,7 +42,7 @@ class PostPageController extends Controller
     {
         return Inertia::render('Post/Edit', [
             'postId' => $id,
-            'reportStatuses' => PostStatus::toSelectArray(),
+            'statusOptions' => PostStatus::toSelectArray(),
         ]);
     }
 }
@@ -420,7 +420,7 @@ class GetPostsUseCase
 }
 ```
 
-**推奨**: プロジェクト初期は Interface のみで開始し、必要に応じて Implementation を追加する。
+**推奨**: 基本的には Interface + Implementation のセットで実装する。ただし、単純な `findById()` のような操作のみの場合は、Interface 宣言のみでも可とする。
 
 ### 実装パターン
 
@@ -514,9 +514,9 @@ public function register(): void
 
 ### Repository 実装の判断基準
 
-#### Interface のみで十分なケース
+#### Interface のみで十分なケース（例外）
 
-以下の場合は Implementation クラスを作成せず、Interface のみで開始することを推奨する。
+以下の場合は例外的に Implementation クラスを作成せず、Interface のみでも可とする。
 
 - **シンプルな CRUD 操作**のみを実装する場合
 - **Eloquent の標準メソッド**（`find()`, `create()`, `update()` 等）で実現できる場合
@@ -581,9 +581,9 @@ class PostRepository implements PostRepositoryInterface
 
 **推奨フロー**:
 
-1. **プロジェクト初期**: Interface のみで開始
-2. **複雑化の兆候**: 実装が複雑になってきたら Implementation クラスを検討
-3. **リファクタリング**: 必要に応じて Interface のみから Implementation クラスへ移行
+1. **基本方針**: Interface + Implementation のセットで実装
+2. **例外**: 単純な `findById()` のみの場合は Interface のみも可
+3. **リファクタリング**: 実装が複雑化したら速やかに Implementation クラスを追加
 
 **判断基準**:
 
