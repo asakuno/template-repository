@@ -6,7 +6,7 @@
 
 | 領域 | 技術 |
 |------|------|
-| バックエンド | Laravel 12.x (PHP 8.2+), Inertia.js |
+| バックエンド | Laravel 12.x (PHP 8.4+), Inertia.js |
 | フロントエンド | React/TypeScript, Tailwind CSS, shadcn/ui |
 | フォーム | Laravel Precognition（リアルタイムバリデーション） |
 | テスト | PHPUnit (Backend), Vitest + RTL (Frontend), Storybook |

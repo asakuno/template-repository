@@ -17,7 +17,7 @@
 
 | カテゴリ | 技術 |
 |---------|------|
-| **Backend** | Laravel 12 (PHP 8.2+) |
+| **Backend** | Laravel 12 (PHP 8.4+) |
 | **Frontend** | React + TypeScript, Inertia.js |
 | **Database** | MySQL 8.0 |
 | **Queue** | Redis |
