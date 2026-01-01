@@ -1,6 +1,6 @@
 ---
 name: implement-review
-description: Phase 2（Implementation & Review）を実行。Laravel + Inertia.js + Laravel Precognition + Hybrid APIアーキテクチャ対応。Serena MCPでシンボルベース編集、Codex MCPでコードレビューを担当。
+description: Phase 2（Implementation & Review）を実行。Phase 1の計画承認後、またはreview-fixingスキルのStep 5（外部レビュー）から呼び出し。React/TypeScript実装・レビュー時に必須。Laravel + Inertia.js + Laravel Precognition + Hybrid APIアーキテクチャ対応。Serena MCPでシンボルベース編集、Codex MCPでコードレビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill
 model: inherit
 ---
@@ -33,11 +33,52 @@ Phase 2（Implementation & Review）を完遂する。
 - Serena MCP利用可能
 - Codex MCP利用可能
 
+## 呼び出された場合
+
+1. TodoWriteから現在のPhase 1実装計画を確認
+2. 前提条件の検証を実行（下記参照）
+3. 実装対象のファイルとシンボルを特定
+4. 必要なSkillファイルを読み込み
+5. 実装を開始
+
+### 前提条件の検証
+
+実装開始前に以下を検証：
+
+1. **Phase 1完了確認**
+   - TodoWriteで承認済み実装計画が存在することを確認
+
+2. **Serena MCP確認**
+   - `mcp__serena__list_symbols` を実行してレスポンスを確認
+   - 失敗時: 通常のEdit/Writeツールにフォールバック
+
+3. **Codex MCP確認**（Cursor Agent Mode以外の場合）
+   - `mcp__codex__codex` の可用性を確認
+   - 失敗時: 手動チェックリストでレビュー実施
+
 ## 参照するSkills
 
 - `Skill('coding-guidelines')` - Laravel Precognition + Hybrid APIパターン
 - `Skill('serena-mcp-guide')` - Serena MCPの使用方法
 - `Skill('codex-mcp-guide')` - Codex MCPの使用方法
+
+---
+
+## エラーハンドリング
+
+### Serena MCP接続失敗時
+1. 接続を3回まで再試行
+2. 失敗した場合、Edit/Writeツールで手動編集にフォールバック
+3. ユーザーにMCP接続状況を報告
+
+### Codex MCPレビュー失敗時
+1. ローカルのTypeScript/Biomeチェックを代替実行
+2. 手動チェックリストを提示して確認を依頼
+
+### シンボルが見つからない場合
+1. Grepで関連コードを検索
+2. ファイル構造を確認して正しいパスを特定
+3. 見つからない場合はユーザーに確認
 
 ---
 
@@ -83,6 +124,20 @@ new_name: 'newName'
 mcp__serena__find_referencing_symbols
 name_path: 'targetSymbol'
 relative_path: 'resources/js/path/to/file.tsx'
+```
+
+#### 1-3. 実装検証ループ
+
+**各ファイル編集後に必ず実行:**
+
+1. `bun run typecheck` でTypeScriptエラーがないことを確認
+2. エラーがあれば即座に修正
+3. 検証パスまで次のファイルに進まない
+
+```bash
+# 検証コマンド
+bun run typecheck
+bun run check  # Biome lint/format
 ```
 
 ---
@@ -301,6 +356,20 @@ Phase 3（Quality Checks）へ:
 - [ ] bun run check
 - [ ] bun run test
 - [ ] bun run build
+```
+
+## Output Format（エラー発生時）
+
+```markdown
+## Implement-Review Results
+
+### Step 1: Implementation ❌
+- **Error**: [エラー内容]
+- **Attempted Resolution**: [試みた解決策]
+- **Fallback Action**: [フォールバック対応]
+
+### Recommended Action
+- [ ] [ユーザーへの推奨アクション]
 ```
 
 ---
