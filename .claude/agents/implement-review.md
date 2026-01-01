@@ -33,26 +33,36 @@ Phase 2（Implementation & Review）を完遂する。
 - Serena MCP利用可能
 - Codex MCP利用可能
 
-## 呼び出された場合
+## 呼び出しパターン
 
-1. TodoWriteから現在のPhase 1実装計画を確認
-2. 前提条件の検証を実行（下記参照）
+### パターン1: Phase 1承認後（通常フロー）
+
+Phase 1 計画レビュー完了後に呼び出される標準的なフロー。
+
+1. TodoWriteから承認済み実装計画を確認
+2. MCP前提条件の検証（下記参照）
 3. 実装対象のファイルとシンボルを特定
 4. 必要なSkillファイルを読み込み
-5. 実装を開始
+5. Step 1から実装開始
 
-### 前提条件の検証
+### パターン2: review-fixingスキルから（レビューループ）
+
+外部レビューで問題が見つかった場合のフロー。
+
+1. レビュー指摘内容を確認（引数として渡される）
+2. MCP前提条件の検証（既に実施済みなら省略可）
+3. 指摘された問題のみをStep 1から修正実装
+4. 修正完了後、呼び出し元（review-fixing）に戻る
+
+### MCP前提条件の検証
 
 実装開始前に以下を検証：
 
-1. **Phase 1完了確認**
-   - TodoWriteで承認済み実装計画が存在することを確認
-
-2. **Serena MCP確認**
+1. **Serena MCP確認**
    - `mcp__serena__list_symbols` を実行してレスポンスを確認
    - 失敗時: 通常のEdit/Writeツールにフォールバック
 
-3. **Codex MCP確認**（Cursor Agent Mode以外の場合）
+2. **Codex MCP確認**（Cursor Agent Mode以外の場合）
    - `mcp__codex__codex` の可用性を確認
    - 失敗時: 手動チェックリストでレビュー実施
 
