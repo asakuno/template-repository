@@ -155,6 +155,7 @@ project/
 | `backend-architecture-guidelines` | 7層設計、レイヤー分離、TypeScript型生成 |
 | `security-guidelines` | IPA準拠セキュリティ診断ワークフロー（オンデマンド参照） |
 | `bug-fixing` | 体系的なバグ調査・修正ワークフロー（10ステップ） |
+| `review-fixing` | PRレビューコメント処理・修正ワークフロー（6ステップ、レビューループ対応） |
 
 #### セキュリティ: Rules vs Skills の使い分け
 
