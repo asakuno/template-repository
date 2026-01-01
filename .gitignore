@@ -74,6 +74,4 @@ storybook-static
 
 # Frontend
 /dist
-# Yarn を使用するため yarn.lock はコミット対象
-# yarn.lock
 package-lock.json
