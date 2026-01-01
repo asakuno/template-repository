@@ -39,7 +39,7 @@ export interface AppPageProps<T extends Record<string, unknown> = Record<string,
   };
   auth: Auth;
   flash: Flash;
-  errors: Record<string, string>;
+  errors: Record<string, string[]>;
 }
 
 /**
@@ -87,7 +87,10 @@ export interface ApiSuccessResponse<T = unknown> {
 
 /**
  * フォームバリデーションエラー
+ *
+ * Laravelのバリデーションエラーは配列形式で返されるため、
+ * 各フィールドに対して複数のエラーメッセージを保持できる配列型を使用します。
  */
 export interface ValidationErrors {
-  [field: string]: string;
+  [field: string]: string[];
 }

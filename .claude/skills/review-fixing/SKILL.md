@@ -178,19 +178,19 @@ After implementing fixes, run verification steps:
 #### For Frontend Changes (React/TypeScript):
 ```bash
 # 1. Type checking
-bun run typecheck
+yarn typecheck
 # If errors: Review type issues, fix only those related to changes
 
 # 2. Linting
-bun run check
+yarn check
 # If errors: Fix linting issues related to changes
 
 # 3. Tests
-bun run test
+yarn test
 # If failures: Analyze failures, determine if related to changes
 
 # 4. Build
-bun run build
+yarn build
 # If errors: Fix build errors related to changes
 ```
 

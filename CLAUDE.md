@@ -10,7 +10,7 @@
 | フロントエンド | React/TypeScript, Tailwind CSS, shadcn/ui |
 | フォーム | Laravel Precognition（リアルタイムバリデーション） |
 | テスト | PHPUnit (Backend), Vitest + RTL (Frontend), Storybook |
-| ビルド | Composer (Backend), Bun (Frontend) |
+| ビルド | Composer (Backend), Vite (Frontend) |
 | Lint/Format | Laravel Pint (Backend), Biome (Frontend) |
 | 静的解析 | PHPStan, deptrac（依存関係） |
 
@@ -46,7 +46,7 @@ Presentation (Controllers) → Request (FormRequest) → UseCase → Service/Rep
 
 **フロントエンド**:
 ```bash
-bun run typecheck && bun run check && bun run test && bun run build
+yarn typecheck && yarn check && yarn test && yarn build
 ```
 
 **バックエンド**:
@@ -74,7 +74,7 @@ bun run typecheck && bun run check && bun run test && bun run build
 - **ユーティリティ関数**: 80%以上
 
 ```bash
-bun run test --coverage
+yarn test --coverage
 ```
 
 **重要**: カバレッジ基準を満たさない場合は、追加テストを作成してから次のフェーズに進む。

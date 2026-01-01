@@ -141,14 +141,14 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 以下のコマンドをすべて実行し、すべてのチェックがパスすることを確認：
 
 ```bash
-bun run typecheck && bun run check && bun run test && bun run build
+yarn typecheck && yarn check && yarn test && yarn build
 ```
 
 **実行内容**:
-- `bun run typecheck`: TypeScript型チェック
-- `bun run check`: Biome lint/format チェック
-- `bun run test`: Vitest テスト実行
-- `bun run build`: Vite ビルド確認
+- `yarn typecheck`: TypeScript型チェック
+- `yarn check`: Biome lint/format チェック
+- `yarn test`: Vitest テスト実行
+- `yarn build`: Vite ビルド確認
 
 **重要**: すべてのチェックがパスするまで次に進まない。
 エラーが発生した場合は、エラーを修正してから再度実行。

@@ -140,14 +140,14 @@ relative_path: 'resources/js/path/to/file.tsx'
 
 **各ファイル編集後に必ず実行:**
 
-1. `bun run typecheck` でTypeScriptエラーがないことを確認
+1. `yarn typecheck` でTypeScriptエラーがないことを確認
 2. エラーがあれば即座に修正
 3. 検証パスまで次のファイルに進まない
 
 ```bash
 # 検証コマンド
-bun run typecheck
-bun run check  # Biome lint/format
+yarn typecheck
+yarn check  # Biome lint/format
 ```
 
 ---
@@ -362,10 +362,10 @@ reasoningEffort: "high"
 
 ### Next Steps
 Phase 3（Quality Checks）へ:
-- [ ] bun run typecheck
-- [ ] bun run check
-- [ ] bun run test
-- [ ] bun run build
+- [ ] yarn typecheck
+- [ ] yarn check
+- [ ] yarn test
+- [ ] yarn build
 ```
 
 ## Output Format（エラー発生時）

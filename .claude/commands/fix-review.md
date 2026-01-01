@@ -4,15 +4,15 @@ argument-hint: "<review-file-path> (例: memos/code_review.md)"
 allowed-tools: ["Read", "Edit", "Write", "Grep", "Glob", "Bash", "AskUserQuestion", "TodoWrite", "Task", "Skill"]
 ---
 
-# /review-fixing - レビューコメント修正コマンド
+# /fix-review - レビューコメント修正コマンド
 
 PRやコードレビューで受けたフィードバック（markdown形式）を体系的に処理し、修正を実施します。
 
 ## 使い方
 
 ```
-/review-fixing memos/code_review.md
-/review-fixing                       # 対話的にファイルを選択
+/fix-review memos/code_review.md
+/fix-review                       # 対話的にファイルを選択
 ```
 
 ---
@@ -97,7 +97,7 @@ AskUserQuestion({
 ### フロントエンド変更時
 
 ```bash
-bun run typecheck && bun run check && bun run test && bun run build
+yarn typecheck && yarn check && yarn test && yarn build
 ```
 
 ### バックエンド変更時
