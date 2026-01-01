@@ -83,7 +83,7 @@
         "noConfusingVoidType": "error",
         "noDoubleEquals": "error",
         "noEmptyBlockStatements": "error",
-        "noExplicitAny": "warn",
+        "noExplicitAny": "error",
         "noShadowRestrictedNames": "error",
         "noWith": "error",
         "noConsole": { "level": "warn", "options": { "allow": ["log"] } }

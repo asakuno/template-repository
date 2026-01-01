@@ -27,10 +27,34 @@ export default defineConfig({
         'dist/',
       ],
       thresholds: {
-        lines: 70,
-        functions: 70,
-        branches: 70,
-        statements: 70,
+        // カスタムフック: 80%以上
+        'resources/js/hooks/**': {
+          lines: 80,
+          functions: 80,
+          branches: 80,
+          statements: 80,
+        },
+        // ユーティリティ関数: 80%以上
+        'resources/js/lib/**': {
+          lines: 80,
+          functions: 80,
+          branches: 80,
+          statements: 80,
+        },
+        // UIコンポーネント: 70%以上
+        'resources/js/components/**': {
+          lines: 70,
+          functions: 70,
+          branches: 70,
+          statements: 70,
+        },
+        // ページコンポーネント: 60%以上
+        'resources/js/pages/**': {
+          lines: 60,
+          functions: 60,
+          branches: 60,
+          statements: 60,
+        },
       },
     },
 
