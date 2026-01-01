@@ -17,6 +17,9 @@
   - [3. Inertia のデータが更新されない](#3-inertia-のデータが更新されない)
   - [4. Props の型エラー](#4-props-の型エラー)
   - [5. フォームのリアルタイムバリデーションが動かない](#5-フォームのリアルタイムバリデーションが動かない)
+  - [6. Laravel Precognition で 419 エラー](#6-laravel-precognition-で-419-エラー)
+  - [7. Wayfinder ルート関数が undefined](#7-wayfinder-ルート関数が-undefined)
+  - [8. DTO 型不一致エラー](#8-dto-型不一致エラー)
 - [Inertia.js 関連](#inertiajs-関連)
   - [1. Flash メッセージが表示されない](#1-flash-メッセージが表示されない)
   - [2. Inertia リンクでページ遷移しない](#2-inertia-リンクでページ遷移しない)
@@ -329,6 +332,140 @@ const PostIndex: FC<Props> = ({ posts, statusOptions }) => {
 />
 {form.errors.title && <p>{form.errors.title}</p>}
 ```
+
+---
+
+### 6. Laravel Precognition で 419 エラー
+
+**症状**: フォーム送信時またはリアルタイムバリデーション時に 419 エラー（CSRF token mismatch）が発生する
+
+**原因**: `/sanctum/csrf-cookie` への事前アクセス漏れ、または `withCredentials` / `withXSRFToken` の設定漏れ
+
+```tsx
+// ❌ 悪い例: CSRF トークン取得なし
+const form = useForm('post', '/api/posts', initialData);
+form.submit(); // 419 エラー
+```
+
+**解決策**: ログイン前に CSRF トークンを取得し、Axios 設定を確認する
+
+```tsx
+// ✅ 良い例: CSRF トークン取得
+import axios from 'axios';
+
+// 1. Axios グローバル設定（src/services/api.ts など）
+axios.defaults.withCredentials = true;
+axios.defaults.withXSRFToken = true;
+
+// 2. ログイン前に CSRF トークン取得
+const getCsrfToken = async () => {
+    await axios.get('/sanctum/csrf-cookie');
+};
+
+// 3. ログイン処理
+const login = async (email: string, password: string) => {
+    await getCsrfToken(); // 最初に取得
+    await axios.post('/login', { email, password });
+};
+```
+
+**チェックリスト**:
+- [ ] `/sanctum/csrf-cookie` にアクセスしているか
+- [ ] `axios.defaults.withCredentials = true` が設定されているか
+- [ ] `axios.defaults.withXSRFToken = true` が設定されているか
+- [ ] `config/sanctum.php` の `stateful` ドメインが正しいか
+
+---
+
+### 7. Wayfinder ルート関数が undefined
+
+**症状**: `route()` 関数が `undefined` で、型エラーまたはランタイムエラーが発生する
+
+**原因**: `php artisan wayfinder:generate` の未実行、または生成ファイルのインポート漏れ
+
+```tsx
+// ❌ 悪い例: 型エラー
+import { show } from '@/routes/posts'; // Cannot find module
+```
+
+**解決策**: Wayfinder の型生成コマンドを実行する
+
+```bash
+# 1. ルート関数を生成
+php artisan wayfinder:generate
+
+# 2. 生成ファイルを確認
+# resources/js/routes/ ディレクトリに生成される
+# resources/js/actions/ ディレクトリにも生成される
+```
+
+```tsx
+// ✅ 良い例: 生成後のインポート
+import { show, index, store } from '@/routes/posts';
+
+<Link href={show(1).url}>View Post</Link>
+<Link href={index().url}>All Posts</Link>
+```
+
+**チェックリスト**:
+- [ ] `php artisan wayfinder:generate` を実行したか
+- [ ] `resources/js/routes/` にファイルが生成されているか
+- [ ] ルート名が正しいか（`routes/web.php` で定義されているか）
+- [ ] TypeScript のキャッシュをクリアしたか（`rm -rf node_modules/.vite`）
+
+---
+
+### 8. DTO 型不一致エラー
+
+**症状**: TypeScript と Laravel の型が一致せず、型エラーが発生する
+
+**原因**: `php artisan typescript:transform` の未実行、または DTO 定義と生成された型の不一致
+
+```tsx
+// ❌ 悪い例: 型不一致
+interface Props {
+    posts: any; // Laravel からの型が不明
+}
+```
+
+**解決策**: 型生成を実行し、自動化する
+
+```bash
+# 1. 手動で型生成
+php artisan typescript:transform
+
+# 2. 生成ファイルを確認
+# resources/js/types/generated.d.ts に生成される
+```
+
+**自動化の推奨**:
+
+```json
+// composer.json
+{
+    "scripts": {
+        "post-autoload-dump": [
+            "@php artisan package:discover --ansi",
+            "@php artisan typescript:transform"
+        ]
+    }
+}
+```
+
+```tsx
+// ✅ 良い例: 生成された型を使用
+interface Props {
+    posts: App.Models.Post[];
+    statusOptions: Array<{ value: string; label: string }>;
+}
+```
+
+**チェックリスト**:
+- [ ] `php artisan typescript:transform` を実行したか
+- [ ] DTO に `#[TypeScript()]` アトリビュートが付与されているか
+- [ ] Model に `#[TypeScript()]` アトリビュートが付与されているか
+- [ ] `config/typescript-transformer.php` が正しく設定されているか
+- [ ] `resources/js/types/generated.d.ts` が更新されているか
 
 ---
 

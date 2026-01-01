@@ -1,6 +1,6 @@
 ---
 name: bug-fixing
-description: Systematic bug investigation and resolution for Laravel + React/Inertia.js applications. Use when users report bugs, unexpected behavior, errors, or when investigating production issues. Covers bug reproduction, root cause analysis, impact assessment, fix implementation, and testing. Applicable to both frontend (React/TypeScript) and backend (Laravel/PHP) bugs.
+description: Systematic bug investigation and resolution for Laravel + React/Inertia.js applications. Use when users report bugs, unexpected behavior, errors, or when investigating production issues. Covers bug reproduction, root cause analysis, impact assessment, fix implementation, and testing. Applicable to both frontend (React/TypeScript) and backend (Laravel/PHP) bugs. Triggers when user mentions バグ (bug), エラー (error), 動かない (not working), 期待通りに動作しない (unexpected behavior), テスト失敗 (test failure), 本番問題 (production issue).
 ---
 
 # Bug Fix
@@ -123,6 +123,82 @@ Consult [common-patterns.md](references/common-patterns.md) to see if this is a 
 - **Frontend**: Follow component guidelines (separate concerns, use custom hooks)
 - **Security**: Review against security guidelines (`.claude/rules/security/`)
 - **Testing**: Follow TDD principles when possible
+
+**Common fix patterns:**
+
+#### N+1 Query Fix (Backend)
+```php
+// ❌ Before: N+1 problem
+$posts = Post::all();
+foreach ($posts as $post) {
+    echo $post->user->name; // N queries
+}
+
+// ✅ After: Eager loading
+$posts = Post::with('user')->get();
+foreach ($posts as $post) {
+    echo $post->user->name; // 1 query
+}
+```
+
+#### useEffect Infinite Loop Fix (Frontend)
+```tsx
+// ❌ Before: Missing dependency
+useEffect(() => {
+    fetchData(filters); // filters not in deps
+}, []);
+
+// ✅ After: Correct dependencies
+useEffect(() => {
+    fetchData(filters);
+}, [filters]);
+```
+
+#### CSRF Token Fix (Frontend)
+```tsx
+// ❌ Before: Missing CSRF token
+axios.post('/api/posts', data);
+
+// ✅ After: With CSRF token
+await getCsrfToken(); // /sanctum/csrf-cookie
+axios.post('/api/posts', data, {
+    withCredentials: true,
+    withXSRFToken: true
+});
+```
+
+#### Type Mismatch Fix (Frontend/Backend)
+```tsx
+// ❌ Before: Type mismatch
+interface Props {
+    userId: string; // Backend sends number
+}
+
+// ✅ After: Correct type
+interface Props {
+    userId: number;
+}
+
+// Or add DTO conversion (Backend)
+public function toArray(): array
+{
+    return [
+        'user_id' => (string) $this->userId, // Explicit conversion
+    ];
+}
+```
+
+#### Security Fix: SQL Injection Prevention
+```php
+// ❌ Before: SQL injection vulnerability
+$email = $request->input('email');
+$user = DB::select("SELECT * FROM users WHERE email = '$email'");
+
+// ✅ After: Parameter binding
+$email = $request->input('email');
+$user = User::where('email', $email)->first();
+// Or: DB::select('SELECT * FROM users WHERE email = ?', [$email]);
+```
 
 **Code quality checks:**
 ```bash

@@ -79,6 +79,20 @@ bun run test --coverage
 
 **重要**: カバレッジ基準を満たさない場合は、追加テストを作成してから次のフェーズに進む。
 
+### バグ修正時のワークフロー統合
+
+バグ修正は通常の開発ワークフローに統合されます（詳細は`bug-fixing`スキルを参照）:
+
+| Bug Fix Step | Project Phase | 対応内容 |
+|--------------|---------------|---------|
+| 1-5 (調査・計画) | Phase 1: Planning & Review | バグ再現、根本原因特定、修正計画作成 |
+| 6-7 (実装・テスト) | Phase 2: Implementation & Review | 修正実装、テストケース追加、コードレビュー |
+| 8 (検証) | Phase 3: Quality Checks | 全チェック実行、カバレッジ確認 |
+| 9 (ドキュメント) | Phase 5: Git Commit | コミットメッセージに根本原因記載 |
+| 10 (監視) | Phase 6後: Post-deployment | 本番環境での動作確認 |
+
+**スキル呼び出し**: バグ報告、エラー発生時は `Skill('bug-fixing')` を使用
+
 ## ディレクトリ構成
 
 ```
@@ -139,6 +153,20 @@ project/
 | `backend-coding-guidelines` | UseCase、Repository、DTO パターン |
 | `backend-test-guidelines` | PHPUnit テスト規約 |
 | `backend-architecture-guidelines` | 7層設計、レイヤー分離、TypeScript型生成 |
+| `security-guidelines` | IPA準拠セキュリティ診断ワークフロー（オンデマンド参照） |
+| `bug-fixing` | 体系的なバグ調査・修正ワークフロー（10ステップ） |
+
+#### セキュリティ: Rules vs Skills の使い分け
+
+- **Rules（`.claude/rules/security/`）**: プロジェクト全体の**必須セキュリティ規約**
+  - すべてのコードで遵守すべき対策（SQLインジェクション、XSS、CSRF等）
+  - 常に参照され、コード実装時に自動適用される
+  - 例: Eloquent ORM必須、Blade `{{ }}` 必須、CSRF トークン必須
+
+- **Skills（`security-guidelines`）**: セキュリティレビュー時の**診断ワークフロー**
+  - オンデマンドで参照される実行手順
+  - 既存コードのセキュリティ診断、レビュー時に使用
+  - 例: IPA 11脆弱性の診断チェックリスト、修正手順
 
 ### MCPs
 
