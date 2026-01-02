@@ -1,351 +1,190 @@
 ---
 name: coding-guidelines
-description: Comprehensive React component coding guidelines, refactoring principles, and architectural patterns. **CRITICAL**: Focuses on patterns AI commonly fails to implement correctly, especially testability, props control, and component responsibility separation. Reference this skill when implementing or refactoring React components during Phase 2.
+description: Comprehensive React component coding guidelines for Laravel + Inertia.js applications with Laravel Precognition and hybrid API architecture. **CRITICAL**: Focuses on patterns AI commonly fails to implement correctly, especially testability, props control, and component responsibility separation. Reference this skill when implementing or refactoring React components during Phase 2.
 ---
 
-# Coding Guidelines - What AI Gets Wrong
+# Coding Guidelines - What AI Gets Wrong (Laravel Precognition + Hybrid API Edition)
 
-This skill focuses on patterns AI commonly fails to implement correctly. Trust AI for syntax and structure, but scrutinize these critical areas where AI consistently makes mistakes.
+This skill focuses on patterns AI commonly fails to implement correctly in Laravel + Inertia.js applications using Laravel Precognition for form validation and a hybrid architecture (Inertia for static content, API for dynamic data).
 
-## ⚠️ Critical: AI's Common Failures
+## How to Use This Skill
 
-### 1. Lack of Testability (Most Critical)
+### Quick Reference - Phase 2: Implementation & Review
 
-**Pattern AI ALWAYS gets wrong**: Creating components that control UI branches with internal state
+**実装前:**
+- [ ] Critical AI Failuresセクションで注意点を確認
+- [ ] 該当パターンの詳細ドキュメントを参照
+
+**実装後:**
+- [ ] AI Weakness Checklistで自己チェック
+- [ ] パターンがガイドラインに一致しているか確認
+
+## Architecture Overview
+
+**Hybrid Approach:**
+- **Static Content**: Inertia.js (server-rendered, SEO-friendly)
+- **Dynamic Data**: API endpoints (real-time updates, interactive features)
+- **Form Validation**: Laravel Precognition (real-time validation without full submission)
+
+---
+
+## Critical AI Failures - Quick Reference
+
+### 1. Lack of Testability (Most Critical) ⚠️
+
+**AI's pattern**: Data fetching in components with internal state → untestable
+
+**Correct pattern**: Custom hook for data + presentational component
 
 ```typescript
-// ❌ Typical AI pattern (untestable)
-function UserProfile({ userId }: { userId: string }) {
+// ❌ AIが書くパターン: テスト不可能
+function UserProfile({ userId }) {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
-  const [user, setUser] = useState<User | null>(null)
-
-  // Problem 1: To test loading state, you must actually trigger fetch to set loading=true
-  // Problem 2: To test error state, you must make fetch fail
-  // Problem 3: Cannot test each state independently
-
+  const [user, setUser] = useState(null)
+  useEffect(() => { fetch(`/api/users/${userId}`)... }, [userId])
   if (loading) return <Spinner />
-  if (error) return <ErrorMessage error={error} />
-  if (!user) return <div>Not found</div>
-
-  return <div>{user.name}</div>
-}
-```
-
-**Why is this untestable?**:
-- Depends on **internal state** (`loading`, `error`, `user`)
-- To test each state, you must **actually trigger** those states
-- Mocks and stubs become complex, tests become brittle
-
-**Correct pattern**: Convert internal state to props, separate components by state
-
-```typescript
-// ✅ Testable pattern
-type UserProfileProps = {
-  user: User | null
-}
-
-function UserProfile({ user }: UserProfileProps) {
-  if (!user) return <div>Not found</div>
   return <div>{user.name}</div>
 }
 
-// Easy to test
-test('displays Not found when user is null', () => {
-  render(<UserProfile user={null} />)
-  expect(screen.getByText('Not found')).toBeInTheDocument()
-})
-
-test('displays user name', () => {
-  const user = { name: 'Taro', id: '1' }
-  render(<UserProfile user={user} />)
-  expect(screen.getByText('Taro')).toBeInTheDocument()
-})
-```
-
-**Same applies to functions**:
-```typescript
-// ❌ AI writes: depends on internal state
-function validateUser() {
-  const user = getCurrentUser() // depends on global state
-  if (!user.email) return false
-  return true
-}
-
-// ✅ Correct: controllable via arguments
-function validateUser(user: User): boolean {
-  if (!user.email) return false
-  return true
-}
-```
-
----
-
-### 2. Insufficient Props Control
-
-**Pattern AI ALWAYS gets wrong**: Components hold internal state that cannot be controlled externally
-
-```typescript
-// ❌ AI writes: trapped in internal state
-function UserCard({ userId }: { userId: string }) {
-  const [user, setUser] = useState<User | null>(null)
-
-  useEffect(() => {
-    fetchUser(userId).then(setUser)
-  }, [userId])
-
-  // Problem: Cannot control loading/error states from parent
-  // Problem: Cannot use Suspense
-  // Problem: Actual fetch runs during tests
-
-  return user ? <div>{user.name}</div> : <div>Loading...</div>
-}
-
-// Cannot control loading state from parent
-<UserCard userId="123" />  // Cannot change Loading display
-```
-
-**Correct pattern**: Make everything controllable via props
-
-```typescript
-// ✅ Correct: everything controlled via props
-type UserCardProps = {
-  user: User | null
-  isLoading?: boolean
-  error?: Error | null
-}
-
-function UserCard({ user, isLoading, error }: UserCardProps) {
+// ✅ 正しいパターン: テスト可能
+function UserProfile({ user, isLoading }) {
   if (isLoading) return <Spinner />
-  if (error) return <ErrorMessage error={error} />
-  if (!user) return <div>Not found</div>
-
   return <div>{user.name}</div>
 }
-
-// Fully controllable from parent
-function UserPage() {
-  const { user, isLoading, error } = useUser('123')
-
-  return <UserCard user={user} isLoading={isLoading} error={error} />
-}
-
-// Easy to test
-test('loading state', () => {
-  render(<UserCard user={null} isLoading={true} />)
-  expect(screen.getByTestId('spinner')).toBeInTheDocument()
-})
 ```
+
+**📖 Detailed Patterns**: [testability-patterns.md](references/testability-patterns.md)
 
 ---
 
-### 3. Insufficient Conditional Branch Extraction
+### 2. Form Handling ⚠️
 
-**Pattern AI ALWAYS gets wrong**: Cramming multiple conditional branches into one component
+**AI's pattern**: Using Inertia's `useForm` or manual fetch → no real-time validation
+
+**Correct pattern**: Use Laravel Precognition
 
 ```typescript
-// ❌ AI writes: scattered conditional branches
-function Dashboard() {
-  const { user, subscription, notifications } = useData()
+// ❌ AIが書くパターン: import { useForm } from '@inertiajs/react'
+// ✅ 正しいパターン: import { useForm } from 'laravel-precognition-react'
+
+const form = useForm('post', route('members.store'), { name: '', email: '' })
+
+// Real-time validation on blur
+<Input
+  value={form.data.name}
+  onChange={(e) => form.setData('name', e.target.value)}
+  onBlur={() => form.validate('name')}
+  error={form.errors.name}
+/>
+```
+
+**📖 Detailed Patterns**: [form-precognition.md](references/form-precognition.md)
+
+---
+
+### 3. Hybrid Architecture ⚠️
+
+**AI's pattern**: All data from Inertia OR all data from API → wrong data source
+
+**Correct pattern**: Inertia for static, API for dynamic
+
+```typescript
+// ✅ Hybrid architecture
+interface Props {
+  user: User              // Static: from Inertia
+  permissions: string[]   // Static: from Inertia
+}
+
+export default function Dashboard({ user, permissions }: Props) {
+  // Dynamic: from API
+  const { stats } = useStats()
+  const { notifications } = useNotifications()
 
   return (
-    <div>
-      {/* Problem 1: user conditional branch */}
-      {user ? (
-        <div>
-          <h1>{user.name}</h1>
-          {/* Problem 2: subscription conditional branch */}
-          {subscription?.isPremium ? (
-            <PremiumBadge />
-          ) : (
-            <FreeBadge />
-          )}
-        </div>
-      ) : (
-        <LoginPrompt />
-      )}
-
-      {/* Problem 3: notifications conditional branch */}
-      {notifications.length > 0 ? (
-        <NotificationList items={notifications} />
-      ) : (
-        <EmptyState />
-      )}
-    </div>
+    <AuthenticatedLayout user={user}>
+      <StatsCard stats={stats} />
+      <NotificationList notifications={notifications} />
+    </AuthenticatedLayout>
   )
 }
-
-// Problems with this design:
-// - Cannot test each conditional branch independently
-// - To test PremiumBadge display, need user + subscription.isPremium=true
-// - Combination of multiple states = test cases explode
 ```
 
-**Correct pattern**: Separate components for each conditional branch
-
-```typescript
-// ✅ Correct: extract conditional branches into separate components
-type UserSectionProps = {
-  user: User | null
-  subscription: Subscription | null
-}
-
-function UserSection({ user, subscription }: UserSectionProps) {
-  if (!user) return <LoginPrompt />
-
-  return (
-    <div>
-      <h1>{user.name}</h1>
-      <SubscriptionBadge subscription={subscription} />
-    </div>
-  )
-}
-
-type SubscriptionBadgeProps = {
-  subscription: Subscription | null
-}
-
-function SubscriptionBadge({ subscription }: SubscriptionBadgeProps) {
-  if (subscription?.isPremium) return <PremiumBadge />
-  return <FreeBadge />
-}
-
-type NotificationSectionProps = {
-  notifications: Notification[]
-}
-
-function NotificationSection({ notifications }: NotificationSectionProps) {
-  if (notifications.length === 0) return <EmptyState />
-  return <NotificationList items={notifications} />
-}
-
-// Easy to test
-test('displays premium badge', () => {
-  const subscription = { isPremium: true }
-  render(<SubscriptionBadge subscription={subscription} />)
-  expect(screen.getByTestId('premium-badge')).toBeInTheDocument()
-})
-
-test('displays free badge', () => {
-  render(<SubscriptionBadge subscription={null} />)
-  expect(screen.getByTestId('free-badge')).toBeInTheDocument()
-})
-```
+**📖 Detailed Patterns**: [hybrid-architecture.md](references/hybrid-architecture.md)
 
 ---
 
-### 4. Mixing Data Fetching with UI Display
+### 4. Insufficient Props Control ⚠️
 
-**Pattern AI ALWAYS gets wrong**: Data fetching with useEffect
+**AI's pattern**: Components control their own state → cannot test from parent
+
+**Correct pattern**: All states controllable via props
 
 ```typescript
-// ❌ AI writes: data fetching with useEffect
-'use client'
+// ❌ AI writes: Internal state
+function Modal() {
+  const [isOpen, setIsOpen] = useState(false)
+  // Cannot control from parent
+}
 
-function UserProfile({ userId }: { userId: string }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch(`/api/users/${userId}`)
-      .then(res => res.json())
-      .then(data => {
-        setUser(data)
-        setLoading(false)
-      })
-  }, [userId])
-
-  // Problem 1: Cannot use Suspense
-  // Problem 2: Cannot SSR (becomes Client Component)
-  // Problem 3: Cannot control loading state from parent
-  // Problem 4: Must mock fetch during tests
-
-  if (loading) return <Spinner />
-  return <div>{user?.name}</div>
+// ✅ Correct: Props controlled
+function Modal({ isOpen, onClose }) {
+  if (!isOpen) return null
+  return <div onClick={onClose}>...</div>
 }
 ```
 
-**Correct pattern**: Data fetching in Server Component, display in Presentational Component
-
-```typescript
-// ✅ Correct: Data fetching in Server Component
-async function UserProfileServer({ userId }: { userId: string }) {
-  const user = await fetchUser(userId)  // Direct async/await
-  return <UserProfile user={user} />
-}
-
-// Presentational Component
-type UserProfileProps = {
-  user: User
-}
-
-function UserProfile({ user }: UserProfileProps) {
-  return <div>{user.name}</div>
-}
-
-// Usage: Loading management with Suspense
-<Suspense fallback={<Spinner />}>
-  <UserProfileServer userId="123" />
-</Suspense>
-
-// Easy to test (data fetching and display separated)
-test('displays user name', () => {
-  const user = { name: 'Taro', id: '1' }
-  render(<UserProfile user={user} />)
-  expect(screen.getByText('Taro')).toBeInTheDocument()
-})
-```
+**📖 Detailed Patterns**: [props-control.md](references/props-control.md)
 
 ---
 
-## Refactoring Principles
+### 5. Conditional Branch Extraction ⚠️
 
-Eight core principles guide component refactoring:
+**AI's pattern**: Nested branches in one component → hard to test
 
-1. **Logic Extraction** - Separate non-UI logic into utility files
+**Correct pattern**: Extract each branch to separate component
+
+```typescript
+// ❌ AI writes: Nested ternaries
+{user ? (loading ? <Spinner /> : (data ? <Content /> : <Empty />)) : <Login />}
+
+// ✅ Correct: Extracted branches
+if (!user) return <LoginPrompt />
+return <ContentSection />
+
+function ContentSection() {
+  const { data, isLoading } = useData()
+  return <Content data={data} isLoading={isLoading} />
+}
+```
+
+**📖 Detailed Patterns**: [conditional-branches.md](references/conditional-branches.md)
+
+---
+
+## 8 Refactoring Principles
+
+1. **Logic Extraction** - Separate data fetching into custom hooks
 2. **Presenter Pattern** - Consolidate conditional text in presenter.ts
 3. **Conditional UI Extraction** - Extract conditional branches to components (CRITICAL)
 4. **Naming and Structure** - Use kebab-case directories, PascalCase files
 5. **Props Control** - All rendering controllable via props (CRITICAL)
-6. **Avoid useEffect for Data** - Use Server Components with async/await
-7. **Avoid Over-Abstraction** - Don't create unnecessary wrappers
-8. **Promise Handling** - Prefer .then().catch() over try-catch
-
-**CRITICAL** marked principles are areas where AI ALWAYS makes mistakes.
+6. **Hybrid Data Strategy** - Inertia for static, API for dynamic
+7. **Laravel Precognition** - Real-time validation for all forms
+8. **Avoid Over-Abstraction** - Don't create unnecessary wrappers
 
 ---
 
-## Component Directory Structure
+## Component Organization
 
-### Key Rules
+| Category | Location | Export | Characteristics |
+|----------|----------|--------|-----------------|
+| **Page** | `Pages/{Module}/{Action}.tsx` | `default` | Inertia props, composition |
+| **Feature** | `Components/features/{module}/` | named | Domain-specific, may use hooks |
+| **UI** | `Components/ui/` | named | Pure presentational, no data fetching |
+| **Hooks** | `hooks/` | named | Data fetching, business logic |
+| **Layouts** | `Layouts/` | named | Wrap pages, navigation |
 
-**Directory Naming**:
-- Root: `kebab-case` matching component name
-- Entry point: `PascalCase` file directly inside root
-- Example: `read-only-editor/ReadOnlyEditor.tsx`
-
-**Parent-Child Hierarchy**:
-- Child components in subdirectories under parent
-- Clear ownership: `parent-component/child-component/grandchild-component/`
-- Import paths reflect relationships
-
-**Export Strategy**:
-- Root entry point is public API
-- Re-export other files for external use
-- Direct imports of subdirectory files limited to internal use
-
----
-
-## Quality Requirements
-
-### Non-Negotiable Standards
-
-- **Preserve external contracts** - Don't change public APIs or behavior
-- **Run checks after all work** - `bun run check:fix` and `bun run typecheck`
-- **No new `any`** - Solve issues fundamentally, document when unavoidable
-- **No new ignores** - No `@ts-ignore` or `// biome-ignore` without reason
-- **Resolve warnings** - Fix ESLint/Biome warnings, remove unnecessary ignores
-- **Improve type safety** - Produce self-explanatory code (comments only for exceptional cases)
+**📖 Detailed Guide**: [component-structure.md](references/component-structure.md)
 
 ---
 
@@ -354,137 +193,53 @@ Eight core principles guide component refactoring:
 Before considering implementation complete, verify AI didn't fall into these traps:
 
 ### Testability ⚠️ (Most Critical)
-- [ ] All UI states controlled via props (not internal state)
+- [ ] Data fetching in custom hooks (not in components)
+- [ ] Presentational components receive all data via props
 - [ ] Each conditional branch extracted to separate component
-- [ ] No internal state that can't be controlled from parent
-- [ ] Functions take arguments (not relying on closures/globals)
 - [ ] Easy to test each state independently
 
 ### Props Control ⚠️
 - [ ] Loading states controllable from parent
 - [ ] Error states controllable from parent
 - [ ] All display variations controllable via props
-- [ ] No useEffect for data fetching in presentational components
+- [ ] Custom hooks return all necessary states
+
+### Laravel Precognition ⚠️
+- [ ] useForm from 'laravel-precognition-react' for all forms
+- [ ] onBlur validation for real-time feedback
+- [ ] FormRequest with proper validation rules
+- [ ] Proper error display with touched state
+
+### Hybrid Architecture ⚠️
+- [ ] Static data from Inertia props
+- [ ] Dynamic data from API via custom hooks
+- [ ] Clear separation of concerns
+- [ ] Appropriate data source for each use case
 
 ### Component Responsibility
-- [ ] Data fetching in Server Components (not useEffect)
-- [ ] Display logic in presenter.ts (not embedded in JSX)
-- [ ] Validation logic in utility files (not in components)
+- [ ] Custom hooks for data fetching
+- [ ] Presentational components for display
+- [ ] Page components for composition
 - [ ] One responsibility per component
 
-### Over-Abstraction
-- [ ] No wrapper components without added value
-- [ ] No single-use abstractions
-- [ ] Direct rendering when no logic needed
-
-### Type Safety
-- [ ] No `any` types
-- [ ] Explicit type annotations on all props
-- [ ] Type guards for runtime checks
-
----
-
-## Code Examples
-
-### Quick Reference
-
-**Testable Component Pattern**:
-```typescript
-// ✅ Props control all states
-type ComponentProps = {
-  data: Data | null
-  isLoading?: boolean
-  error?: Error | null
-}
-
-function Component({ data, isLoading, error }: ComponentProps) {
-  if (isLoading) return <Spinner />
-  if (error) return <ErrorMessage error={error} />
-  if (!data) return <EmptyState />
-
-  return <Content data={data} />
-}
-```
-
-**Logic Extraction**:
-```typescript
-// Extract to userValidation.ts
-export const validateEmail = (email: string): boolean => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-}
-```
-
-**Presenter Pattern**:
-```typescript
-// presenter.ts
-export const getUserStatusText = (status: string): string => {
-  switch (status) {
-    case "active": return "Active"
-    case "inactive": return "Inactive"
-    default: return "Unknown"
-  }
-}
-```
-
----
-
-## Integration with Development Workflow
-
-This skill is primarily referenced during **Phase 2 (Implementation)** when:
-- Implementing new React components
-- Refactoring existing components
-- Extracting logic from components
-- Organizing component directory structure
-- Ensuring code quality standards
-
-After implementation, code undergoes review in Phase 2 (Code Review) using Codex MCP.
-
----
-
-## Common Patterns
-
-### Server Component Pattern
-```typescript
-// Server Component (async)
-export async function UserProfileServer({ userId }: { userId: string }) {
-  const user = await fetchUser(userId)  // Direct async/await
-  return <UserProfile user={user} />
-}
-
-// Usage with Suspense
-<Suspense fallback={<Spinner />}>
-  <UserProfileServer userId={userId} />
-</Suspense>
-```
-
-### Presenter Pattern
-```typescript
-// presenter.ts - Pure functions for display logic
-export const getUserStatusText = (status: string): string => { /* ... */ }
-export const getUserStatusColor = (status: string): string => { /* ... */ }
-
-// Component uses presenter
-<Badge color={getUserStatusColor(status)}>
-  {getUserStatusText(status)}
-</Badge>
-```
-
-### Conditional UI Extraction
-```typescript
-// Extract conditional branches to separate components
-// Instead of: {isLoading ? <Spinner /> : <Content />}
-// Create: <LoadingState /> and <ContentState /> components with props
-```
+### Quality Requirements
+- [ ] Preserve external contracts
+- [ ] Run checks: `bun run check:fix && bun run typecheck`
+- [ ] No new `any` types
+- [ ] No new ignores (`@ts-ignore`, `// biome-ignore`)
+- [ ] Resolve all warnings
+- [ ] Improve type safety
 
 ---
 
 ## Summary: What to Watch For
 
 AI will confidently write code that:
-1. **Looks clean** but is **impossible to test** (internal state dependencies)
-2. **Works** but **can't be controlled** from parent (no props control)
-3. **Compiles** but **violates separation of concerns** (data fetching + UI mixed)
-4. **Is abstract** but **has no benefit** (unnecessary wrappers)
+1. **Uses Inertia's useForm** instead of Laravel Precognition
+2. **Fetches all data from API** (should use Inertia for static)
+3. **Fetches all data from Inertia** (should use API for dynamic)
+4. **Mixes data fetching with presentation** (should separate)
+5. **Cannot be tested** (internal state dependencies)
 
 **Trust AI for**:
 - Syntax and TypeScript basics
@@ -492,11 +247,26 @@ AI will confidently write code that:
 - Basic component structure
 
 **Scrutinize AI for**:
-- Testability (internal state vs props)
-- Component responsibility (one thing per component)
+- Form handling (must use Laravel Precognition)
+- Data source selection (Inertia vs API)
+- Testability (custom hooks + presentational components)
 - Props control (can parent control all states?)
-- Conditional branch extraction (separate components?)
 
-When in doubt, ask: **"Can I easily test this component's different states?"**
+**When in doubt, ask**: "Can I easily test this component's different states without mocking fetch?"
 
-If the answer is no, refactor until you can pass props to control each state independently.
+If the answer is no, extract data fetching to a custom hook and make the component purely presentational.
+
+---
+
+## Reference Documents
+
+| Document | Content | Lines |
+|----------|---------|-------|
+| [testability-patterns.md](references/testability-patterns.md) | Custom hooks + presentational components pattern | ~280 |
+| [form-precognition.md](references/form-precognition.md) | Laravel Precognition form implementation | ~330 |
+| [hybrid-architecture.md](references/hybrid-architecture.md) | Inertia props vs API data strategy | ~330 |
+| [props-control.md](references/props-control.md) | Making components controllable via props | ~330 |
+| [conditional-branches.md](references/conditional-branches.md) | Extracting conditional branches | ~280 |
+| [component-structure.md](references/component-structure.md) | Directory structure, navigation, quality | ~300 |
+
+**Total**: ~1,850 lines of detailed patterns and examples available on-demand.
