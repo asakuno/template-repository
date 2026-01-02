@@ -80,7 +80,7 @@ git stash pop
 ### Frontend Quality Checks
 
 ```bash
-bun run typecheck && bun run check && bun run test && bun run build
+yarn typecheck && yarn check && yarn test && yarn build
 ```
 
 #### よくあるエラーと対処法
@@ -88,7 +88,7 @@ bun run typecheck && bun run check && bun run test && bun run build
 | エラー | 原因 | 対処法 |
 |--------|------|--------|
 | **typecheck失敗** | 型定義の不足 | 適切な型を追加 |
-| **check失敗** | Biome lint エラー | `bun run check --apply` で自動修正 |
+| **check失敗** | Biome lint エラー | `yarn check --apply` で自動修正 |
 | **test失敗** | テストケースの不足または実装のバグ | 修正して再実行 |
 | **build失敗** | import エラーやビルド設定の問題 | エラーログを確認して修正 |
 
@@ -98,15 +98,15 @@ bun run typecheck && bun run check && bun run test && bun run build
 # typecheck エラーの場合
 # 型定義を追加・修正
 # 再度チェック
-bun run typecheck
+yarn typecheck
 
 # check エラーの場合（自動修正を試す）
-bun run check --apply
-bun run check  # 再確認
+yarn check --apply
+yarn check  # 再確認
 
 # test エラーの場合
 # テストまたは実装を修正
-bun run test
+yarn test
 
 # すべてパス後、修正コミット
 git add .
@@ -192,7 +192,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 1. **依存関係を確認**
    ```bash
    # Frontend
-   bun install
+   yarn install
 
    # Backend
    composer install
@@ -206,7 +206,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
    ```bash
    # Frontend
    rm -rf node_modules/.cache
-   bun run build
+   yarn build
 
    # Backend
    php artisan cache:clear

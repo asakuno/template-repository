@@ -71,3 +71,7 @@ next-env.d.ts
 storybook-static
 
 /memos
+
+# Frontend
+/dist
+package-lock.json

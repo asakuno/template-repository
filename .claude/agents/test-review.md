@@ -339,7 +339,7 @@ reasoningEffort: "high"
 - [ ] [修正項目1]
 
 ### Next Steps
-- [ ] bun run test
+- [ ] yarn test
 - [ ] カバレッジ確認
 ```
 
@@ -375,6 +375,6 @@ reasoningEffort: "high"
 - [ ] テスト戦略が適切
 
 **Next**
-- [ ] bun run test 実行
+- [ ] yarn test 実行
 - [ ] カバレッジ確認
 - [ ] Phase 3（Quality Checks）へ進む準備完了
