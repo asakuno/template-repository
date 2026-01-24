@@ -4,102 +4,57 @@ paths:
   - resources/js/**/*.ts
 ---
 
-# フロントエンド アーキテクチャ規約
+# フロントエンド アーキテクチャ概要
 
-## Inertia.js の基本
+## ハイブリッドアーキテクチャ
 
-Inertia.js はサーバーサイドルーティングを使用するため、React Router や Next.js のようなクライアントサイドルーティングは使用しない。ページコンポーネントは `resources/js/Pages/` に配置し、Laravel のルートと対応させる。
+本プロジェクトは Inertia.js + React によるハイブリッドアーキテクチャを採用する。
+
+| データ種別 | 取得方法 | 例 |
+|-----------|---------|-----|
+| **静的データ** | Inertia Props | 認証情報、メニュー、権限、Enumオプション |
+| **動的データ** | API + カスタムフック | 通知、統計、検索結果、リアルタイムデータ |
 
 ## ディレクトリ構成
 
 ```
 resources/js/
-├── Pages/                    # ページコンポーネント（Inertia）
-│   ├── Members/
-│   │   ├── Index.tsx
-│   │   ├── Show.tsx
-│   │   └── Create.tsx
-│   └── Dashboard.tsx
-├── Components/               # 再利用可能なUIコンポーネント
-│   ├── ui/                   # 汎用UIコンポーネント
-│   │   ├── Button.tsx
-│   │   ├── Input.tsx
-│   │   └── Modal.tsx
-│   └── features/             # 機能固有のコンポーネント
-│       └── members/
-│           ├── MemberCard.tsx
-│           └── MemberForm.tsx
-├── Layouts/                  # レイアウトコンポーネント
-│   ├── AuthenticatedLayout.tsx
-│   └── GuestLayout.tsx
-├── hooks/                    # カスタムフック
-├── types/                    # 型定義
-│   ├── index.d.ts
-│   └── models.ts
-└── lib/                      # ユーティリティ関数
+├── pages/          # ページコンポーネント（Inertia）
+├── components/     # 再利用可能なUIコンポーネント
+│   ├── ui/         # 汎用UI（Button, Input, Modal）
+│   └── features/   # 機能固有コンポーネント
+├── layouts/        # レイアウトコンポーネント
+├── hooks/          # カスタムフック（API データ取得）
+├── types/          # TypeScript型定義（generated.d.ts, model.d.ts）
+├── actions/        # Wayfinder Actions（自動生成）
+└── routes/         # Wayfinder Routes（自動生成）
 ```
 
-## ページコンポーネント
+## 基本原則
 
-ページコンポーネントは Laravel Controller から渡される props を受け取る。props の型は明示的に定義する。
+- **Page コンポーネント**: `export default` を使用（Inertia の慣例）
+- **Components 配下**: 名前付きエクスポートを使用
+- **フォーム**: Laravel Precognition 必須（`@inertiajs/react` の `useForm` **使用禁止**）
+- **ルーティング**: Wayfinder で型安全なURL生成
+- **型定義**: すべての props に明示的な型定義
 
-```tsx
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+## 禁止事項
 
-interface Member {
-    id: string;
-    name: string;
-    email: string;
-}
+- `@inertiajs/react` の `useForm` 使用
+- ハードコードされたURL（Wayfinder を使用）
+- 型定義の省略
+- `any` 型の使用
 
-interface Props {
-    members: Member[];
-}
+---
 
-export default function Index({ members }: Props) {
-    return (
-        <AuthenticatedLayout>
-            <Head title="メンバー一覧" />
-            <div className="container mx-auto">
-                {members.map((member) => (
-                    <MemberCard key={member.id} member={member} />
-                ))}
-            </div>
-        </AuthenticatedLayout>
-    );
-}
-```
+## 詳細ガイドライン（Skills 参照）
 
-## フォーム送信
+実装時は以下の Skills を参照すること。
 
-Inertia のフォームヘルパーを使用する。`useForm` フックでフォーム状態を管理し、`router` でナビゲーションを行う。
-
-```tsx
-import { useForm } from '@inertiajs/react';
-
-export default function Create() {
-    const { data, setData, post, processing, errors } = useForm({
-        name: '',
-        email: '',
-    });
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        post(route('members.store'));
-    };
-
-    return (
-        <form onSubmit={handleSubmit}>
-            <Input
-                value={data.name}
-                onChange={(e) => setData('name', e.target.value)}
-                error={errors.name}
-            />
-            <Button type="submit" disabled={processing}>
-                作成
-            </Button>
-        </form>
-    );
-}
-```
+| 領域 | Skill |
+|------|-------|
+| コンポーネント実装 | `Skill('coding-guidelines')` |
+| TypeScript / Tailwind CSS | `Skill('coding-guidelines')` |
+| Inertia.js フロントエンド | `Skill('coding-guidelines')` |
+| テスト（Vitest / RTL） | `Skill('test-guidelines')` |
+| Storybook | `Skill('storybook-guidelines')` |
