@@ -1,6 +1,6 @@
 # UseCase Testing - Unit Tests with Mocked Dependencies
 
-This reference covers testing patterns for Application layer UseCases in the 4-layer architecture.
+This reference covers testing patterns for UseCase layer in the 7-layer architecture.
 
 ## Core Principles
 

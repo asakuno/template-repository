@@ -118,3 +118,17 @@ React のセキュリティ機能を適切に使用する。
 3. 認証・認可チェックが実装されているか
 4. セキュアなAPI/関数を使用しているか
 5. セキュリティヘッダが設定されているか
+
+---
+
+## 詳細ガイドライン（Skills 参照）
+
+脆弱性対策の詳細な実装パターンは `Skill('security-guidelines')` を参照すること。
+
+| 脆弱性カテゴリ | 参照先 |
+|--------------|-------|
+| SQLインジェクション / OSコマンド / ディレクトリトラバーサル | `Skill('security-guidelines')` |
+| XSS（クロスサイトスクリプティング） | `Skill('security-guidelines')` |
+| CSRF / セッション管理 | `Skill('security-guidelines')` |
+| HTTPヘッダ / クリックジャッキング | `Skill('security-guidelines')` |
+| アクセス制御 / 認証 | `Skill('security-guidelines')` |

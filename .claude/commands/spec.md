@@ -118,7 +118,7 @@ AskUserQuestion({
 [使用する技術スタック、ライブラリ]
 
 ## データ設計
-[エンティティ、ValueObject、DTO]
+[Model、DTO（Laravel Data）]
 
 ## インターフェース設計
 [API、コンポーネントのインターフェース]

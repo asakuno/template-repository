@@ -1,6 +1,6 @@
 # Controller & Inertia Testing - Feature Tests for Presentation Layer
 
-This reference covers testing patterns for Presentation layer Controllers with Inertia.js in the 4-layer architecture.
+This reference covers testing patterns for Presentation layer Controllers with Inertia.js in the 7-layer architecture.
 
 ## Core Principles
 

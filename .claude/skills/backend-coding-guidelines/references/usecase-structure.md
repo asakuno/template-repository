@@ -1,4 +1,4 @@
-# UseCase Structure - Input/Output DTOs and Orchestration
+# UseCase Structure - Business Logic and Orchestration
 
 ## AI's Common Failure Patterns
 
@@ -7,17 +7,17 @@
 **❌ AI writes: Logic in controller**
 
 ```php
-final class MemberController extends Controller
+final class UserController extends Controller
 {
     public function store(Request $request)
     {
-        // Business logic in controller
-        $member = new Member();
-        $member->name = $request->input('name');
-        $member->email = $request->input('email');
-        $member->save();
+        // Business logic in controller - WRONG!
+        $user = new User();
+        $user->name = $request->input('name');
+        $user->email = $request->input('email');
+        $user->save();
 
-        return redirect()->route('members.index');
+        return redirect()->route('users.index');
     }
 }
 ```
@@ -28,93 +28,95 @@ final class MemberController extends Controller
 - Can't reuse logic (CLI, API, etc.)
 - Violates Single Responsibility Principle
 
-### Pattern 2: UseCase Returns Entity Directly
+### Pattern 2: UseCase Contains HTTP-Specific Logic
 
-**❌ AI writes: UseCase returns Entity directly**
+**❌ AI writes: UseCase with HTTP response logic**
 
 ```php
-final readonly class CreateMemberUseCase
+final readonly class CreateUserUseCase
 {
-    public function execute(string $name, string $email): Member
+    public function execute(CreateUserData $data): JsonResponse
     {
-        $member = Member::create(
-            name: Name::create($name),
-            email: Email::create($email),
-        );
+        // HTTP-specific return type - WRONG!
+        $user = User::create([
+            'name' => $data->name,
+            'email' => $data->email,
+        ]);
 
-        $this->repository->save($member);
-
-        return $member; // Exposing Entity to Presentation layer
+        return response()->json(['id' => $user->id], 201);
     }
 }
 ```
 
 **Problems**:
-- Exposes Domain Entity to Presentation layer
+- UseCase tied to HTTP layer
+- Can't reuse for CLI or other contexts
 - Breaks layer separation
-- Controller gets access to Entity methods
-- Hard to control what data is returned
+- Hard to test without HTTP
 
 ---
 
-## ✅ Correct Pattern: UseCase with Input/Output DTOs
+## ✅ Correct Pattern: UseCase with Laravel Data DTOs
 
 ### Complete UseCase Implementation
 
 ```php
-// Input DTO
-final readonly class CreateMemberInput
+// app/Data/User/CreateUserData.php
+#[TypeScript()]
+#[MapName(SnakeCaseMapper::class)]
+final readonly class CreateUserData extends Data
 {
     public function __construct(
+        #[Max(255)]
         public string $name,
+        #[Email, Max(255)]
         public string $email,
+        #[Min(8)]
+        public string $password,
     ) {}
 }
 
-// Output DTO
-final readonly class CreateMemberOutput
+// app/UseCases/User/CreateUserUseCase.php
+final readonly class CreateUserUseCase
 {
     public function __construct(
-        public string $id,
-    ) {}
-}
-
-// UseCase
-final readonly class CreateMemberUseCase
-{
-    public function __construct(
-        private MemberRepositoryInterface $repository,
+        private UserRepositoryInterface $repository,
     ) {}
 
-    public function execute(CreateMemberInput $input): CreateMemberOutput
+    public function execute(CreateUserData $data): User
     {
-        $member = Member::create(
-            name: Name::create($input->name),
-            email: Email::create($input->email),
-        );
+        // Business rule validation
+        $existing = $this->repository->findByEmail($data->email);
+        if ($existing !== null) {
+            throw ValidationException::withMessages([
+                'email' => ['This email is already registered.'],
+            ]);
+        }
 
-        $this->repository->save($member);
-
-        return new CreateMemberOutput(
-            id: $member->id()->value(),
+        // Create via Repository
+        return $this->repository->create(
+            $data->name,
+            $data->email,
+            $data->password
         );
     }
 }
 
-// Controller uses UseCase
-final class MemberController extends Controller
+// app/Http/Controllers/Api/UserController.php
+final class UserController extends Controller
 {
-    public function store(
-        CreateMemberRequest $request,
-        CreateMemberUseCase $useCase,
-    ): RedirectResponse {
-        $useCase->execute(new CreateMemberInput(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-        ));
+    public function __construct(
+        private CreateUserUseCase $createUserUseCase,
+    ) {}
 
-        return redirect()->route('members.index')
-            ->with('success', 'メンバーを作成しました');
+    public function store(StoreUserRequest $request): JsonResponse
+    {
+        $data = $request->getCreateUserData();
+        $user = $this->createUserUseCase->execute($data);
+
+        return response()->json([
+            'data' => new UserResource($user),
+        ], 201);
     }
 }
 ```
@@ -126,94 +128,99 @@ final class MemberController extends Controller
 ### Simple Create UseCase
 
 ```php
-final readonly class CreateProjectInput
+// app/Data/Post/CreatePostData.php
+#[TypeScript()]
+#[MapName(SnakeCaseMapper::class)]
+final readonly class CreatePostData extends Data
 {
     public function __construct(
-        public string $name,
-        public string $description,
-        public string $managerId,
+        public int $userId,
+        public string $weekStartDate,
+        #[Max(255)]
+        public string $title,
+        #[Max(1000)]
+        public ?string $memo,
+        public PostStatus $status,
+        /** @var array<TagValueData> */
+        #[DataCollectionOf(TagValueData::class)]
+        public array $tagValues,
     ) {}
 }
 
-final readonly class CreateProjectOutput
+// app/UseCases/Post/CreatePostUseCase.php
+final readonly class CreatePostUseCase
 {
     public function __construct(
-        public string $id,
-    ) {}
-}
-
-final readonly class CreateProjectUseCase
-{
-    public function __construct(
-        private ProjectRepositoryInterface $projectRepository,
-        private MemberServiceInterface $memberService,
+        private PostRepositoryInterface $postRepository,
     ) {}
 
-    public function execute(CreateProjectInput $input): CreateProjectOutput
+    public function execute(CreatePostData $data): Post
     {
-        // Validate manager exists (via Contract)
-        if (!$this->memberService->exists($input->managerId)) {
-            throw new DomainException('指定された管理者が存在しません');
-        }
-
-        $project = Project::create(
-            name: ProjectName::create($input->name),
-            description: ProjectDescription::create($input->description),
-            managerId: MemberId::from($input->managerId),
+        // Business rule: Check for duplicates
+        $existing = $this->postRepository->findByUserAndWeek(
+            $data->userId,
+            $data->weekStartDate
         );
 
-        $this->projectRepository->save($project);
+        if ($existing !== null) {
+            throw ValidationException::withMessages([
+                'week_start_date' => ['A post for this week already exists.'],
+            ]);
+        }
 
-        return new CreateProjectOutput(
-            id: $project->id()->value(),
+        // Convert nested DTOs to array
+        $tagValuesArray = array_map(fn ($tag) => [
+            'tag_id' => $tag->tagId,
+            'value' => $tag->value,
+        ], $data->tagValues);
+
+        // Create via Repository
+        return $this->postRepository->create(
+            $data->userId,
+            $data->weekStartDate,
+            $data->title,
+            $data->memo,
+            $data->status,
+            $tagValuesArray
         );
     }
 }
 ```
 
-### List/Query UseCase with Multiple Results
+### List/Query UseCase with Pagination
 
 ```php
-final readonly class ListMembersOutput
+// app/Data/Post/SearchPostsData.php
+#[TypeScript()]
+#[MapName(SnakeCaseMapper::class)]
+final readonly class SearchPostsData extends Data
 {
-    /**
-     * @param array<MemberData> $members
-     */
     public function __construct(
-        public array $members,
+        public ?int $userId,
+        public ?string $q,
+        public ?PostStatus $status,
+        public ?string $weekStartDate,
+        public int $page = 1,
+        public int $perPage = 20,
     ) {}
 }
 
-final readonly class MemberData
+// app/UseCases/Post/GetPostsUseCase.php
+final readonly class GetPostsUseCase
 {
     public function __construct(
-        public string $id,
-        public string $name,
-        public string $email,
-        public string $status,
-    ) {}
-}
-
-final readonly class ListMembersUseCase
-{
-    public function __construct(
-        private MemberRepositoryInterface $repository,
+        private PostRepositoryInterface $repository,
     ) {}
 
-    public function execute(): ListMembersOutput
+    public function execute(SearchPostsData $data): LengthAwarePaginator
     {
-        $members = $this->repository->findAll();
-
-        return new ListMembersOutput(
-            members: array_map(
-                fn(Member $m) => new MemberData(
-                    id: $m->id()->value(),
-                    name: $m->name()->value(),
-                    email: $m->email()->value(),
-                    status: $m->status()->value(),
-                ),
-                $members,
-            ),
+        return $this->repository->search(
+            userId: $data->userId,
+            query: $data->q,
+            status: $data->status,
+            weekStartDate: $data->weekStartDate,
+            page: $data->page,
+            perPage: $data->perPage
         );
     }
 }
@@ -222,48 +229,58 @@ final readonly class ListMembersUseCase
 ### Update UseCase
 
 ```php
-final readonly class UpdateMemberInput
+// app/Data/Post/UpdatePostData.php
+#[TypeScript()]
+#[MapName(SnakeCaseMapper::class)]
+final readonly class UpdatePostData extends Data
 {
     public function __construct(
-        public string $id,
-        public string $name,
-        public string $email,
+        public int $id,
+        public string $weekStartDate,
+        #[Max(255)]
+        public string $title,
+        #[Max(1000)]
+        public ?string $memo,
+        public PostStatus $status,
+        /** @var array<TagValueData> */
+        #[DataCollectionOf(TagValueData::class)]
+        public array $tagValues,
     ) {}
 }
 
-final readonly class UpdateMemberOutput
+// app/UseCases/Post/UpdatePostUseCase.php
+final readonly class UpdatePostUseCase
 {
     public function __construct(
-        public string $id,
-    ) {}
-}
-
-final readonly class UpdateMemberUseCase
-{
-    public function __construct(
-        private MemberRepositoryInterface $repository,
+        private PostRepositoryInterface $repository,
     ) {}
 
-    public function execute(UpdateMemberInput $input): UpdateMemberOutput
+    public function execute(UpdatePostData $data, int $currentUserId): Post
     {
-        $member = $this->repository->findById(MemberId::from($input->id));
+        $post = $this->repository->findById($data->id);
 
-        if ($member === null) {
-            throw new DomainException('メンバーが見つかりません');
+        if ($post === null) {
+            throw new PostNotFoundException($data->id);
         }
 
-        // Create new instance with updated values (immutability)
-        $updatedMember = Member::reconstruct(
-            id: $member->id(),
-            name: Name::create($input->name),
-            email: Email::create($input->email),
-            status: $member->status(),
-        );
+        // Business rule: Ownership check
+        if ($post->user_id !== $currentUserId) {
+            throw new UnauthorizedAccessException('You cannot update this post.');
+        }
 
-        $this->repository->save($updatedMember);
+        // Convert nested DTOs to array
+        $tagValuesArray = array_map(fn ($tag) => [
+            'tag_id' => $tag->tagId,
+            'value' => $tag->value,
+        ], $data->tagValues);
 
-        return new UpdateMemberOutput(
-            id: $updatedMember->id()->value(),
+        return $this->repository->update(
+            $data->id,
+            $data->weekStartDate,
+            $data->title,
+            $data->memo,
+            $data->status,
+            $tagValuesArray
         );
     }
 }
@@ -272,133 +289,93 @@ final readonly class UpdateMemberUseCase
 ### Delete UseCase
 
 ```php
-final readonly class DeleteMemberInput
+// app/UseCases/Post/DeletePostUseCase.php
+final readonly class DeletePostUseCase
 {
     public function __construct(
-        public string $id,
-    ) {}
-}
-
-final readonly class DeleteMemberOutput
-{
-    public function __construct(
-        public bool $success,
-    ) {}
-}
-
-final readonly class DeleteMemberUseCase
-{
-    public function __construct(
-        private MemberRepositoryInterface $repository,
+        private PostRepositoryInterface $repository,
     ) {}
 
-    public function execute(DeleteMemberInput $input): DeleteMemberOutput
+    public function execute(int $id, int $currentUserId): bool
     {
-        $member = $this->repository->findById(MemberId::from($input->id));
+        $post = $this->repository->findById($id);
 
-        if ($member === null) {
-            throw new DomainException('メンバーが見つかりません');
+        if ($post === null) {
+            throw new PostNotFoundException($id);
         }
 
-        $this->repository->delete($member->id());
+        // Business rule: Ownership check
+        if ($post->user_id !== $currentUserId) {
+            throw new UnauthorizedAccessException('You cannot delete this post.');
+        }
 
-        return new DeleteMemberOutput(success: true);
+        return $this->repository->delete($id);
     }
 }
 ```
 
-### UseCase with Business Logic
+### UseCase with Status Transition
 
 ```php
-final readonly class StartProjectInput
+// app/UseCases/Post/SubmitPostUseCase.php
+final readonly class SubmitPostUseCase
 {
     public function __construct(
-        public string $projectId,
-    ) {}
-}
-
-final readonly class StartProjectOutput
-{
-    public function __construct(
-        public string $id,
-        public string $status,
-    ) {}
-}
-
-final readonly class StartProjectUseCase
-{
-    public function __construct(
-        private ProjectRepositoryInterface $repository,
+        private PostRepositoryInterface $repository,
     ) {}
 
-    public function execute(StartProjectInput $input): StartProjectOutput
+    public function execute(int $postId, int $currentUserId): Post
     {
-        $project = $this->repository->findById(ProjectId::from($input->projectId));
+        $post = $this->repository->findById($postId);
 
-        if ($project === null) {
-            throw new DomainException('プロジェクトが見つかりません');
+        if ($post === null) {
+            throw new PostNotFoundException($postId);
         }
 
-        // Business logic is in Entity
-        $startedProject = $project->start();
+        // Business rule: Ownership check
+        if ($post->user_id !== $currentUserId) {
+            throw new UnauthorizedAccessException('You cannot submit this post.');
+        }
 
-        $this->repository->save($startedProject);
+        // Business rule: Already submitted check
+        if ($post->status === PostStatus::Submitted) {
+            throw ValidationException::withMessages([
+                'status' => ['This post has already been submitted.'],
+            ]);
+        }
 
-        return new StartProjectOutput(
-            id: $startedProject->id()->value(),
-            status: $startedProject->status()->value(),
-        );
+        return $this->repository->updateStatus($postId, PostStatus::Submitted);
     }
 }
 ```
 
-### UseCase with Multiple Repositories
+### UseCase with Service Dependency
 
 ```php
-final readonly class AssignMemberToProjectInput
+// app/UseCases/Post/ExportPostUseCase.php
+final readonly class ExportPostUseCase
 {
     public function __construct(
-        public string $projectId,
-        public string $memberId,
-    ) {}
-}
-
-final readonly class AssignMemberToProjectOutput
-{
-    public function __construct(
-        public string $projectId,
-        public string $memberId,
-    ) {}
-}
-
-final readonly class AssignMemberToProjectUseCase
-{
-    public function __construct(
-        private ProjectRepositoryInterface $projectRepository,
-        private MemberServiceInterface $memberService,
+        private PostRepositoryInterface $repository,
+        private PostExportService $exportService,
     ) {}
 
-    public function execute(AssignMemberToProjectInput $input): AssignMemberToProjectOutput
+    public function execute(int $postId, int $currentUserId): string
     {
-        // Validate project exists
-        $project = $this->projectRepository->findById(ProjectId::from($input->projectId));
-        if ($project === null) {
-            throw new DomainException('プロジェクトが見つかりません');
+        $post = $this->repository->findById($postId);
+
+        if ($post === null) {
+            throw new PostNotFoundException($postId);
         }
 
-        // Validate member exists (via Contract)
-        if (!$this->memberService->exists($input->memberId)) {
-            throw new DomainException('メンバーが見つかりません');
+        // Business rule: Ownership or shared access check
+        if ($post->user_id !== $currentUserId &&
+            !$post->sharedUsers()->where('user_id', $currentUserId)->exists()) {
+            throw new UnauthorizedAccessException('You cannot export this post.');
         }
 
-        $updatedProject = $project->assignMember(MemberId::from($input->memberId));
-
-        $this->projectRepository->save($updatedProject);
-
-        return new AssignMemberToProjectOutput(
-            projectId: $updatedProject->id()->value(),
-            memberId: $input->memberId,
-        );
+        // Delegate to Service
+        return $this->exportService->exportToCsv($post);
     }
 }
 ```
@@ -409,85 +386,131 @@ final readonly class AssignMemberToProjectUseCase
 
 ### 1. Single Responsibility
 - One UseCase per business operation
-- Named by action: `Create`, `Update`, `Delete`, `List`, `Start`, etc.
+- Named by action: `Create`, `Update`, `Delete`, `Get`, `Submit`, etc.
 - Clear purpose and boundary
 
-### 2. Input DTO
-- Accepts primitive types from Presentation layer
-- Validates format (not business rules)
-- Named `{Action}{Entity}Input`
+### 2. Laravel Data DTOs
+- Use `spatie/laravel-data` for type-safe DTOs
+- `#[TypeScript()]` for frontend type generation
+- `#[MapName(SnakeCaseMapper::class)]` for case conversion
 
-### 3. Output DTO
-- Returns only necessary data
-- Uses primitives or simple structures
-- Named `{Action}{Entity}Output`
-- Never returns Entity directly
+### 3. Return Types
+- Simple operations: Return Eloquent Model
+- List operations: Return `Collection` or `LengthAwarePaginator`
+- Delete operations: Return `bool`
+- Never return HTTP-specific types
 
 ### 4. Dependency Injection
 - Constructor injection for dependencies
-- Depends on interfaces (not implementations)
-- Uses Repository interfaces from Domain layer
+- Depends on Repository Interface (not implementation)
+- Uses Service for complex operations
 
-### 5. Transaction Boundary
-- Each UseCase is one transaction
-- Atomic operation
-- All-or-nothing execution
+### 5. Business Logic Location
+- Validation rules → FormRequest
+- Business rules → UseCase
+- Data access → Repository
+- Reusable logic → Service
 
-### 6. Layer Communication
-- Controller → UseCase (via Input DTO)
-- UseCase → Repository (via Interface)
-- UseCase → Controller (via Output DTO)
+### 6. Transaction Management
+- Simple operations: Repository handles transaction
+- Complex operations: UseCase wraps in `DB::transaction()`
 
 ---
 
 ## Controller Integration
 
-### Inertia Response
+### API Controller
 
 ```php
-final class MemberController extends Controller
+// app/Http/Controllers/Api/PostController.php
+final class PostController extends Controller
 {
-    public function index(ListMembersUseCase $useCase): Response
-    {
-        $output = $useCase->execute();
+    public function __construct(
+        private GetPostsUseCase $getPostsUseCase,
+        private CreatePostUseCase $createPostUseCase,
+        private UpdatePostUseCase $updatePostUseCase,
+        private DeletePostUseCase $deletePostUseCase,
+    ) {}
 
-        return Inertia::render('Members/Index', [
-            'members' => $output->members,
+    public function index(SearchPostsRequest $request): JsonResponse
+    {
+        $data = $request->getSearchPostsData();
+        $posts = $this->getPostsUseCase->execute($data);
+
+        return response()->json([
+            'data' => PostResource::collection($posts),
+            'meta' => [
+                'current_page' => $posts->currentPage(),
+                'last_page' => $posts->lastPage(),
+                'per_page' => $posts->perPage(),
+                'total' => $posts->total(),
+            ],
         ]);
     }
 
-    public function store(
-        CreateMemberRequest $request,
-        CreateMemberUseCase $useCase,
-    ): RedirectResponse {
-        $output = $useCase->execute(new CreateMemberInput(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-        ));
+    public function store(StorePostRequest $request): JsonResponse
+    {
+        $data = $request->getCreatePostData();
+        $post = $this->createPostUseCase->execute($data);
 
-        return redirect()->route('members.show', $output->id)
-            ->with('success', 'メンバーを作成しました');
+        return response()->json([
+            'data' => new PostResource($post),
+        ], 201);
+    }
+
+    public function update(
+        UpdatePostRequest $request,
+        Post $post
+    ): JsonResponse {
+        $this->authorize('update', $post);
+
+        $data = $request->getUpdatePostData();
+        $updatedPost = $this->updatePostUseCase->execute($data, auth()->id());
+
+        return response()->json([
+            'data' => new PostResource($updatedPost),
+        ]);
+    }
+
+    public function destroy(Post $post): JsonResponse
+    {
+        $this->authorize('delete', $post);
+
+        $this->deletePostUseCase->execute($post->id, auth()->id());
+
+        return response()->json(null, 204);
     }
 }
 ```
 
-### API Response
+### Web Controller (Inertia)
 
 ```php
-final class MemberApiController extends Controller
+// app/Http/Controllers/Web/PostPageController.php
+final class PostPageController extends Controller
 {
-    public function store(
-        CreateMemberRequest $request,
-        CreateMemberUseCase $useCase,
-    ): JsonResponse {
-        $output = $useCase->execute(new CreateMemberInput(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-        ));
+    public function index(Request $request): Response
+    {
+        return Inertia::render('Post/Index', [
+            'statusOptions' => PostStatus::toSelectArray(),
+            'filters' => $request->only(['q', 'status']),
+        ]);
+        // Dynamic data fetched via API on frontend
+    }
 
-        return response()->json([
-            'id' => $output->id,
-        ], 201);
+    public function create(): Response
+    {
+        return Inertia::render('Post/Create', [
+            'statusOptions' => PostStatus::toSelectArray(),
+        ]);
+    }
+
+    public function edit(int $id): Response
+    {
+        return Inertia::render('Post/Edit', [
+            'postId' => $id,
+            'statusOptions' => PostStatus::toSelectArray(),
+        ]);
     }
 }
 ```
@@ -499,30 +522,31 @@ final class MemberApiController extends Controller
 Before considering a UseCase implementation complete, verify:
 
 - [ ] Class is marked as `final readonly`
-- [ ] Named `{Action}{Entity}UseCase`
-- [ ] Has Input DTO (`{Action}{Entity}Input`)
-- [ ] Has Output DTO (`{Action}{Entity}Output`)
+- [ ] Named `{Action}{Resource}UseCase`
+- [ ] Uses Laravel Data DTO for input
 - [ ] Uses constructor injection for dependencies
 - [ ] Depends on Repository Interface (not implementation)
-- [ ] Returns Output DTO (not Entity)
-- [ ] No HTTP-specific logic (Request, Response)
-- [ ] No direct database access
+- [ ] Returns Eloquent Model or Collection (not HTTP response)
+- [ ] No HTTP-specific logic (Request, Response, redirect)
+- [ ] No direct Eloquent queries (use Repository)
 - [ ] Single responsibility (one business operation)
+- [ ] Business rules are validated in UseCase
+- [ ] Throws appropriate exceptions for error cases
 
 ---
 
 ## Why This Matters
 
-**Without DTOs**, code suffers from:
+**Without proper UseCase structure**, code suffers from:
 - Tight coupling between layers
-- Exposing Domain internals to Presentation
-- Hard to change Entity without breaking Controller
-- Unclear contracts between layers
+- Business logic scattered across Controllers
+- Hard to test without HTTP
+- Can't reuse logic for CLI/API
 
-**With Input/Output DTOs**, you get:
+**With proper UseCase structure**, you get:
 - Clear layer separation
-- Stable contracts
-- Testability (no HTTP needed)
+- Business logic in one place
+- Testability (mock Repository)
 - Reusability (CLI, API, Web)
-- Type safety
-- Documentation through code
+- Type safety with Laravel Data
+- TypeScript types for frontend

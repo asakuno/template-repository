@@ -34,7 +34,7 @@ tests/
 - Model のスコープ、アクセサ、ミューテータ
 - Service の単一メソッド
 - UseCase（Repository をモック）
-- ValueObject、DTO
+- Laravel Data DTO
 
 **特徴**:
 - DB は不要（モックを使用）

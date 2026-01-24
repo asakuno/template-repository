@@ -40,8 +40,8 @@ git commit -m "refactor: Phase X リファクタリング (REFACTOR)"
 前Phaseに戻り、修正コミットを作成する。
 
 **例**:
-- Domain層のEntity設計ミス（Infrastructure層実装中に発見）
-- ValueObjectのバリデーションロジックの不備
+- UseCase層のビジネスロジック設計ミス（Controller実装中に発見）
+- DTOのバリデーションロジックの不備
 - Repository Interfaceのメソッド不足
 
 **対応**:
@@ -235,18 +235,18 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 ```
 ------ -----------------------------------------------------------------
-Line   modules/Auth/Domain/ValueObjects/Email.php
+Line   app/UseCases/User/CreateUserUseCase.php
 ------ -----------------------------------------------------------------
- 12     Parameter #1 $value of method Email::create() expects string,
-        int given.
- 24     Property Email::$value type has no value type specified in
-        iterable type array.
+ 12     Parameter #1 $email of method UserRepositoryInterface::findByEmail()
+        expects string, int given.
+ 24     Property CreateUserData::$tagValues type has no value type specified
+        in iterable type array.
 ------ -----------------------------------------------------------------
 ```
 
 **読み方**:
 - `Line 12`: エラーが発生した行番号
-- `Parameter #1 $value expects string, int given`: 型の不一致（string期待、intが渡された）
+- `Parameter #1 $email expects string, int given`: 型の不一致（string期待、intが渡された）
 - **対処法**: メソッド呼び出し側で正しい型を渡す、またはメソッドのシグネチャを修正
 
 ### Biome エラー出力例
@@ -270,16 +270,16 @@ error[lint/suspicious/noExplicitAny]: Do not use the any type.
 ### PHPUnit エラー出力例
 
 ```
-1) Tests\Unit\Modules\Auth\Domain\ValueObjects\EmailTest::test_無効なメールアドレスは例外が発生する
-Failed asserting that exception of type "InvalidArgumentException" is thrown.
+1) Tests\Unit\UseCases\User\CreateUserUseCaseTest::test_重複メールアドレスは例外が発生する
+Failed asserting that exception of type "ValidationException" is thrown.
 
-/home/user/project/tests/Unit/Modules/Auth/Domain/ValueObjects/EmailTest.php:28
+/home/user/project/tests/Unit/UseCases/User/CreateUserUseCaseTest.php:28
 ```
 
 **読み方**:
 - `1)`: テストケース番号
-- `EmailTest::test_無効なメールアドレスは例外が発生する`: 失敗したテスト
-- `Failed asserting that exception of type "InvalidArgumentException" is thrown`: 期待した例外が発生しなかった
+- `CreateUserUseCaseTest::test_重複メールアドレスは例外が発生する`: 失敗したテスト
+- `Failed asserting that exception of type "ValidationException" is thrown`: 期待した例外が発生しなかった
 - **対処法**: 実装側で例外を投げるロジックを追加、またはテストの期待値を修正
 
 ---
@@ -378,8 +378,8 @@ git stash
 
 # Phase 1のファイルを修正
 # 修正後、Phase 1の修正コミット
-git add modules/Auth/Domain/
-git commit -m "fix(backend): Phase 1修正 - Entity設計の不備を修正
+git add app/UseCases/
+git commit -m "fix(backend): Phase 1修正 - UseCase設計の不備を修正
 
 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -406,7 +406,7 @@ git stash pop
 | **Test timeout** | 非同期処理の await 忘れ | `async/await` を追加、`waitFor` を使用 |
 | **Database connection failed** | .env 設定誤り | `.env` のDB設定を確認、`php artisan migrate` を実行 |
 | **Memory limit exceeded** | テストで大量データ生成 | Factory の生成数を削減、`RefreshDatabase` を使用 |
-| **Circular dependency** | モジュール間の循環参照 | Contract パターンで依存を逆転、アーキテクチャを見直す |
+| **Circular dependency** | ドメイン間の循環参照 | Service層パターンで依存を逆転、アーキテクチャを見直す |
 
 ### 緊急時の対応フロー
 

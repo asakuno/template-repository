@@ -72,10 +72,10 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ### Phase 1完了（Planning & Review）
 
 ```
-feat(backend): Phase 1完了 - 4層アーキテクチャ設計と実装計画を作成
+feat(backend): Phase 1完了 - 7層アーキテクチャ設計と実装計画を作成
 
-- 4層アーキテクチャ設計（backend-architecture-guidelines準拠）
-- Entity/ValueObject設計
+- 7層アーキテクチャ設計（backend-architecture-guidelines準拠）
+- Model/DTO設計
 - UseCase設計
 - Repository Interface設計
 - 実装計画書（DESIGN.md）作成
@@ -90,8 +90,8 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 test(backend): Phase 2a完了 - TDD RED フェーズ テスト作成
 
-- Unit テスト作成（Domain層）
-- Feature テスト作成（Application層）
+- Unit テスト作成（UseCase層）
+- Feature テスト作成（Controller/Repository層）
 - テストケース設計完了
 - Repository Interface モック実装
 
@@ -105,8 +105,8 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 feat(backend): Phase 2b完了 - TDD GREEN & REFACTOR フェーズ 実装完了
 
-- Entity/ValueObject実装（create/reconstruct）
-- UseCase実装（Input/Output DTO）
+- Model/DTO実装（Laravel Data）
+- UseCase実装（ビジネスロジック）
 - Repository実装（Eloquent）
 - Controller実装（Presentation層）
 - 全テスト通過（GREEN）
@@ -153,12 +153,12 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 **例**:
 ```
-test(backend): Domain層 テスト作成 (RED)
+test(backend): UseCase層 テスト作成 (RED)
 
-- EmailTest.php
-- PasswordTest.php
-- UserIdTest.php
-- NameTest.php
+- CreateUserUseCaseTest.php
+- UpdateUserUseCaseTest.php
+- DeleteUserUseCaseTest.php
+- GetUsersUseCaseTest.php
 
 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -182,12 +182,12 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 **例**:
 ```
-feat(backend): Domain層 実装完了 (GREEN)
+feat(backend): UseCase層 実装完了 (GREEN)
 
-- Email.php
-- Password.php
-- UserId.php
-- Name.php
+- CreateUserUseCase.php
+- UpdateUserUseCase.php
+- DeleteUserUseCase.php
+- GetUsersUseCase.php
 - 全テストがパス
 
 Generated with [Claude Code](https://claude.com/claude-code)
@@ -212,7 +212,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 **例**:
 ```
-refactor(backend): Domain層 リファクタリング (REFACTOR)
+refactor(backend): UseCase層 リファクタリング (REFACTOR)
 
 - Laravel Pint 適用
 - コーディング規約統一
@@ -284,7 +284,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 - `[scope]` は実装対象に応じて変更
 - 箇条書き部分は実際の実装内容に合わせて調整
-- Phase名は具体的に記載（例: Domain層、基本UIコンポーネント）
+- Phase名は具体的に記載（例: UseCase層、基本UIコンポーネント）
 
 ### 一貫性の維持
 

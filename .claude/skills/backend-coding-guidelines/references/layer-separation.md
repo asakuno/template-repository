@@ -2,244 +2,319 @@
 
 ## AI's Common Failure Patterns
 
-### Pattern 1: Domain Depends on Eloquent
+### Pattern 1: Controller Contains Business Logic
 
-**❌ AI writes: Domain depends on Eloquent**
+**❌ AI writes: Business logic in controller**
 
 ```php
-// In Domain layer
-use Illuminate\Database\Eloquent\Model;
-
-final class Member
+// In Controller
+final class PostController extends Controller
 {
-    public function save(): void
+    public function store(Request $request)
     {
-        MemberModel::create([...]); // Domain depends on Infrastructure
+        // Business logic in controller - WRONG!
+        $existingPost = Post::where('user_id', auth()->id())
+            ->where('week_start_date', $request->input('week_start_date'))
+            ->first();
+
+        if ($existingPost) {
+            return back()->withErrors(['week_start_date' => 'Already exists']);
+        }
+
+        $post = Post::create([
+            'user_id' => auth()->id(),
+            'title' => $request->input('title'),
+            // ...
+        ]);
+
+        return redirect()->route('posts.index');
     }
 }
 ```
 
 **Problems**:
-- Domain layer depends on Laravel
-- Can't test Domain logic without database
-- Violates Dependency Inversion Principle
-- Domain is no longer portable
+- Business logic mixed with HTTP handling
+- Hard to test (requires HTTP request)
+- Can't reuse logic (CLI, API, etc.)
+- Violates Single Responsibility Principle
 
 ### Pattern 2: UseCase Uses Eloquent Directly
 
 **❌ AI writes: UseCase uses Eloquent directly**
 
 ```php
-final readonly class CreateMemberUseCase
+final readonly class CreatePostUseCase
 {
-    public function execute(CreateMemberInput $input): void
+    public function execute(CreatePostData $data): Post
     {
-        MemberModel::create([
-            'name' => $input->name,
-            'email' => $input->email,
+        // Direct Eloquent usage - acceptable in simple cases
+        // but bypasses Repository abstraction
+        return Post::create([
+            'user_id' => $data->userId,
+            'title' => $data->title,
         ]);
     }
 }
 ```
 
 **Problems**:
-- Application layer depends on Infrastructure
-- Bypasses Repository abstraction
-- Hard to test (requires database)
+- Application layer depends directly on Eloquent
+- Bypasses Repository abstraction (when needed)
+- Hard to test without database
 - Can't swap storage implementation
 
-### Pattern 3: Controller Accesses Database
+### Pattern 3: Model Contains Business Logic
 
-**❌ AI writes: Controller accesses database**
+**❌ AI writes: Business logic in Model**
 
 ```php
-final class MemberController extends Controller
+class Post extends Model
 {
-    public function index(): Response
+    public function submit(): void
     {
-        $members = MemberModel::all(); // Direct DB access
-        return Inertia::render('Members/Index', ['members' => $members]);
+        // Business logic in Model - WRONG!
+        if ($this->status === PostStatus::Submitted) {
+            throw new \Exception('Already submitted');
+        }
+        $this->status = PostStatus::Submitted;
+        $this->save();
     }
 }
 ```
 
 **Problems**:
-- Presentation layer depends on Infrastructure
-- No business logic separation
-- Hard to test
-- Can't reuse logic
+- Business logic mixed with data structure
+- Difficult to test without database
+- Model becomes bloated
+- Violates Single Responsibility Principle
 
 ---
 
 ## ✅ Correct Pattern: Proper Layer Isolation
 
-### Layer Dependency Rules
+### 7-Layer Architecture Dependency Rules
 
 ```
-Presentation → Application → Domain ← Infrastructure
+Presentation (Controllers) → Request → UseCase → Service/Repository → Model → Resource
 ```
 
 **Rules**:
-1. Domain layer has NO dependencies
-2. Infrastructure implements Domain interfaces
-3. Application uses Domain interfaces
-4. Presentation uses Application layer only
+1. Controllers handle HTTP only, delegate to UseCases
+2. UseCases contain business logic
+3. Repositories abstract data access
+4. Models are data containers only
+5. Resources transform data for responses
 
-### Domain Layer: Pure PHP, No Laravel
-
-```php
-// ✅ Correct: Domain layer has no external dependencies
-// modules/Member/Domain/Entities/Member.php
-
-namespace Modules\Member\Domain\Entities;
-
-use Modules\Member\Domain\ValueObjects\MemberId;
-use Modules\Member\Domain\ValueObjects\Name;
-use Modules\Member\Domain\ValueObjects\Email;
-use Modules\Member\Domain\ValueObjects\MemberStatus;
-
-final class Member
-{
-    private function __construct(
-        private readonly MemberId $id,
-        private readonly Name $name,
-        private readonly Email $email,
-        private readonly MemberStatus $status,
-    ) {}
-
-    public static function create(Name $name, Email $email): self
-    {
-        return new self(
-            id: MemberId::generate(),
-            name: $name,
-            email: $email,
-            status: MemberStatus::active(),
-        );
-    }
-
-    public static function reconstruct(
-        MemberId $id,
-        Name $name,
-        Email $email,
-        MemberStatus $status,
-    ): self {
-        return new self($id, $name, $email, $status);
-    }
-
-    public function deactivate(): self
-    {
-        return new self(
-            id: $this->id,
-            name: $this->name,
-            email: $this->email,
-            status: MemberStatus::inactive(),
-        );
-    }
-
-    // No use statements for Laravel classes
-    // No database operations
-    // Pure business logic only
-
-    public function id(): MemberId { return $this->id; }
-    public function name(): Name { return $this->name; }
-    public function email(): Email { return $this->email; }
-    public function status(): MemberStatus { return $this->status; }
-}
-```
-
-### Application Layer: Uses Repository Interface
+### Controller: HTTP Handling Only
 
 ```php
-// ✅ Correct: UseCase uses Repository interface
-// modules/Member/Application/UseCases/ListMembersUseCase.php
+// ✅ Correct: Controller delegates to UseCase
+// app/Http/Controllers/Api/PostController.php
 
-namespace Modules\Member\Application\UseCases;
+namespace App\Http\Controllers\Api;
 
-use Modules\Member\Domain\Repositories\MemberRepositoryInterface;
-use Modules\Member\Application\DTOs\ListMembersOutput;
-use Modules\Member\Application\DTOs\MemberData;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StorePostRequest;
+use App\Http\Resources\PostResource;
+use App\UseCases\Post\CreatePostUseCase;
+use Illuminate\Http\JsonResponse;
 
-final readonly class ListMembersUseCase
+final class PostController extends Controller
 {
     public function __construct(
-        private MemberRepositoryInterface $repository, // Interface from Domain
+        private CreatePostUseCase $createPostUseCase,
     ) {}
 
-    public function execute(): ListMembersOutput
+    public function store(StorePostRequest $request): JsonResponse
     {
-        $members = $this->repository->findAll();
+        $data = $request->getCreatePostData();
+        $post = $this->createPostUseCase->execute($data);
 
-        return new ListMembersOutput(
-            members: array_map(
-                fn(Member $m) => new MemberData(
-                    id: $m->id()->value(),
-                    name: $m->name()->value(),
-                    email: $m->email()->value(),
-                    status: $m->status()->value(),
-                ),
-                $members,
-            ),
+        return response()->json([
+            'data' => new PostResource($post),
+        ], 201);
+    }
+}
+```
+
+### UseCase: Business Logic
+
+```php
+// ✅ Correct: UseCase contains business logic
+// app/UseCases/Post/CreatePostUseCase.php
+
+namespace App\UseCases\Post;
+
+use App\Data\Post\CreatePostData;
+use App\Models\Post;
+use App\Repositories\Post\PostRepositoryInterface;
+use Illuminate\Validation\ValidationException;
+
+final readonly class CreatePostUseCase
+{
+    public function __construct(
+        private PostRepositoryInterface $postRepository,
+    ) {}
+
+    public function execute(CreatePostData $data): Post
+    {
+        // Business rule: Check for duplicates
+        $existing = $this->postRepository->findByUserAndWeek(
+            $data->userId,
+            $data->weekStartDate
+        );
+
+        if ($existing !== null) {
+            throw ValidationException::withMessages([
+                'week_start_date' => ['A post for this week already exists.'],
+            ]);
+        }
+
+        // Create via Repository
+        return $this->postRepository->create(
+            $data->userId,
+            $data->weekStartDate,
+            $data->title,
+            $data->memo,
+            $data->status,
+            $data->tagValues
         );
     }
 }
 ```
 
-### Infrastructure Layer: Implements Domain Interface
+### Repository: Data Access Abstraction
 
 ```php
-// ✅ Correct: Infrastructure implements Domain interface
-// modules/Member/Infrastructure/Repositories/EloquentMemberRepository.php
+// ✅ Correct: Repository interface in app/Repositories/
+// app/Repositories/Post/PostRepositoryInterface.php
 
-namespace Modules\Member\Infrastructure\Repositories;
+namespace App\Repositories\Post;
 
-use Modules\Member\Domain\Repositories\MemberRepositoryInterface;
-use Modules\Member\Domain\Entities\Member;
-use Modules\Member\Infrastructure\Models\MemberModel;
+use App\Enums\PostStatus;
+use App\Models\Post;
 
-final class EloquentMemberRepository implements MemberRepositoryInterface
+interface PostRepositoryInterface
 {
-    public function findAll(): array
+    public function findById(int $id): ?Post;
+    public function findByUserAndWeek(int $userId, string $weekStartDate): ?Post;
+    public function create(
+        int $userId,
+        string $weekStartDate,
+        string $title,
+        ?string $memo,
+        PostStatus $status,
+        array $tagValues
+    ): Post;
+    public function update(int $id, array $data): Post;
+    public function delete(int $id): bool;
+}
+
+// app/Repositories/Post/PostRepository.php
+
+namespace App\Repositories\Post;
+
+use App\Enums\PostStatus;
+use App\Models\Post;
+use Illuminate\Support\Facades\DB;
+
+final class PostRepository implements PostRepositoryInterface
+{
+    public function findById(int $id): ?Post
     {
-        return MemberModel::all()
-            ->map(fn(MemberModel $m) => $this->toEntity($m))
-            ->toArray();
+        return Post::find($id);
     }
 
-    private function toEntity(MemberModel $model): Member
+    public function findByUserAndWeek(int $userId, string $weekStartDate): ?Post
     {
-        return Member::reconstruct(
-            id: MemberId::from($model->id),
-            name: Name::create($model->name),
-            email: Email::create($model->email),
-            status: MemberStatus::from($model->status),
-        );
+        return Post::where('user_id', $userId)
+            ->where('week_start_date', $weekStartDate)
+            ->first();
+    }
+
+    public function create(
+        int $userId,
+        string $weekStartDate,
+        string $title,
+        ?string $memo,
+        PostStatus $status,
+        array $tagValues
+    ): Post {
+        return DB::transaction(function () use (
+            $userId, $weekStartDate, $title, $memo, $status, $tagValues
+        ) {
+            $post = Post::create([
+                'user_id' => $userId,
+                'week_start_date' => $weekStartDate,
+                'title' => $title,
+                'memo' => $memo,
+                'status' => $status,
+            ]);
+
+            foreach ($tagValues as $tagValue) {
+                $post->tags()->attach($tagValue['tag_id'], [
+                    'value' => $tagValue['value'],
+                ]);
+            }
+
+            return $post->fresh(['tags']);
+        });
     }
 
     // Other methods...
 }
 ```
 
-### Presentation Layer: Uses UseCase
+### Model: Data Container Only
 
 ```php
-// ✅ Correct: Controller uses UseCase
-// app/Http/Controllers/MemberController.php
+// ✅ Correct: Model is data container
+// app/Models/Post.php
 
-namespace App\Http\Controllers;
+namespace App\Models;
 
-use Modules\Member\Application\UseCases\ListMembersUseCase;
-use Inertia\Inertia;
-use Inertia\Response;
+use App\Enums\PostStatus;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
-final class MemberController extends Controller
+#[TypeScript()]
+class Post extends Model
 {
-    public function index(ListMembersUseCase $useCase): Response
-    {
-        $output = $useCase->execute();
+    protected $fillable = [
+        'user_id',
+        'week_start_date',
+        'title',
+        'memo',
+        'status',
+    ];
 
-        return Inertia::render('Members/Index', [
-            'members' => $output->members,
-        ]);
+    protected function casts(): array
+    {
+        return [
+            'week_start_date' => 'date',
+            'status' => PostStatus::class,
+        ];
+    }
+
+    // Relationships
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'post_tag')
+            ->withPivot('value')
+            ->withTimestamps();
+    }
+
+    // Query scopes (NOT business logic)
+    public function scopeByStatus(Builder $query, PostStatus $status): Builder
+    {
+        return $query->where('status', $status);
     }
 }
 ```
@@ -248,319 +323,111 @@ final class MemberController extends Controller
 
 ## Detecting Layer Violations
 
-### Domain Layer Violations
+### Controller Layer Violations
 
-**❌ Forbidden in Domain layer:**
-
-```php
-// Laravel dependencies
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-
-// Infrastructure layer
-use Modules\Member\Infrastructure\Models\MemberModel;
-
-// Application layer
-use Modules\Member\Application\UseCases\CreateMemberUseCase;
-
-// Presentation layer
-use App\Http\Controllers\MemberController;
-```
-
-**✅ Allowed in Domain layer:**
-
-```php
-// Pure PHP
-use InvalidArgumentException;
-use DateTimeImmutable;
-
-// Domain layer only
-use Modules\Member\Domain\Entities\Member;
-use Modules\Member\Domain\ValueObjects\Email;
-use Modules\Member\Domain\Repositories\MemberRepositoryInterface;
-use Modules\Member\Domain\Exceptions\MemberNotFoundException;
-
-// Laravel utilities (if absolutely necessary)
-use Illuminate\Support\Str; // Only for UUID generation
-```
-
-### Application Layer Violations
-
-**❌ Forbidden in Application layer:**
-
-```php
-// Direct database access
-use Illuminate\Support\Facades\DB;
-MemberModel::create([...]);
-
-// HTTP-specific logic
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-return response()->json([...]);
-
-// Infrastructure implementations
-use Modules\Member\Infrastructure\Repositories\EloquentMemberRepository;
-```
-
-**✅ Allowed in Application layer:**
-
-```php
-// Domain layer
-use Modules\Member\Domain\Entities\Member;
-use Modules\Member\Domain\Repositories\MemberRepositoryInterface;
-
-// Application layer
-use Modules\Member\Application\DTOs\CreateMemberInput;
-use Modules\Member\Application\DTOs\CreateMemberOutput;
-
-// Laravel (for transaction management, if needed)
-use Illuminate\Support\Facades\DB;
-DB::transaction(fn() => ...); // Only in UseCase
-```
-
-### Presentation Layer Violations
-
-**❌ Forbidden in Presentation layer:**
+**❌ Forbidden in Controllers:**
 
 ```php
 // Business logic
-$member = Member::create(...);
-if ($member->isActive()) { ... }
+if ($post->status === PostStatus::Submitted) {
+    throw new \Exception('Cannot edit submitted post');
+}
 
-// Direct database access
-MemberModel::where('status', 'active')->get();
+// Direct database queries
+$posts = Post::where('status', 'active')
+    ->where('user_id', $userId)
+    ->get();
 
-// Domain layer direct manipulation
-$this->memberRepository->save($member);
+// Complex data processing
+$statistics = $posts->groupBy('status')
+    ->map(fn ($group) => $group->count());
 ```
 
-**✅ Allowed in Presentation layer:**
+**✅ Allowed in Controllers:**
 
 ```php
 // HTTP handling
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Http\RedirectResponse;
-
-// Inertia
-use Inertia\Inertia;
-use Inertia\Response;
-
-// Application layer
-use Modules\Member\Application\UseCases\CreateMemberUseCase;
-use Modules\Member\Application\DTOs\CreateMemberInput;
+use Illuminate\Http\JsonResponse;
 
 // Form Requests
-use App\Http\Requests\CreateMemberRequest;
+use App\Http\Requests\StorePostRequest;
+
+// UseCase calls
+$this->createPostUseCase->execute($data);
+
+// Policy checks
+$this->authorize('update', $post);
+
+// Resource transformation
+return response()->json(new PostResource($post));
 ```
 
----
+### UseCase Layer Violations
 
-## Common Violations and Fixes
-
-### Violation 1: Controller with Business Logic
-
-**❌ Before:**
+**❌ Forbidden in UseCases:**
 
 ```php
-final class MemberController extends Controller
-{
-    public function store(Request $request)
-    {
-        // Validation
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:members',
-        ]);
+// HTTP-specific logic
+use Illuminate\Http\Request;
+return response()->json([...]);
 
-        // Business logic in controller
-        if (MemberModel::where('email', $validated['email'])->exists()) {
-            return back()->withErrors(['email' => 'このメールアドレスは既に使用されています']);
-        }
+// Direct controller return types
+return redirect()->route('posts.index');
 
-        // Direct database access
-        $member = MemberModel::create($validated);
-
-        return redirect()->route('members.index');
-    }
-}
+// View rendering
+return view('posts.index');
 ```
 
-**✅ After:**
+**✅ Allowed in UseCases:**
 
 ```php
-// Controller
-final class MemberController extends Controller
-{
-    public function store(
-        CreateMemberRequest $request,
-        CreateMemberUseCase $useCase,
-    ): RedirectResponse {
-        $useCase->execute(new CreateMemberInput(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-        ));
+// Repository interfaces
+use App\Repositories\Post\PostRepositoryInterface;
 
-        return redirect()->route('members.index')
-            ->with('success', 'メンバーを作成しました');
-    }
-}
+// Laravel Data DTOs
+use App\Data\Post\CreatePostData;
 
-// UseCase
-final readonly class CreateMemberUseCase
-{
-    public function __construct(
-        private MemberRepositoryInterface $repository,
-    ) {}
+// Eloquent Models as return types
+use App\Models\Post;
 
-    public function execute(CreateMemberInput $input): CreateMemberOutput
-    {
-        // Check if email exists
-        if ($this->repository->findByEmail(Email::create($input->email)) !== null) {
-            throw new DomainException('このメールアドレスは既に使用されています');
-        }
+// Validation exceptions
+use Illuminate\Validation\ValidationException;
 
-        $member = Member::create(
-            name: Name::create($input->name),
-            email: Email::create($input->email),
-        );
-
-        $this->repository->save($member);
-
-        return new CreateMemberOutput(id: $member->id()->value());
-    }
-}
+// Transaction management
+use Illuminate\Support\Facades\DB;
 ```
 
-### Violation 2: Domain Entity with Database Access
+### Model Layer Violations
 
-**❌ Before:**
+**❌ Forbidden in Models:**
 
 ```php
-final class Member
-{
-    public function save(): void
-    {
-        MemberModel::updateOrCreate(
-            ['id' => $this->id],
-            ['name' => $this->name, 'email' => $this->email],
-        );
-    }
+// Business logic
+public function submit(): void { ... }
+public function canBeEdited(): bool { ... }
 
-    public function delete(): void
-    {
-        MemberModel::where('id', $this->id)->delete();
-    }
-}
+// Authorization logic
+public function canBeEditedBy(User $user): bool { ... }
+
+// Validation logic
+public function validate(): bool { ... }
 ```
 
-**✅ After:**
+**✅ Allowed in Models:**
 
 ```php
-// Domain Entity (no database access)
-final class Member
-{
-    // Pure business logic only
-    public function deactivate(): self
-    {
-        return new self(
-            id: $this->id,
-            name: $this->name,
-            email: $this->email,
-            status: MemberStatus::inactive(),
-        );
-    }
+// Relationships
+public function user(): BelongsTo { ... }
 
-    // No save(), delete(), or database methods
-}
+// Casts
+protected function casts(): array { ... }
 
-// Repository handles persistence
-final class EloquentMemberRepository implements MemberRepositoryInterface
-{
-    public function save(Member $member): void
-    {
-        MemberModel::updateOrCreate(
-            ['id' => $member->id()->value()],
-            [
-                'name' => $member->name()->value(),
-                'email' => $member->email()->value(),
-                'status' => $member->status()->value(),
-            ],
-        );
-    }
+// Query scopes
+public function scopeByStatus($query, $status) { ... }
 
-    public function delete(MemberId $id): void
-    {
-        MemberModel::where('id', $id->value())->delete();
-    }
-}
-```
-
-### Violation 3: UseCase with Eloquent
-
-**❌ Before:**
-
-```php
-final readonly class ListMembersUseCase
-{
-    public function execute(): array
-    {
-        return MemberModel::where('status', 'active')
-            ->orderBy('name')
-            ->get()
-            ->toArray();
-    }
-}
-```
-
-**✅ After:**
-
-```php
-// UseCase uses Repository interface
-final readonly class ListMembersUseCase
-{
-    public function __construct(
-        private MemberRepositoryInterface $repository,
-    ) {}
-
-    public function execute(): ListMembersOutput
-    {
-        $members = $this->repository->findActive();
-
-        return new ListMembersOutput(
-            members: array_map(
-                fn(Member $m) => new MemberData(
-                    id: $m->id()->value(),
-                    name: $m->name()->value(),
-                    email: $m->email()->value(),
-                ),
-                $members,
-            ),
-        );
-    }
-}
-
-// Repository interface
-interface MemberRepositoryInterface
-{
-    public function findActive(): array;
-}
-
-// Repository implementation
-final class EloquentMemberRepository implements MemberRepositoryInterface
-{
-    public function findActive(): array
-    {
-        return MemberModel::where('status', 'active')
-            ->orderBy('name')
-            ->get()
-            ->map(fn($m) => $this->toEntity($m))
-            ->toArray();
-    }
-}
+// Accessors/Mutators
+protected function formattedDate(): Attribute { ... }
 ```
 
 ---
@@ -570,41 +437,65 @@ final class EloquentMemberRepository implements MemberRepositoryInterface
 ### Layer Dependency Configuration
 
 ```yaml
-# deptrac/layer.yaml
+# deptrac.yaml
 deptrac:
   paths:
-    - ./modules
+    - ./app
   layers:
-    Domain:
+    - name: Presentation
       collectors:
         - type: directory
-          regex: modules/.*/Domain/.*
-    Application:
+          value: app/Http/Controllers
+    - name: Request
       collectors:
         - type: directory
-          regex: modules/.*/Application/.*
-    Infrastructure:
+          value: app/Http/Requests
+    - name: UseCase
       collectors:
         - type: directory
-          regex: modules/.*/Infrastructure/.*
-    Presentation:
+          value: app/UseCases
+    - name: Service
       collectors:
         - type: directory
-          regex: app/Http/.*
+          value: app/Services
+    - name: Repository
+      collectors:
+        - type: directory
+          value: app/Repositories
+    - name: Model
+      collectors:
+        - type: directory
+          value: app/Models
+    - name: Resource
+      collectors:
+        - type: directory
+          value: app/Http/Resources
+
   ruleset:
-    Domain: []  # No dependencies allowed
-    Application:
-      - Domain
-    Infrastructure:
-      - Domain
     Presentation:
-      - Application
+      - Request
+      - UseCase
+      - Resource
+    Request:
+      - Data
+    UseCase:
+      - Repository
+      - Service
+      - Model
+    Service:
+      - Repository
+      - Model
+    Repository:
+      - Model
+    Resource:
+      - Model
+    Model: []
 ```
 
 ### Running Deptrac
 
 ```bash
-./vendor/bin/deptrac analyse --config-file=deptrac/layer.yaml
+./vendor/bin/deptrac analyse
 ```
 
 ---
@@ -613,43 +504,47 @@ deptrac:
 
 Before considering layer separation correct, verify:
 
-### Domain Layer
-- [ ] No `use` statements for Laravel classes
-- [ ] No database operations
-- [ ] No HTTP Request/Response handling
-- [ ] Only pure PHP and Domain layer classes
-- [ ] Can be tested without Laravel
+### Controller Layer
+- [ ] No business logic
+- [ ] Only HTTP handling
+- [ ] Uses UseCases for all operations
+- [ ] Uses Policy for authorization
+- [ ] Returns Resources for JSON responses
 
-### Application Layer
-- [ ] Uses Repository interfaces (not implementations)
-- [ ] No direct database access
+### UseCase Layer
+- [ ] Contains business logic
+- [ ] Uses Repository interfaces
 - [ ] No HTTP-specific logic
-- [ ] Returns DTOs (not Entities)
+- [ ] Returns Models or DTOs
+- [ ] Handles transactions when needed
 
-### Infrastructure Layer
-- [ ] Implements Domain interfaces
+### Repository Layer
+- [ ] Implements interface
+- [ ] Only data access operations
 - [ ] No business logic
-- [ ] Handles technical details only
+- [ ] Returns Eloquent Models
 
-### Presentation Layer
-- [ ] No business logic
-- [ ] Uses UseCases only
-- [ ] Handles HTTP concerns only
+### Model Layer
+- [ ] Data container only
+- [ ] Relationships defined
+- [ ] Casts defined
+- [ ] Query scopes (no business logic)
+- [ ] No authorization logic
 
 ---
 
 ## Why This Matters
 
 **Without layer separation**:
-- Domain logic mixed with technical details
-- Can't test business logic independently
-- Can't swap implementations
-- Violates SOLID principles
-- Monolithic, hard to maintain
+- Business logic scattered across controllers and models
+- Hard to test
+- Hard to reuse logic
+- Tight coupling
+- Difficult to maintain
 
 **With proper layer separation**:
-- Domain is pure and portable
-- Easy to test
 - Clear responsibilities
-- Flexible (can swap storage, UI)
+- Easy to test (mock repositories)
+- Reusable business logic
+- Loose coupling
 - Maintainable and scalable

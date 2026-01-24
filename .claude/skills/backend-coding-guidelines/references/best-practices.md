@@ -366,9 +366,7 @@ if (!$report) {
 
 <body>
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 ### Type
@@ -389,9 +387,7 @@ feat: Add weekly report export to CSV
 - Add UTF-8 BOM for Excel compatibility
 - Include KPI values in export
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 ---

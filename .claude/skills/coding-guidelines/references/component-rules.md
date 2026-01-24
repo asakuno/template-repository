@@ -1,8 +1,3 @@
----
-paths:
-  - resources/js/Components/**/*.tsx
----
-
 # コンポーネント実装規約
 
 ## コンポーネントの分類

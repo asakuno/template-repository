@@ -169,6 +169,19 @@ project/
   - 既存コードのセキュリティ診断、レビュー時に使用
   - 例: IPA 11脆弱性の診断チェックリスト、修正手順
 
+#### 実装時の Skill 参照
+
+実装フェーズでは、対応する Skill を参照して詳細なガイドラインを確認すること。
+
+| フェーズ | 領域 | 参照 Skill |
+|---------|------|-----------|
+| Phase 2: Implementation | Backend | `Skill('backend-coding-guidelines')` |
+| Phase 2: Implementation | Frontend | `Skill('coding-guidelines')` |
+| Phase 2: Implementation | Security Review | `Skill('security-guidelines')` |
+| Testing | Backend (PHPUnit) | `Skill('backend-test-guidelines')` |
+| Testing | Frontend (Vitest/RTL) | `Skill('test-guidelines')` |
+| Testing | Storybook | `Skill('storybook-guidelines')` |
+
 ### MCPs
 
 | MCP | 用途 |

@@ -1,9 +1,3 @@
----
-paths:
-  - resources/js/**/*.tsx
-  - resources/js/**/*.ts
----
-
 # TypeScript・スタイリング規約
 
 ## TypeScript 設定

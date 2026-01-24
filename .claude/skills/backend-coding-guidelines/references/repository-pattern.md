@@ -1,37 +1,17 @@
-# Repository Pattern - Interface + Implementation Separation
+# Repository Pattern - Interface and Implementation Separation
 
 ## AI's Common Failure Patterns
 
-### Pattern 1: Repository Returns Eloquent Model
-
-**❌ AI writes: Repository returns Eloquent Model**
-
-```php
-final class MemberRepository
-{
-    public function findById(string $id): ?MemberModel
-    {
-        return MemberModel::find($id);
-    }
-}
-
-// Problems:
-// - Exposes Eloquent Model to Application/Domain layer
-// - Breaks layer separation
-// - Domain logic can access Eloquent methods
-```
-
-### Pattern 2: No Interface Separation
+### Pattern 1: No Interface Separation
 
 **❌ AI writes: No interface separation**
 
 ```php
-final class MemberRepository
+final class UserRepository
 {
-    public function findById(string $id): ?Member
+    public function findById(int $id): ?User
     {
-        $model = MemberModel::find($id);
-        return $model ? new Member($model->id, $model->name, $model->email) : null;
+        return User::find($id);
     }
 }
 
@@ -42,91 +22,101 @@ final class MemberRepository
 // - UseCase depends on concrete implementation
 ```
 
----
+### Pattern 2: Business Logic in Repository
 
-## ✅ Correct Pattern: Interface in Domain, Implementation in Infrastructure
-
-### Repository Interface (Domain Layer)
+**❌ AI writes: Business logic in Repository**
 
 ```php
-// modules/Member/Domain/Repositories/MemberRepositoryInterface.php
-
-interface MemberRepositoryInterface
+final class PostRepository implements PostRepositoryInterface
 {
-    public function findById(MemberId $id): ?Member;
-    public function findByEmail(Email $email): ?Member;
+    public function create(CreatePostData $data): Post
+    {
+        // Business logic in Repository - WRONG!
+        if ($data->status === PostStatus::Submitted) {
+            $this->validateSubmission($data);
+        }
+
+        return Post::create([...]);
+    }
+}
+
+// Problems:
+// - Business logic should be in UseCase
+// - Repository is only for data access
+// - Violates Single Responsibility
+```
+
+---
+
+## ✅ Correct Pattern: Interface in Repositories Directory
+
+### Repository Interface
+
+```php
+// app/Repositories/User/UserRepositoryInterface.php
+
+namespace App\Repositories\User;
+
+use App\Models\User;
+
+interface UserRepositoryInterface
+{
+    public function findById(int $id): ?User;
+    public function findByEmail(string $email): ?User;
     public function findAll(): array;
-    public function save(Member $member): void;
-    public function delete(MemberId $id): void;
+    public function create(string $name, string $email, string $password): User;
+    public function update(int $id, array $data): User;
+    public function delete(int $id): bool;
 }
 ```
 
-### Repository Implementation (Infrastructure Layer)
+### Repository Implementation
 
 ```php
-// modules/Member/Infrastructure/Repositories/EloquentMemberRepository.php
+// app/Repositories/User/UserRepository.php
 
-final class EloquentMemberRepository implements MemberRepositoryInterface
+namespace App\Repositories\User;
+
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
+final class UserRepository implements UserRepositoryInterface
 {
-    public function findById(MemberId $id): ?Member
+    public function findById(int $id): ?User
     {
-        $model = MemberModel::find($id->value());
-
-        if ($model === null) {
-            return null;
-        }
-
-        return Member::reconstruct(
-            id: MemberId::from($model->id),
-            name: Name::create($model->name),
-            email: Email::create($model->email),
-            status: MemberStatus::from($model->status),
-        );
+        return User::find($id);
     }
 
-    public function findByEmail(Email $email): ?Member
+    public function findByEmail(string $email): ?User
     {
-        $model = MemberModel::where('email', $email->value())->first();
-
-        if ($model === null) {
-            return null;
-        }
-
-        return Member::reconstruct(
-            id: MemberId::from($model->id),
-            name: Name::create($model->name),
-            email: Email::create($model->email),
-            status: MemberStatus::from($model->status),
-        );
+        return User::where('email', $email)->first();
     }
 
     public function findAll(): array
     {
-        return MemberModel::all()
-            ->map(fn(MemberModel $model) => Member::reconstruct(
-                id: MemberId::from($model->id),
-                name: Name::create($model->name),
-                email: Email::create($model->email),
-                status: MemberStatus::from($model->status),
-            ))
-            ->toArray();
+        return User::all()->all();
     }
 
-    public function save(Member $member): void
+    public function create(string $name, string $email, string $password): User
     {
-        MemberModel::updateOrCreate(
-            ['id' => $member->id()->value()],
-            [
-                'name' => $member->name()->value(),
-                'email' => $member->email()->value(),
-                'status' => $member->status()->value(),
-            ],
-        );
+        return User::create([
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make($password),
+        ]);
     }
 
-    public function delete(MemberId $id): void
+    public function update(int $id, array $data): User
     {
-        MemberModel::where('id', $id->value())->delete();
+        $user = User::findOrFail($id);
+        $user->update($data);
+
+        return $user->fresh();
+    }
+
+    public function delete(int $id): bool
+    {
+        return User::destroy($id) > 0;
     }
 }
 ```
@@ -134,15 +124,29 @@ final class EloquentMemberRepository implements MemberRepositoryInterface
 ### Service Provider Binding
 
 ```php
-// modules/Member/Infrastructure/MemberServiceProvider.php
+// app/Providers/AppServiceProvider.php
 
-final class MemberServiceProvider extends ServiceProvider
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use App\Repositories\User\UserRepositoryInterface;
+use App\Repositories\User\UserRepository;
+use App\Repositories\Post\PostRepositoryInterface;
+use App\Repositories\Post\PostRepository;
+
+final class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // Repository bindings
         $this->app->bind(
-            MemberRepositoryInterface::class,
-            EloquentMemberRepository::class,
+            UserRepositoryInterface::class,
+            UserRepository::class,
+        );
+
+        $this->app->bind(
+            PostRepositoryInterface::class,
+            PostRepository::class,
         );
     }
 }
@@ -152,202 +156,152 @@ final class MemberServiceProvider extends ServiceProvider
 
 ## Repository Method Patterns
 
-### Find Single Entity
+### Find Single Model
 
 ```php
 // By ID
-public function findById(MemberId $id): ?Member
+public function findById(int $id): ?Post
 {
-    $model = MemberModel::find($id->value());
-
-    if ($model === null) {
-        return null;
-    }
-
-    return $this->toEntity($model);
+    return Post::find($id);
 }
 
 // By unique property
-public function findByEmail(Email $email): ?Member
+public function findByUserAndWeek(int $userId, string $weekStartDate): ?Post
 {
-    $model = MemberModel::where('email', $email->value())->first();
-
-    if ($model === null) {
-        return null;
-    }
-
-    return $this->toEntity($model);
+    return Post::where('user_id', $userId)
+        ->where('week_start_date', $weekStartDate)
+        ->first();
 }
 ```
 
-### Find Multiple Entities
+### Find Multiple Models
 
 ```php
 // Find all
 public function findAll(): array
 {
-    return MemberModel::all()
-        ->map(fn(MemberModel $m) => $this->toEntity($m))
-        ->toArray();
+    return Post::all()->all();
 }
 
 // Find with criteria
-public function findActiveMembers(): array
+public function findByUser(int $userId): array
 {
-    return MemberModel::where('status', 'active')
+    return Post::where('user_id', $userId)
+        ->orderBy('created_at', 'desc')
         ->get()
-        ->map(fn(MemberModel $m) => $this->toEntity($m))
-        ->toArray();
+        ->all();
 }
 
 // Find by IDs
 public function findByIds(array $ids): array
 {
-    $idValues = array_map(fn(MemberId $id) => $id->value(), $ids);
-
-    return MemberModel::whereIn('id', $idValues)
+    return Post::whereIn('id', $ids)
         ->get()
-        ->map(fn(MemberModel $m) => $this->toEntity($m))
-        ->toArray();
+        ->all();
 }
 ```
 
-### Save (Create or Update)
+### Create with Relations
 
 ```php
-public function save(Member $member): void
-{
-    MemberModel::updateOrCreate(
-        ['id' => $member->id()->value()],
-        [
-            'name' => $member->name()->value(),
-            'email' => $member->email()->value(),
-            'status' => $member->status()->value(),
-        ],
-    );
-}
-
-// Alternative: Separate create and update
-public function create(Member $member): void
-{
-    MemberModel::create([
-        'id' => $member->id()->value(),
-        'name' => $member->name()->value(),
-        'email' => $member->email()->value(),
-        'status' => $member->status()->value(),
-    ]);
-}
-
-public function update(Member $member): void
-{
-    MemberModel::where('id', $member->id()->value())
-        ->update([
-            'name' => $member->name()->value(),
-            'email' => $member->email()->value(),
-            'status' => $member->status()->value(),
+public function create(
+    int $userId,
+    string $weekStartDate,
+    string $title,
+    ?string $memo,
+    PostStatus $status,
+    array $tagValues
+): Post {
+    return DB::transaction(function () use (
+        $userId, $weekStartDate, $title, $memo, $status, $tagValues
+    ) {
+        $post = Post::create([
+            'user_id' => $userId,
+            'week_start_date' => $weekStartDate,
+            'title' => $title,
+            'memo' => $memo,
+            'status' => $status,
         ]);
+
+        foreach ($tagValues as $tagValue) {
+            $post->tags()->attach($tagValue['tag_id'], [
+                'value' => $tagValue['value'],
+            ]);
+        }
+
+        return $post->fresh(['tags']);
+    });
+}
+```
+
+### Update with Relations
+
+```php
+public function update(
+    int $id,
+    string $weekStartDate,
+    string $title,
+    ?string $memo,
+    PostStatus $status,
+    array $tagValues
+): Post {
+    return DB::transaction(function () use (
+        $id, $weekStartDate, $title, $memo, $status, $tagValues
+    ) {
+        $post = Post::findOrFail($id);
+
+        $post->update([
+            'week_start_date' => $weekStartDate,
+            'title' => $title,
+            'memo' => $memo,
+            'status' => $status,
+        ]);
+
+        // Sync tags
+        $syncData = [];
+        foreach ($tagValues as $tagValue) {
+            $syncData[$tagValue['tag_id']] = ['value' => $tagValue['value']];
+        }
+        $post->tags()->sync($syncData);
+
+        return $post->fresh(['tags']);
+    });
 }
 ```
 
 ### Delete
 
 ```php
-public function delete(MemberId $id): void
+public function delete(int $id): bool
 {
-    MemberModel::where('id', $id->value())->delete();
+    return Post::destroy($id) > 0;
 }
 
 // Soft delete
-public function softDelete(MemberId $id): void
+public function softDelete(int $id): bool
 {
-    MemberModel::where('id', $id->value())->update([
-        'deleted_at' => now(),
-    ]);
+    $post = Post::find($id);
+    if ($post === null) {
+        return false;
+    }
+
+    return $post->delete();
 }
 ```
 
 ### Exists Check
 
 ```php
-public function exists(MemberId $id): bool
+public function exists(int $id): bool
 {
-    return MemberModel::where('id', $id->value())->exists();
+    return Post::where('id', $id)->exists();
 }
 
-public function emailExists(Email $email): bool
+public function existsByUserAndWeek(int $userId, string $weekStartDate): bool
 {
-    return MemberModel::where('email', $email->value())->exists();
-}
-```
-
----
-
-## Model to Entity Conversion
-
-### Extract to Private Method
-
-```php
-final class EloquentMemberRepository implements MemberRepositoryInterface
-{
-    public function findById(MemberId $id): ?Member
-    {
-        $model = MemberModel::find($id->value());
-
-        if ($model === null) {
-            return null;
-        }
-
-        return $this->toEntity($model);
-    }
-
-    public function findAll(): array
-    {
-        return MemberModel::all()
-            ->map(fn(MemberModel $m) => $this->toEntity($m))
-            ->toArray();
-    }
-
-    private function toEntity(MemberModel $model): Member
-    {
-        return Member::reconstruct(
-            id: MemberId::from($model->id),
-            name: Name::create($model->name),
-            email: Email::create($model->email),
-            status: MemberStatus::from($model->status),
-        );
-    }
-}
-```
-
-### Complex Entity with Relations
-
-```php
-final class EloquentProjectRepository implements ProjectRepositoryInterface
-{
-    public function findById(ProjectId $id): ?Project
-    {
-        $model = ProjectModel::with('members')->find($id->value());
-
-        if ($model === null) {
-            return null;
-        }
-
-        return $this->toEntity($model);
-    }
-
-    private function toEntity(ProjectModel $model): Project
-    {
-        return Project::reconstruct(
-            id: ProjectId::from($model->id),
-            name: ProjectName::create($model->name),
-            description: ProjectDescription::create($model->description),
-            managerId: MemberId::from($model->manager_id),
-            status: ProjectStatus::from($model->status),
-            memberIds: $model->members->map(
-                fn($m) => MemberId::from($m->id)
-            )->toArray(),
-        );
-    }
+    return Post::where('user_id', $userId)
+        ->where('week_start_date', $weekStartDate)
+        ->exists();
 }
 ```
 
@@ -358,80 +312,79 @@ final class EloquentProjectRepository implements ProjectRepositoryInterface
 ### Eager Loading
 
 ```php
-public function findWithMembers(ProjectId $id): ?Project
+public function findWithRelations(int $id): ?Post
 {
-    $model = ProjectModel::with('members')->find($id->value());
-
-    if ($model === null) {
-        return null;
-    }
-
-    return $this->toEntity($model);
+    return Post::with(['user', 'tags'])->find($id);
 }
 
-public function findAllWithMembers(): array
+public function findAllWithRelations(): array
 {
-    return ProjectModel::with('members')
+    return Post::with(['user', 'tags'])
+        ->orderBy('created_at', 'desc')
         ->get()
-        ->map(fn(ProjectModel $m) => $this->toEntity($m))
-        ->toArray();
+        ->all();
 }
 ```
 
 ### Pagination Support
 
 ```php
-public function findPaginated(int $perPage): LengthAwarePaginator
-{
-    $paginator = MemberModel::paginate($perPage);
+use Illuminate\Pagination\LengthAwarePaginator;
 
-    return new LengthAwarePaginator(
-        items: $paginator->items()->map(fn($m) => $this->toEntity($m))->toArray(),
-        total: $paginator->total(),
-        perPage: $paginator->perPage(),
-        currentPage: $paginator->currentPage(),
-    );
+public function search(
+    ?int $userId,
+    ?string $query,
+    ?PostStatus $status,
+    int $page = 1,
+    int $perPage = 20
+): LengthAwarePaginator {
+    $builder = Post::with(['user', 'tags']);
+
+    if ($userId !== null) {
+        $builder->where('user_id', $userId);
+    }
+
+    if ($query !== null) {
+        $builder->where('title', 'like', "%{$query}%");
+    }
+
+    if ($status !== null) {
+        $builder->where('status', $status);
+    }
+
+    return $builder->orderBy('created_at', 'desc')
+        ->paginate($perPage, ['*'], 'page', $page);
 }
 ```
 
 ### Filtering and Sorting
 
 ```php
-public interface MemberRepositoryInterface
+// Using Laravel Data DTO for criteria
+use App\Data\Post\SearchPostsData;
+
+public function search(SearchPostsData $criteria): LengthAwarePaginator
 {
-    public function search(MemberSearchCriteria $criteria): array;
-}
+    $query = Post::with(['user', 'tags']);
 
-final readonly class MemberSearchCriteria
-{
-    public function __construct(
-        public ?string $nameKeyword = null,
-        public ?MemberStatus $status = null,
-        public ?string $sortBy = 'name',
-        public ?string $sortOrder = 'asc',
-    ) {}
-}
-
-final class EloquentMemberRepository implements MemberRepositoryInterface
-{
-    public function search(MemberSearchCriteria $criteria): array
-    {
-        $query = MemberModel::query();
-
-        if ($criteria->nameKeyword !== null) {
-            $query->where('name', 'like', "%{$criteria->nameKeyword}%");
-        }
-
-        if ($criteria->status !== null) {
-            $query->where('status', $criteria->status->value());
-        }
-
-        $query->orderBy($criteria->sortBy, $criteria->sortOrder);
-
-        return $query->get()
-            ->map(fn(MemberModel $m) => $this->toEntity($m))
-            ->toArray();
+    if ($criteria->userId !== null) {
+        $query->where('user_id', $criteria->userId);
     }
+
+    if ($criteria->q !== null) {
+        $query->where('title', 'like', "%{$criteria->q}%");
+    }
+
+    if ($criteria->status !== null) {
+        $query->where('status', $criteria->status);
+    }
+
+    if ($criteria->weekStartDate !== null) {
+        $query->where('week_start_date', $criteria->weekStartDate);
+    }
+
+    return $query->orderBy('created_at', 'desc')
+        ->paginate($criteria->perPage, ['*'], 'page', $criteria->page);
 }
 ```
 
@@ -439,32 +392,87 @@ final class EloquentMemberRepository implements MemberRepositoryInterface
 
 ## Transaction Handling
 
-### Repository Should Not Manage Transactions
+### Simple Operations: Repository Manages Transaction
 
 ```php
-// ❌ Wrong: Repository manages transaction
-final class EloquentMemberRepository implements MemberRepositoryInterface
-{
-    public function save(Member $member): void
-    {
-        DB::transaction(function () use ($member) {
-            MemberModel::updateOrCreate(...);
-        });
-    }
-}
+// ✅ Correct: Repository manages transaction for related operations
+public function create(
+    int $userId,
+    string $title,
+    array $tagValues
+): Post {
+    return DB::transaction(function () use ($userId, $title, $tagValues) {
+        $post = Post::create([
+            'user_id' => $userId,
+            'title' => $title,
+        ]);
 
-// ✅ Correct: UseCase manages transaction
-final readonly class CreateMemberUseCase
+        foreach ($tagValues as $tagValue) {
+            $post->tags()->attach($tagValue['tag_id'], [
+                'value' => $tagValue['value'],
+            ]);
+        }
+
+        return $post->fresh(['tags']);
+    });
+}
+```
+
+### Complex Operations: UseCase Manages Transaction
+
+```php
+// ✅ Correct: UseCase manages transaction for multiple repositories
+final readonly class TransferOwnershipUseCase
 {
-    public function execute(CreateMemberInput $input): CreateMemberOutput
+    public function __construct(
+        private PostRepositoryInterface $postRepository,
+        private UserRepositoryInterface $userRepository,
+    ) {}
+
+    public function execute(int $postId, int $newOwnerId): Post
     {
-        return DB::transaction(function () use ($input) {
-            $member = Member::create(...);
-            $this->repository->save($member);
-            return new CreateMemberOutput(...);
+        return DB::transaction(function () use ($postId, $newOwnerId) {
+            // Validate new owner exists
+            $newOwner = $this->userRepository->findById($newOwnerId);
+            if ($newOwner === null) {
+                throw ValidationException::withMessages([
+                    'new_owner_id' => ['User not found.'],
+                ]);
+            }
+
+            // Update ownership
+            return $this->postRepository->updateOwner($postId, $newOwnerId);
         });
     }
 }
+```
+
+---
+
+## Directory Structure
+
+```
+app/
+├── Repositories/
+│   ├── User/
+│   │   ├── UserRepositoryInterface.php
+│   │   └── UserRepository.php
+│   ├── Post/
+│   │   ├── PostRepositoryInterface.php
+│   │   └── PostRepository.php
+│   └── Tag/
+│       ├── TagRepositoryInterface.php
+│       └── TagRepository.php
+├── UseCases/
+│   └── Post/
+│       ├── CreatePostUseCase.php     # Uses PostRepositoryInterface
+│       └── GetPostsUseCase.php
+├── Models/
+│   ├── User.php
+│   ├── Post.php
+│   └── Tag.php
+└── Providers/
+    └── AppServiceProvider.php         # Binds interfaces
 ```
 
 ---
@@ -474,54 +482,100 @@ final readonly class CreateMemberUseCase
 ### Interface Mocking in UseCase Tests
 
 ```php
-final class CreateMemberUseCaseTest extends TestCase
+final class CreatePostUseCaseTest extends TestCase
 {
-    public function test_メンバーを作成できる(): void
+    public function test_can_create_post(): void
     {
-        $repository = $this->createMock(MemberRepositoryInterface::class);
+        // Arrange
+        $repository = $this->createMock(PostRepositoryInterface::class);
         $repository->expects($this->once())
-            ->method('save')
-            ->with($this->callback(function (Member $member) {
-                return $member->name()->value() === 'Test User'
-                    && $member->email()->value() === 'test@example.com';
-            }));
+            ->method('findByUserAndWeek')
+            ->with(1, '2025-01-01')
+            ->willReturn(null);
 
-        $useCase = new CreateMemberUseCase($repository);
-        $output = $useCase->execute(new CreateMemberInput(
-            name: 'Test User',
-            email: 'test@example.com',
-        ));
+        $repository->expects($this->once())
+            ->method('create')
+            ->willReturn(new Post(['id' => 1, 'title' => 'Test Post']));
 
-        $this->assertNotEmpty($output->id);
+        $useCase = new CreatePostUseCase($repository);
+
+        // Act
+        $data = new CreatePostData(
+            userId: 1,
+            weekStartDate: '2025-01-01',
+            title: 'Test Post',
+            memo: null,
+            status: PostStatus::Draft,
+            tagValues: [],
+        );
+        $result = $useCase->execute($data);
+
+        // Assert
+        $this->assertInstanceOf(Post::class, $result);
+        $this->assertEquals('Test Post', $result->title);
     }
 }
 ```
 
-### Repository Implementation Tests
+### Repository Implementation Tests (Feature Tests)
 
 ```php
-final class EloquentMemberRepositoryTest extends TestCase
+final class PostRepositoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_IDでメンバーを取得できる(): void
+    private PostRepository $repository;
+
+    protected function setUp(): void
     {
-        $model = MemberModel::factory()->create();
-
-        $repository = new EloquentMemberRepository();
-        $member = $repository->findById(MemberId::from($model->id));
-
-        $this->assertNotNull($member);
-        $this->assertSame($model->id, $member->id()->value());
-        $this->assertSame($model->name, $member->name()->value());
+        parent::setUp();
+        $this->repository = app(PostRepositoryInterface::class);
     }
 
-    public function test_存在しないIDの場合nullを返す(): void
+    public function test_can_find_by_id(): void
     {
-        $repository = new EloquentMemberRepository();
-        $member = $repository->findById(MemberId::from('non-existent-id'));
+        // Arrange
+        $post = Post::factory()->create();
 
-        $this->assertNull($member);
+        // Act
+        $found = $this->repository->findById($post->id);
+
+        // Assert
+        $this->assertNotNull($found);
+        $this->assertEquals($post->id, $found->id);
+    }
+
+    public function test_returns_null_for_non_existent_id(): void
+    {
+        // Act
+        $found = $this->repository->findById(99999);
+
+        // Assert
+        $this->assertNull($found);
+    }
+
+    public function test_can_create_post_with_tags(): void
+    {
+        // Arrange
+        $user = User::factory()->create();
+        $tag = Tag::factory()->create();
+
+        // Act
+        $post = $this->repository->create(
+            userId: $user->id,
+            weekStartDate: '2025-01-01',
+            title: 'Test Post',
+            memo: 'Test memo',
+            status: PostStatus::Draft,
+            tagValues: [
+                ['tag_id' => $tag->id, 'value' => '100'],
+            ]
+        );
+
+        // Assert
+        $this->assertInstanceOf(Post::class, $post);
+        $this->assertEquals('Test Post', $post->title);
+        $this->assertCount(1, $post->tags);
     }
 }
 ```
@@ -532,30 +586,29 @@ final class EloquentMemberRepositoryTest extends TestCase
 
 Before considering a Repository implementation complete, verify:
 
-- [ ] Interface defined in Domain layer
-- [ ] Implementation in Infrastructure layer
-- [ ] Named `{Entity}RepositoryInterface` and `Eloquent{Entity}Repository`
-- [ ] Returns Entity (not Eloquent Model)
-- [ ] Uses `reconstruct()` to build Entity from Model
-- [ ] Uses ValueObjects for method parameters
+- [ ] Interface defined in `app/Repositories/[Resource]/`
+- [ ] Implementation in same directory
+- [ ] Named `[Resource]RepositoryInterface` and `[Resource]Repository`
+- [ ] Returns Eloquent Model (not custom Entity)
+- [ ] Uses scalar types for method parameters (not ValueObjects)
 - [ ] Service Provider binds interface to implementation
-- [ ] No business logic in Repository
-- [ ] No transaction management in Repository
-- [ ] Private `toEntity()` method for Model conversion
+- [ ] No business logic in Repository (only data access)
+- [ ] Transaction management for related operations
+- [ ] Eager loading for relations (`with()`)
 
 ---
 
 ## Why This Matters
 
 **Without Interface/Implementation separation**:
-- Tight coupling to Eloquent
-- Can't swap implementations
-- Hard to test
+- Tight coupling to Eloquent in UseCase
+- Can't swap implementations for testing
+- Hard to mock in unit tests
 - Violates Dependency Inversion Principle
 
 **With proper Repository pattern**:
-- Dependency Inversion (Domain defines interface)
-- Testability (easy to mock)
-- Flexibility (can swap to different storage)
-- Clear boundaries between layers
-- Type safety with ValueObjects
+- Dependency Inversion (UseCase depends on interface)
+- Testability (easy to mock interface)
+- Flexibility (can swap implementations)
+- Clear separation between business logic and data access
+- Type safety with Laravel Data DTOs

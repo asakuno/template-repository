@@ -1,9 +1,3 @@
----
-paths:
-  - resources/js/**/*.test.tsx
-  - resources/js/**/*.test.ts
----
-
 # フロントエンド テスト規約
 
 ## テストの配置
@@ -106,7 +100,7 @@ vi.mock('@inertiajs/react', () => ({
 ### カバレッジの確認
 
 ```bash
-bun run test --coverage
+yarn test --coverage
 ```
 
 カバレッジレポートは `coverage/` ディレクトリに生成される。HTML レポートで詳細を確認できる。

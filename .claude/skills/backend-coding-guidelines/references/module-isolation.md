@@ -1,29 +1,29 @@
-# Module Isolation - Cross-Module Communication via Contract
+# Cross-Domain Communication - Service Layer Patterns
 
 ## AI's Common Failure Pattern
 
-**❌ AI writes: Module A directly uses Module B's internals**
+**❌ AI writes: UseCase directly uses another domain's Repository**
 
 ```php
-// In Project module
-use Modules\Member\Domain\Entities\Member;
-use Modules\Member\Domain\Repositories\MemberRepositoryInterface;
+// In Post UseCase
+use App\Repositories\User\UserRepositoryInterface;
 
-final readonly class CreateProjectUseCase
+final readonly class CreatePostUseCase
 {
     public function __construct(
-        private MemberRepositoryInterface $memberRepository, // Wrong!
+        private PostRepositoryInterface $postRepository,
+        private UserRepositoryInterface $userRepository, // Wrong!
     ) {}
 
-    public function execute(CreateProjectInput $input): CreateProjectOutput
+    public function execute(CreatePostData $data): Post
     {
-        // Directly accessing Member module's internal Repository
-        $member = $this->memberRepository->findById(
-            MemberId::from($input->managerId)
-        );
+        // Directly accessing User domain's Repository
+        $user = $this->userRepository->findById($data->userId);
 
-        if ($member === null) {
-            throw new DomainException('管理者が見つかりません');
+        if ($user === null) {
+            throw new ValidationException::withMessages([
+                'user_id' => ['User not found.'],
+            ]);
         }
 
         // ...
@@ -32,102 +32,94 @@ final readonly class CreateProjectUseCase
 ```
 
 **Problems**:
-- Module coupling (Project depends on Member internals)
-- Can't change Member implementation without affecting Project
-- Violates module isolation
+- Domain coupling (Post depends on User internals)
+- UseCase layer knows about other domain's Repository
 - Creates dependency web
+- Hard to test (need multiple Repository mocks)
 
 ---
 
-## ✅ Correct Pattern: Use Contract for Cross-Module Communication
+## ✅ Correct Pattern: Use Service Layer for Cross-Domain Communication
 
-### Step 1: Define Contract Interface
+### Step 1: Define Service Interface
 
 ```php
-// modules/Contract/Member/MemberServiceInterface.php
+// app/Services/User/UserServiceInterface.php
 
-namespace Modules\Contract\Member;
+namespace App\Services\User;
 
-interface MemberServiceInterface
+interface UserServiceInterface
 {
-    public function findById(string $id): ?MemberDto;
-    public function exists(string $id): bool;
-    public function findByEmail(string $email): ?MemberDto;
+    public function findById(int $id): ?UserDto;
+    public function exists(int $id): bool;
+    public function findByEmail(string $email): ?UserDto;
 }
 ```
 
-### Step 2: Define Contract DTO
+### Step 2: Define Service DTO
 
 ```php
-// modules/Contract/Member/MemberDto.php
+// app/Services/User/UserDto.php
 
-namespace Modules\Contract\Member;
+namespace App\Services\User;
 
-final readonly class MemberDto
+final readonly class UserDto
 {
     public function __construct(
-        public string $id,
+        public int $id,
         public string $name,
         public string $email,
         public string $status,
     ) {}
+
+    public static function fromModel(\App\Models\User $user): self
+    {
+        return new self(
+            id: $user->id,
+            name: $user->name,
+            email: $user->email,
+            status: $user->status->value,
+        );
+    }
 }
 ```
 
-### Step 3: Implement Contract in Member Module
+### Step 3: Implement Service
 
 ```php
-// modules/Member/Application/Services/MemberService.php
+// app/Services/User/UserService.php
 
-namespace Modules\Member\Application\Services;
+namespace App\Services\User;
 
-use Modules\Contract\Member\MemberServiceInterface;
-use Modules\Contract\Member\MemberDto;
-use Modules\Member\Domain\Repositories\MemberRepositoryInterface;
-use Modules\Member\Domain\ValueObjects\MemberId;
-use Modules\Member\Domain\ValueObjects\Email;
+use App\Models\User;
 
-final readonly class MemberService implements MemberServiceInterface
+final readonly class UserService implements UserServiceInterface
 {
-    public function __construct(
-        private MemberRepositoryInterface $repository,
-    ) {}
-
-    public function findById(string $id): ?MemberDto
+    public function findById(int $id): ?UserDto
     {
-        $member = $this->repository->findById(MemberId::from($id));
+        $user = User::find($id);
 
-        if ($member === null) {
+        if ($user === null) {
             return null;
         }
 
-        return new MemberDto(
-            id: $member->id()->value(),
-            name: $member->name()->value(),
-            email: $member->email()->value(),
-            status: $member->status()->value(),
-        );
+        return UserDto::fromModel($user);
     }
 
-    public function exists(string $id): bool
+    public function exists(int $id): bool
     {
-        return $this->repository->findById(MemberId::from($id)) !== null;
+        return User::where('id', $id)->exists();
     }
 
-    public function findByEmail(string $email): ?MemberDto
+    public function findByEmail(string $email): ?UserDto
     {
-        $member = $this->repository->findByEmail(Email::create($email));
+        $user = User::where('email', $email)->first();
 
-        if ($member === null) {
+        if ($user === null) {
             return null;
         }
 
-        return new MemberDto(
-            id: $member->id()->value(),
-            name: $member->name()->value(),
-            email: $member->email()->value(),
-            status: $member->status()->value(),
-        );
+        return UserDto::fromModel($user);
     }
 }
 ```
@@ -135,66 +127,60 @@ final readonly class MemberService implements MemberServiceInterface
 ### Step 4: Register Service Provider Binding
 
 ```php
-// modules/Member/Infrastructure/MemberServiceProvider.php
+// app/Providers/AppServiceProvider.php
 
-namespace Modules\Member\Infrastructure;
+namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Modules\Contract\Member\MemberServiceInterface;
-use Modules\Member\Application\Services\MemberService;
+use App\Services\User\UserServiceInterface;
+use App\Services\User\UserService;
 
-final class MemberServiceProvider extends ServiceProvider
+final class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Repository binding
+        // Service binding
         $this->app->bind(
-            MemberRepositoryInterface::class,
-            EloquentMemberRepository::class,
-        );
-
-        // Contract Service binding
-        $this->app->bind(
-            MemberServiceInterface::class,
-            MemberService::class,
+            UserServiceInterface::class,
+            UserService::class,
         );
     }
 }
 ```
 
-### Step 5: Use Contract in Other Module
+### Step 5: Use Service in UseCase
 
 ```php
-// modules/Project/Application/UseCases/CreateProjectUseCase.php
+// app/UseCases/Post/CreatePostUseCase.php
 
-namespace Modules\Project\Application\UseCases;
+namespace App\UseCases\Post;
 
-use Modules\Contract\Member\MemberServiceInterface; // Via Contract
+use App\Services\User\UserServiceInterface;
+use App\Repositories\Post\PostRepositoryInterface;
 
-final readonly class CreateProjectUseCase
+final readonly class CreatePostUseCase
 {
     public function __construct(
-        private ProjectRepositoryInterface $projectRepository,
-        private MemberServiceInterface $memberService, // Via Contract
+        private PostRepositoryInterface $postRepository,
+        private UserServiceInterface $userService, // Via Service
     ) {}
 
-    public function execute(CreateProjectInput $input): CreateProjectOutput
+    public function execute(CreatePostData $data): Post
     {
-        // Validate manager exists (via Contract)
-        if (!$this->memberService->exists($input->managerId)) {
-            throw new DomainException('指定された管理者が存在しません');
+        // Validate user exists (via Service)
+        if (!$this->userService->exists($data->userId)) {
+            throw ValidationException::withMessages([
+                'user_id' => ['User not found.'],
+            ]);
         }
 
-        $project = Project::create(
-            name: ProjectName::create($input->name),
-            description: ProjectDescription::create($input->description),
-            managerId: MemberId::from($input->managerId),
-        );
-
-        $this->projectRepository->save($project);
-
-        return new CreateProjectOutput(
-            id: $project->id()->value(),
+        return $this->postRepository->create(
+            $data->userId,
+            $data->weekStartDate,
+            $data->title,
+            $data->memo,
+            $data->status,
+            $data->tagValues
         );
     }
 }
@@ -202,211 +188,201 @@ final readonly class CreateProjectUseCase
 
 ---
 
-## Contract Design Patterns
+## Service Design Patterns
 
 ### Pattern 1: Simple Existence Check
 
 ```php
-// Contract
-interface MemberServiceInterface
+// Service Interface
+interface UserServiceInterface
 {
-    public function exists(string $id): bool;
+    public function exists(int $id): bool;
 }
 
 // Implementation
-final readonly class MemberService implements MemberServiceInterface
+final readonly class UserService implements UserServiceInterface
 {
-    public function exists(string $id): bool
+    public function exists(int $id): bool
     {
-        return $this->repository->findById(MemberId::from($id)) !== null;
+        return User::where('id', $id)->exists();
     }
 }
 
-// Usage in other module
-if (!$this->memberService->exists($managerId)) {
-    throw new DomainException('メンバーが存在しません');
+// Usage in UseCase
+if (!$this->userService->exists($data->userId)) {
+    throw ValidationException::withMessages([
+        'user_id' => ['User not found.'],
+    ]);
 }
 ```
 
 ### Pattern 2: Retrieve Basic Data
 
 ```php
-// Contract DTO
-final readonly class MemberDto
+// Service DTO
+final readonly class UserDto
 {
     public function __construct(
-        public string $id,
+        public int $id,
         public string $name,
         public string $email,
     ) {}
-}
 
-// Contract
-interface MemberServiceInterface
-{
-    public function findById(string $id): ?MemberDto;
-}
-
-// Implementation
-final readonly class MemberService implements MemberServiceInterface
-{
-    public function findById(string $id): ?MemberDto
+    public static function fromModel(User $user): self
     {
-        $member = $this->repository->findById(MemberId::from($id));
-
-        if ($member === null) {
-            return null;
-        }
-
-        return new MemberDto(
-            id: $member->id()->value(),
-            name: $member->name()->value(),
-            email: $member->email()->value(),
+        return new self(
+            id: $user->id,
+            name: $user->name,
+            email: $user->email,
         );
     }
 }
 
+// Service Interface
+interface UserServiceInterface
+{
+    public function findById(int $id): ?UserDto;
+}
+
+// Implementation
+final readonly class UserService implements UserServiceInterface
+{
+    public function findById(int $id): ?UserDto
+    {
+        $user = User::find($id);
+
+        if ($user === null) {
+            return null;
+        }
+
+        return UserDto::fromModel($user);
+    }
+}
+
 // Usage
-$memberDto = $this->memberService->findById($managerId);
-if ($memberDto === null) {
-    throw new DomainException('メンバーが見つかりません');
+$userDto = $this->userService->findById($data->userId);
+if ($userDto === null) {
+    throw ValidationException::withMessages([
+        'user_id' => ['User not found.'],
+    ]);
 }
 ```
 
 ### Pattern 3: Batch Operations
 
 ```php
-// Contract
-interface MemberServiceInterface
+// Service Interface
+interface UserServiceInterface
 {
     /**
-     * @param array<string> $ids
-     * @return array<MemberDto>
+     * @param array<int> $ids
+     * @return array<UserDto>
      */
     public function findByIds(array $ids): array;
 
     /**
-     * @param array<string> $ids
+     * @param array<int> $ids
      */
     public function allExist(array $ids): bool;
 }
 
 // Implementation
-final readonly class MemberService implements MemberServiceInterface
+final readonly class UserService implements UserServiceInterface
 {
     public function findByIds(array $ids): array
     {
-        $memberIds = array_map(fn($id) => MemberId::from($id), $ids);
-        $members = $this->repository->findByIds($memberIds);
-
-        return array_map(
-            fn($member) => new MemberDto(
-                id: $member->id()->value(),
-                name: $member->name()->value(),
-                email: $member->email()->value(),
-            ),
-            $members,
-        );
+        return User::whereIn('id', $ids)
+            ->get()
+            ->map(fn ($user) => UserDto::fromModel($user))
+            ->all();
     }
 
     public function allExist(array $ids): bool
     {
-        $memberIds = array_map(fn($id) => MemberId::from($id), $ids);
-        $members = $this->repository->findByIds($memberIds);
-
-        return count($members) === count($ids);
+        return User::whereIn('id', $ids)->count() === count($ids);
     }
 }
 
 // Usage
-if (!$this->memberService->allExist($input->memberIds)) {
-    throw new DomainException('一部のメンバーが存在しません');
+if (!$this->userService->allExist($data->memberIds)) {
+    throw ValidationException::withMessages([
+        'member_ids' => ['Some users do not exist.'],
+    ]);
 }
 ```
 
 ### Pattern 4: Query with Criteria
 
 ```php
-// Contract DTO
-final readonly class MemberSearchCriteria
+// Service DTO for criteria
+final readonly class UserSearchCriteria
 {
     public function __construct(
         public ?string $nameKeyword = null,
         public ?string $status = null,
+        public int $page = 1,
+        public int $perPage = 20,
     ) {}
 }
 
-// Contract
-interface MemberServiceInterface
+// Service Interface
+interface UserServiceInterface
 {
     /**
-     * @return array<MemberDto>
+     * @return array<UserDto>
      */
-    public function search(MemberSearchCriteria $criteria): array;
+    public function search(UserSearchCriteria $criteria): array;
 }
 
 // Implementation
-final readonly class MemberService implements MemberServiceInterface
+final readonly class UserService implements UserServiceInterface
 {
-    public function search(MemberSearchCriteria $criteria): array
+    public function search(UserSearchCriteria $criteria): array
     {
-        $domainCriteria = new \Modules\Member\Domain\Criteria\MemberSearchCriteria(
-            nameKeyword: $criteria->nameKeyword,
-            status: $criteria->status !== null
-                ? MemberStatus::from($criteria->status)
-                : null,
-        );
+        $query = User::query();
 
-        $members = $this->repository->search($domainCriteria);
+        if ($criteria->nameKeyword !== null) {
+            $query->where('name', 'like', "%{$criteria->nameKeyword}%");
+        }
 
-        return array_map(
-            fn($member) => new MemberDto(
-                id: $member->id()->value(),
-                name: $member->name()->value(),
-                email: $member->email()->value(),
-                status: $member->status()->value(),
-            ),
-            $members,
-        );
+        if ($criteria->status !== null) {
+            $query->where('status', $criteria->status);
+        }
+
+        return $query
+            ->orderBy('created_at', 'desc')
+            ->skip(($criteria->page - 1) * $criteria->perPage)
+            ->take($criteria->perPage)
+            ->get()
+            ->map(fn ($user) => UserDto::fromModel($user))
+            ->all();
     }
 }
 ```
 
-### Pattern 5: Command Operations
+### Pattern 5: Business Operations
 
 ```php
-// Contract
-interface MemberServiceInterface
+// Service Interface
+interface UserServiceInterface
 {
-    public function activate(string $id): void;
-    public function deactivate(string $id): void;
+    public function activate(int $id): void;
+    public function deactivate(int $id): void;
 }
 
 // Implementation
-final readonly class MemberService implements MemberServiceInterface
+final readonly class UserService implements UserServiceInterface
 {
-    public function activate(string $id): void
+    public function activate(int $id): void
     {
-        $member = $this->repository->findById(MemberId::from($id));
-
-        if ($member === null) {
-            throw new DomainException('メンバーが見つかりません');
-        }
-
-        $activatedMember = $member->activate();
-        $this->repository->save($activatedMember);
+        $user = User::findOrFail($id);
+        $user->update(['status' => UserStatus::Active]);
     }
 
-    public function deactivate(string $id): void
+    public function deactivate(int $id): void
     {
-        $member = $this->repository->findById(MemberId::from($id));
-
-        if ($member === null) {
-            throw new DomainException('メンバーが見つかりません');
-        }
-
-        $deactivatedMember = $member->deactivate();
-        $this->repository->save($deactivatedMember);
+        $user = User::findOrFail($id);
+        $user->update(['status' => UserStatus::Inactive]);
     }
 }
 ```
@@ -416,198 +392,285 @@ final readonly class MemberService implements MemberServiceInterface
 ## Directory Structure
 
 ```
-modules/
-├── Contract/                    # Cross-module public APIs
-│   ├── Member/
-│   │   ├── MemberServiceInterface.php
-│   │   ├── MemberDto.php
-│   │   └── MemberSearchCriteria.php
-│   └── Project/
-│       ├── ProjectServiceInterface.php
-│       └── ProjectDto.php
-├── Member/
-│   ├── Application/
-│   │   └── Services/
-│   │       └── MemberService.php     # Implements Contract
-│   ├── Domain/
-│   │   ├── Entities/
-│   │   ├── ValueObjects/
-│   │   └── Repositories/
-│   └── Infrastructure/
-│       ├── MemberServiceProvider.php  # Binds Contract
-│       └── Repositories/
-└── Project/
-    ├── Application/
-    │   ├── UseCases/
-    │   │   └── CreateProjectUseCase.php  # Uses Member via Contract
-    │   └── Services/
-    │       └── ProjectService.php         # Implements Contract
-    ├── Domain/
-    └── Infrastructure/
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Api/
+│   │   │   ├── PostController.php
+│   │   │   └── UserController.php
+│   │   └── Web/
+│   │       ├── PostPageController.php
+│   │       └── UserPageController.php
+│   ├── Requests/
+│   └── Resources/
+│
+├── UseCases/                           # Business Logic Layer
+│   ├── Post/
+│   │   ├── CreatePostUseCase.php       # Uses UserServiceInterface
+│   │   ├── UpdatePostUseCase.php
+│   │   └── GetPostsUseCase.php
+│   └── User/
+│       ├── CreateUserUseCase.php
+│       └── GetUsersUseCase.php
+│
+├── Services/                           # Shared Logic Layer
+│   ├── Post/
+│   │   ├── PostExportService.php       # Complex operations
+│   │   └── PostStatisticsService.php
+│   └── User/
+│       ├── UserServiceInterface.php    # Interface for cross-domain
+│       ├── UserService.php             # Implementation
+│       └── UserDto.php                 # Service-specific DTO
+│
+├── Repositories/                       # Data Access Layer
+│   ├── Post/
+│   │   ├── PostRepositoryInterface.php
+│   │   └── PostRepository.php
+│   └── User/
+│       ├── UserRepositoryInterface.php
+│       └── UserRepository.php
+│
+├── Models/                             # Model Layer
+│   ├── Post.php
+│   └── User.php
+│
+└── Providers/
+    └── AppServiceProvider.php          # Binds interfaces
 ```
 
 ---
 
-## Module Dependency Rules
+## Layer Dependency Rules
 
 ### Allowed Dependencies
 
 ```php
-// ✅ Module can depend on Contract
-use Modules\Contract\Member\MemberServiceInterface;
-use Modules\Contract\Member\MemberDto;
+// ✅ UseCase can depend on Service Interface
+use App\Services\User\UserServiceInterface;
 
-// ✅ Module can depend on itself
-use Modules\Project\Domain\Entities\Project;
-use Modules\Project\Domain\Repositories\ProjectRepositoryInterface;
+// ✅ UseCase can depend on Repository Interface
+use App\Repositories\Post\PostRepositoryInterface;
+
+// ✅ Service can depend on Model
+use App\Models\User;
+
+// ✅ Service can depend on Repository Interface
+use App\Repositories\User\UserRepositoryInterface;
 ```
 
 ### Forbidden Dependencies
 
 ```php
-// ❌ Module cannot depend on other module's internals
-use Modules\Member\Domain\Entities\Member;
-use Modules\Member\Domain\Repositories\MemberRepositoryInterface;
-use Modules\Member\Application\UseCases\CreateMemberUseCase;
-use Modules\Member\Infrastructure\Repositories\EloquentMemberRepository;
+// ❌ UseCase cannot depend on another domain's Repository directly
+use App\Repositories\User\UserRepositoryInterface; // In PostUseCase
+
+// ❌ Controller cannot depend on Repository directly
+use App\Repositories\Post\PostRepositoryInterface;
+
+// ❌ Service cannot depend on UseCase
+use App\UseCases\User\CreateUserUseCase;
 ```
 
 ---
 
 ## Static Analysis with Deptrac
 
-### Module Dependency Configuration
+### Layer Dependency Configuration
 
 ```yaml
-# deptrac/module.yaml
+# deptrac.yaml
 deptrac:
   paths:
-    - ./modules
+    - ./app
   layers:
-    Contract:
+    - name: Presentation
       collectors:
         - type: directory
-          regex: modules/Contract/.*
-    Member:
+          value: app/Http/Controllers
+    - name: Request
       collectors:
         - type: directory
-          regex: modules/Member/.*
-    Project:
+          value: app/Http/Requests
+    - name: UseCase
       collectors:
         - type: directory
-          regex: modules/Project/.*
+          value: app/UseCases
+    - name: Service
+      collectors:
+        - type: directory
+          value: app/Services
+    - name: Repository
+      collectors:
+        - type: directory
+          value: app/Repositories
+    - name: Model
+      collectors:
+        - type: directory
+          value: app/Models
+    - name: Resource
+      collectors:
+        - type: directory
+          value: app/Http/Resources
+
   ruleset:
-    Contract: []  # No dependencies
-    Member:
-      - Contract
-      - Member
-    Project:
-      - Contract
-      - Project
+    Presentation:
+      - Request
+      - UseCase
+      - Resource
+    Request:
+      - Data
+    UseCase:
+      - Repository
+      - Service
+      - Model
+    Service:
+      - Repository
+      - Model
+    Repository:
+      - Model
+    Resource:
+      - Model
+    Model: []
 ```
 
 ### Running Deptrac
 
 ```bash
-./vendor/bin/deptrac analyse --config-file=deptrac/module.yaml
+./vendor/bin/deptrac analyse
 ```
 
 ---
 
-## Contract Design Guidelines
+## Service Design Guidelines
 
-### 1. Keep DTOs Simple
-- Use primitives (string, int, bool, array)
-- No domain logic in DTOs
+### 1. Keep Service DTOs Simple
+- Use primitives (int, string, bool, array)
+- No business logic in DTOs
 - Immutable (readonly)
+- Use `fromModel()` factory method
 
 ### 2. Define Minimal Interface
-- Only expose what other modules need
+- Only expose what other UseCases need
 - Don't expose internal implementation details
 - Follow Interface Segregation Principle
 
 ### 3. Use Primitives for Parameters
-- Accept primitives, not ValueObjects
-- Contract is boundary between modules
-- ValueObject conversion happens inside module
+- Accept primitives, not domain-specific types
+- Service is boundary between domains
+- Keep interface simple and clear
 
-### 4. Return DTOs, Not Entities
-- Never return Domain Entities
-- Create Contract-specific DTOs
+### 4. Return DTOs, Not Models
+- Never return Eloquent Models directly
+- Create Service-specific DTOs
 - Control data exposure
 
-### 5. Version Contract Changes Carefully
-- Adding methods: Safe (new functionality)
-- Changing method signatures: Breaking change
-- Removing methods: Breaking change
+### 5. Service vs Repository
+- **Repository**: Data access abstraction (CRUD)
+- **Service**: Business logic that spans domains or requires complex operations
 
 ---
 
-## Testing with Contracts
+## Testing with Services
 
-### Mock Contract in Tests
+### Mock Service in Tests
 
 ```php
-final class CreateProjectUseCaseTest extends TestCase
+final class CreatePostUseCaseTest extends TestCase
 {
-    public function test_プロジェクトを作成できる(): void
+    public function test_can_create_post(): void
     {
-        $memberService = $this->createMock(MemberServiceInterface::class);
-        $memberService->expects($this->once())
+        // Mock UserService
+        $userService = $this->createMock(UserServiceInterface::class);
+        $userService->expects($this->once())
             ->method('exists')
-            ->with('manager-id')
+            ->with(1)
             ->willReturn(true);
 
-        $projectRepository = $this->createMock(ProjectRepositoryInterface::class);
-        $projectRepository->expects($this->once())
-            ->method('save');
+        // Mock PostRepository
+        $postRepository = $this->createMock(PostRepositoryInterface::class);
+        $postRepository->expects($this->once())
+            ->method('create')
+            ->willReturn(new Post(['id' => 1]));
 
-        $useCase = new CreateProjectUseCase(
-            projectRepository: $projectRepository,
-            memberService: $memberService,
+        $useCase = new CreatePostUseCase(
+            postRepository: $postRepository,
+            userService: $userService,
         );
 
-        $output = $useCase->execute(new CreateProjectInput(
-            name: 'Test Project',
-            description: 'Description',
-            managerId: 'manager-id',
-        ));
+        $data = new CreatePostData(
+            userId: 1,
+            weekStartDate: '2025-01-01',
+            title: 'Test Post',
+            memo: null,
+            status: PostStatus::Draft,
+            tagValues: [],
+        );
 
-        $this->assertNotEmpty($output->id);
+        $result = $useCase->execute($data);
+
+        $this->assertInstanceOf(Post::class, $result);
+    }
+
+    public function test_throws_exception_when_user_not_found(): void
+    {
+        $userService = $this->createMock(UserServiceInterface::class);
+        $userService->expects($this->once())
+            ->method('exists')
+            ->with(999)
+            ->willReturn(false);
+
+        $postRepository = $this->createMock(PostRepositoryInterface::class);
+
+        $useCase = new CreatePostUseCase(
+            postRepository: $postRepository,
+            userService: $userService,
+        );
+
+        $data = new CreatePostData(
+            userId: 999,
+            weekStartDate: '2025-01-01',
+            title: 'Test Post',
+            memo: null,
+            status: PostStatus::Draft,
+            tagValues: [],
+        );
+
+        $this->expectException(ValidationException::class);
+        $useCase->execute($data);
     }
 }
 ```
 
 ---
 
-## Checklist: Module Isolation
+## Checklist: Cross-Domain Communication
 
-Before considering module communication correct, verify:
+Before considering cross-domain communication correct, verify:
 
-- [ ] Contract interface defined in `modules/Contract/`
-- [ ] Contract DTOs use primitives only
-- [ ] Service implements Contract in Application layer
-- [ ] Service Provider binds Contract to implementation
-- [ ] Other modules use Contract (not internal classes)
-- [ ] No direct cross-module Entity/Repository references
-- [ ] Deptrac validates module dependencies
-- [ ] Tests mock Contract interfaces
+- [ ] Service interface defined in `app/Services/`
+- [ ] Service DTOs use primitives only
+- [ ] Service implements interface
+- [ ] Service Provider binds interface to implementation
+- [ ] UseCase uses Service interface (not Repository of other domain)
+- [ ] No direct cross-domain Repository references in UseCase
+- [ ] Deptrac validates layer dependencies
+- [ ] Tests mock Service interfaces
 
 ---
 
 ## Why This Matters
 
-**Without Contract pattern**:
-- Tight module coupling
-- Can't change one module without affecting others
-- Dependency web
-- Hard to understand module boundaries
+**Without Service layer pattern**:
+- Tight domain coupling
+- UseCase knows about other domain's Repository
+- Dependency web between UseCases
+- Hard to understand domain boundaries
 - Difficult to test in isolation
 
-**With Contract pattern**:
-- Loose coupling between modules
-- Clear module boundaries
-- Independent module evolution
-- Easy to test (mock Contract)
+**With Service layer pattern**:
+- Loose coupling between domains
+- Clear domain boundaries
+- Independent domain evolution
+- Easy to test (mock Service)
 - Maintainable architecture
-- Can extract modules to separate packages
+- Single responsibility for each layer

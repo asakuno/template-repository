@@ -36,94 +36,83 @@ git add .
 git commit -m "chore(auth): 環境準備完了 - Sanctumインストール、セッションテーブル作成"
 ```
 
-#### Phase 1: Domain層
+#### Phase 1: Model層
 ```bash
-# RED: 全ValueObjectのテスト作成
-# - EmailTest.php
-# - PasswordTest.php
-# - UserIdTest.php
-# - NameTest.php
-git add tests/Unit/Modules/Auth/Domain/
-git commit -m "test(auth): Domain層テスト作成 (RED)
+# RED: Model関連テスト作成
+# - UserTest.php（アクセサ、リレーション）
+git add tests/Unit/Models/
+git commit -m "test(auth): Model層テスト作成 (RED)
 
-- Email ValueObjectテスト
-- Password ValueObjectテスト
-- UserId ValueObjectテスト
-- Name ValueObjectテスト"
+- User Modelスコープテスト
+- User Modelリレーションテスト"
 
-# GREEN: 全ValueObjectの実装
-# - Email.php
-# - Password.php
-# - UserId.php
-# - Name.php
-# - UserRepositoryInterface.php
-git add modules/Auth/Domain/
-git commit -m "feat(auth): Domain層実装完了 (GREEN)
+# GREEN: Model実装
+# - User.php（fillable, casts, relations）
+git add app/Models/
+git commit -m "feat(auth): Model層実装完了 (GREEN)
 
-- Email ValueObject実装
-- Password ValueObject実装（Argon2idハッシュ化）
-- UserId ValueObject実装
-- Name ValueObject実装
-- UserRepositoryInterface定義"
+- User Model実装
+- UserStatus Enum実装
+- リレーション定義"
 
 # REFACTOR: コード品質改善（Pint適用等）
-./vendor/bin/pint modules/Auth/Domain/
-git add modules/Auth/Domain/
-git commit -m "refactor(auth): Domain層リファクタリング (REFACTOR)
+./vendor/bin/pint app/Models/
+git add app/Models/
+git commit -m "refactor(auth): Model層リファクタリング (REFACTOR)
 
 - Laravel Pint適用
 - コーディング規約統一"
 ```
 
-#### Phase 2: Infrastructure層
+#### Phase 2: Repository層
 ```bash
 # RED
-git commit -m "test(auth): Infrastructure層テスト作成 (RED)
+git commit -m "test(auth): Repository層テスト作成 (RED)
 
-- EloquentUserRepositoryテスト"
+- UserRepositoryテスト"
 
 # GREEN
-git commit -m "feat(auth): Infrastructure層実装完了 (GREEN)
+git commit -m "feat(auth): Repository層実装完了 (GREEN)
 
-- EloquentUserRepository実装
-- User Modelアクセサ追加"
+- UserRepositoryInterface定義
+- UserRepository実装"
 
 # REFACTOR
-git commit -m "refactor(auth): Infrastructure層リファクタリング (REFACTOR)"
+git commit -m "refactor(auth): Repository層リファクタリング (REFACTOR)"
 ```
 
-#### Phase 3: Application層
+#### Phase 3: UseCase層
 ```bash
 # RED
-git commit -m "test(auth): Application層テスト作成 (RED)
+git commit -m "test(auth): UseCase層テスト作成 (RED)
 
 - LoginUseCaseテスト
 - LogoutUseCaseテスト
 - GetAuthenticatedUserUseCaseテスト"
 
 # GREEN
-git commit -m "feat(auth): Application層実装完了 (GREEN)
+git commit -m "feat(auth): UseCase層実装完了 (GREEN)
 
-- LoginInput/Output DTO実装
-- AuthenticatedUserOutput DTO実装
+- LoginData DTO実装（Laravel Data）
+- AuthenticatedUserData DTO実装
 - LoginUseCase実装（セッション再生成含む）
 - LogoutUseCase実装（セッション無効化含む）
 - GetAuthenticatedUserUseCase実装"
 
 # REFACTOR
-git commit -m "refactor(auth): Application層リファクタリング (REFACTOR)"
+git commit -m "refactor(auth): UseCase層リファクタリング (REFACTOR)"
 ```
 
-#### Phase 4: Presentation層
+#### Phase 4: Controller層
 ```bash
 # RED
-git commit -m "test(auth): Presentation層テスト作成 (RED)
+git commit -m "test(auth): Controller層テスト作成 (RED)
 
 - LoginRequestテスト
 - AuthControllerテスト"
 
 # GREEN
-git commit -m "feat(auth): Presentation層実装完了 (GREEN)
+git commit -m "feat(auth): Controller層実装完了 (GREEN)
 
 - LoginRequest実装（バリデーション）
 - AuthController実装（login/logout/user）
@@ -131,7 +120,7 @@ git commit -m "feat(auth): Presentation層実装完了 (GREEN)
 - レート制限設定"
 
 # REFACTOR
-git commit -m "refactor(auth): Presentation層リファクタリング (REFACTOR)"
+git commit -m "refactor(auth): Controller層リファクタリング (REFACTOR)"
 ```
 
 #### Phase 5: セキュリティ強化
@@ -219,19 +208,19 @@ git commit -m "chore(auth): Quality Checks通過
 ```markdown
 ## 実装ステップ（Phase単位で記載）
 
-### Phase 1: Domain層
-- Email, Password, UserId, Name ValueObjects
+### Phase 1: Model層
+- User Model（fillable, casts, relations）
+- UserStatus Enum
+
+### Phase 2: Repository層
 - UserRepositoryInterface
+- UserRepository実装
 
-### Phase 2: Infrastructure層
-- EloquentUserRepository
-- User Model拡張
-
-### Phase 3: Application層
+### Phase 3: UseCase層
 - LoginUseCase, LogoutUseCase, GetAuthenticatedUserUseCase
-- Input/Output DTOs
+- Laravel Data DTOs
 
-### Phase 4: Presentation層
+### Phase 4: Controller層
 - LoginRequest
 - AuthController
 - APIルート定義
@@ -274,7 +263,7 @@ Phase単位で実装中にエラーが発生した場合：
 
 Phase単位のコミットは以下の利点がある：
 
-- **機能的なまとまり**: Domain層全体を一度にレビュー可能
+- **機能的なまとまり**: UseCase層全体を一度にレビュー可能
 - **差分の可読性**: 関連するファイルがまとまっている
 - **ロールバックの容易性**: Phase単位で戻せる
 
