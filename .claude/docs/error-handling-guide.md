@@ -130,7 +130,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 | **phpstan失敗** | 型定義の不足、潜在的バグ | 適切な型を追加、コードを修正 |
 | **pint失敗** | コーディング規約違反 | `./vendor/bin/pint` で自動修正 |
 | **phpunit失敗** | テストケースの不足または実装のバグ | 修正して再実行 |
-| **deptrac失敗** | 依存関係の違反 | 4層アーキテクチャに従って修正 |
+| **deptrac失敗** | 依存関係の違反 | 7層アーキテクチャに従って修正 |
 
 #### 対応例
 
@@ -149,7 +149,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ./vendor/bin/phpunit
 
 # deptrac エラーの場合
-# 依存関係を修正（例: Domain層からInfrastructure層への依存を削除）
+# 依存関係を修正（例: レイヤー間の不正な依存を修正）
 ./vendor/bin/deptrac
 
 # すべてパス後、修正コミット

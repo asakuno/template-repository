@@ -43,23 +43,22 @@ $ARGUMENTS
 
 例（Backend - 架空の商品管理機能の場合）:
 
-**Phase 1: Domain層**
-- ProductId, CategoryId, ProductName ValueObjects
-- Product Entity
+**Phase 1: Model層**
+- Product Model（Eloquent）
+- ProductFactory
+
+**Phase 2: Repository層**
 - ProductRepositoryInterface
+- ProductRepository
 
-**Phase 2: Infrastructure層**
-- EloquentProductRepository
-- Product Model
-
-**Phase 3: Application層**
+**Phase 3: UseCase層**
 - CreateProductUseCase, GetProductUseCase
-- Input/Output DTOs
+- CreateProductData, UpdateProductData（Laravel Data DTOs）
 
-**Phase 4: Presentation層**
-- ProductController
-- ProductRequest
-- APIルート定義
+**Phase 4: Controller層**
+- ProductController（API）
+- ProductPageController（Web）
+- StoreProductRequest, UpdateProductRequest
 
 例（Frontend - 架空のユーザー管理画面の場合）:
 
@@ -215,29 +214,25 @@ $ARGUMENTS
     → コミット:
       git commit -m "refactor: [Phase名] リファクタリング (REFACTOR)"
 
-例: Backend Phase 1（Domain層）の場合
+例: Backend Phase 1（Model層）の場合
 
 **作業順序**:
-1. 全ValueObjectのテストファイルを作成（RED）
-   - EmailTest.php を作成 → テスト失敗を確認
-   - PasswordTest.php を作成 → テスト失敗を確認
-   - UserIdTest.php を作成 → テスト失敗を確認
-   - NameTest.php を作成 → テスト失敗を確認
-   - 一括コミット: `test(auth): Domain層テスト作成 (RED)`
+1. 全Modelのテストファイルを作成（RED）
+   - UserTest.php を作成 → テスト失敗を確認
+   - ProductTest.php を作成 → テスト失敗を確認
+   - 一括コミット: `test(auth): Model層テスト作成 (RED)`
 
-2. 全ValueObjectを実装（GREEN）
-   - Email.php を実装 → EmailTest.php がパス
-   - Password.php を実装 → PasswordTest.php がパス
-   - UserId.php を実装 → UserIdTest.php がパス
-   - Name.php を実装 → NameTest.php がパス
+2. 全Modelを実装（GREEN）
+   - User.php を実装（Eloquent Model、Casts、Scopes）→ UserTest.php がパス
+   - Product.php を実装 → ProductTest.php がパス
    - 全テストがパスすることを確認
-   - 一括コミット: `feat(auth): Domain層実装完了 (GREEN)`
+   - 一括コミット: `feat(auth): Model層実装完了 (GREEN)`
 
 3. リファクタリング（REFACTOR）
    - Laravel Pint 適用
    - コーディング規約統一
    - 全テストが引き続きパスすることを確認
-   - コミット: `refactor(auth): Domain層リファクタリング (REFACTOR)`
+   - コミット: `refactor(auth): Model層リファクタリング (REFACTOR)`
 
 Phase 3: Quality Checks を実行
   以下のコマンドをすべて実行し、すべてのチェックがパスすることを確認：
@@ -309,27 +304,25 @@ Phase 3: Quality Checks を実行
 - Laravel Policyで認可チェック実装
 - レート制限の設定（例: throttle:5,1）
 
-例: Phase 1（Domain層）の場合
+例: Phase 1（Model層）の場合
 
 **作業順序**:
-1. 全ValueObjectのテストファイルを作成（RED）
-   - ProductIdTest.php を作成 → テスト失敗を確認
-   - CategoryIdTest.php を作成 → テスト失敗を確認
-   - ProductNameTest.php を作成 → テスト失敗を確認
-   - 一括コミット: `test(product): Domain層テスト作成 (RED)`
+1. 全Modelのテストファイルを作成（RED）
+   - ProductTest.php を作成 → テスト失敗を確認
+   - CategoryTest.php を作成 → テスト失敗を確認
+   - 一括コミット: `test(product): Model層テスト作成 (RED)`
 
-2. 全ValueObjectを実装（GREEN）
-   - ProductId.php を実装 → ProductIdTest.php がパス
-   - CategoryId.php を実装 → CategoryIdTest.php がパス
-   - ProductName.php を実装 → ProductNameTest.php がパス
+2. 全Modelを実装（GREEN）
+   - Product.php を実装（Eloquent Model）→ ProductTest.php がパス
+   - Category.php を実装 → CategoryTest.php がパス
    - 全テストがパスすることを確認
-   - 一括コミット: `feat(product): Domain層実装完了 (GREEN)`
+   - 一括コミット: `feat(product): Model層実装完了 (GREEN)`
 
 3. リファクタリング（REFACTOR）
    - Laravel Pint 適用
    - コーディング規約統一
    - 全テストが引き続きパスすることを確認
-   - コミット: `refactor(product): Domain層リファクタリング (REFACTOR)`
+   - コミット: `refactor(product): Model層リファクタリング (REFACTOR)`
 
 Phase 3: Quality Checks を実行
   以下のコマンドをすべて実行し、すべてのチェックがパスすることを確認：
@@ -349,13 +342,13 @@ Phase 3: Quality Checks を実行
   - `phpstan` 失敗: 型定義の不足、潜在的バグ → 適切な型を追加、コードを修正
   - `pint` 失敗: コーディング規約違反 → `./vendor/bin/pint` で自動修正
   - `phpunit` 失敗: テストケースの不足または実装のバグ → 修正して再実行
-  - `deptrac` 失敗: 依存関係の違反 → 4層アーキテクチャに従って修正
+  - `deptrac` 失敗: 依存関係の違反 → 7層アーキテクチャに従って修正
 
 コミットメッセージ例:
 - Phase 1完了: feat(backend): Phase 1完了 - 実装計画作成
-- RED: test(backend): Domain層 テスト作成 (RED)
-- GREEN: feat(backend): Domain層 実装完了 (GREEN)
-- REFACTOR: refactor(backend): Domain層 リファクタリング (REFACTOR)
+- RED: test(backend): Model層 テスト作成 (RED)
+- GREEN: feat(backend): Model層 実装完了 (GREEN)
+- REFACTOR: refactor(backend): Model層 リファクタリング (REFACTOR)
 - Quality Checks: chore(backend): Quality Checks通過
 ```
 
@@ -372,15 +365,15 @@ Phase 3: Quality Checks を実行
    → コミット: feat(backend): Phase 1完了 - 実装計画作成
 
 2. Backend Phase 2以降: 各PhaseごとにTDDサイクル
-   例: Phase 2（Domain層）
-     - RED → コミット: test(backend): Domain層 テスト作成 (RED)
-     - GREEN → コミット: feat(backend): Domain層 実装完了 (GREEN)
-     - REFACTOR → コミット: refactor(backend): Domain層 リファクタリング (REFACTOR)
+   例: Phase 2（Model層）
+     - RED → コミット: test(backend): Model層 テスト作成 (RED)
+     - GREEN → コミット: feat(backend): Model層 実装完了 (GREEN)
+     - REFACTOR → コミット: refactor(backend): Model層 リファクタリング (REFACTOR)
 
-   例: Phase 3（Infrastructure層）
-     - RED → コミット: test(backend): Infrastructure層 テスト作成 (RED)
-     - GREEN → コミット: feat(backend): Infrastructure層 実装完了 (GREEN)
-     - REFACTOR → コミット: refactor(backend): Infrastructure層 リファクタリング (REFACTOR)
+   例: Phase 3（Repository層）
+     - RED → コミット: test(backend): Repository層 テスト作成 (RED)
+     - GREEN → コミット: feat(backend): Repository層 実装完了 (GREEN)
+     - REFACTOR → コミット: refactor(backend): Repository層 リファクタリング (REFACTOR)
 
 3. Backend Quality Checks
    → コミット: chore(backend): Quality Checks通過

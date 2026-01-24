@@ -1,11 +1,11 @@
 ---
 name: backend-test-guidelines
-description: Comprehensive PHPUnit and Laravel testing guidelines for 4-layer architecture. Covers Unit tests for Domain layer, Feature tests for Application/Infrastructure/Presentation layers, and Inertia testing patterns. Reference this skill when creating or updating backend test code during Phase 2 (Testing & Review).
+description: Comprehensive PHPUnit and Laravel testing guidelines for 7-layer architecture. Covers Unit tests for UseCase layer (with mocked Repository), Feature tests for Repository/Controller layers. Reference this skill when creating or updating backend test code during Phase 2 (Testing & Review).
 ---
 
 # Backend Test Guidelines - PHPUnit & Laravel Testing
 
-This skill covers testing patterns for Laravel applications following a 4-layer architecture. It focuses on what AI commonly gets wrong in test design and implementation.
+This skill covers testing patterns for Laravel applications following a 7-layer architecture. It focuses on what AI commonly gets wrong in test design and implementation.
 
 ---
 
@@ -29,33 +29,34 @@ This skill covers testing patterns for Laravel applications following a 4-layer 
 
 | Layer | Test Type | Database | Purpose |
 |-------|-----------|----------|---------|
-| Domain | Unit | No | Entity/ValueObject behavior |
-| Application | Unit | No | UseCase logic with mocked Repository |
-| Application | Feature | Yes | UseCase integration with real Repository |
-| Infrastructure | Feature | Yes | Repository implementation |
-| Presentation | Feature | Yes | HTTP request/response, Inertia rendering |
+| Model | Unit | No | Casts, scopes, accessors |
+| UseCase | Unit | No | UseCase logic with mocked Repository |
+| UseCase | Feature | Yes | UseCase integration with real Repository |
+| Repository | Feature | Yes | Repository implementation with DB |
+| Controller | Feature | Yes | HTTP request/response, Inertia rendering |
 
 ## Directory Structure
 
 ```
 tests/
 ├── Unit/
-│   └── Modules/
-│       └── {Module}/
-│           ├── Domain/
-│           │   ├── Entities/
-│           │   └── ValueObjects/
-│           └── Application/
-│               └── UseCases/
+│   ├── Models/
+│   │   └── {Model}Test.php
+│   ├── Services/
+│   │   └── {Service}Test.php
+│   └── UseCases/
+│       └── {Resource}/
+│           └── {Action}{Resource}UseCaseTest.php
 └── Feature/
-    └── Modules/
-        └── {Module}/
-            ├── Application/
-            │   └── UseCases/
-            ├── Infrastructure/
-            │   └── Repositories/
-            └── Presentation/
-                └── Controllers/
+    ├── Http/
+    │   └── Controllers/
+    │       ├── Api/
+    │       │   └── {Resource}ControllerTest.php
+    │       └── Web/
+    │           └── {Resource}PageControllerTest.php
+    └── Repositories/
+        └── {Resource}/
+            └── {Resource}RepositoryTest.php
 ```
 
 ---
@@ -66,29 +67,29 @@ This table provides a quick overview of test patterns. Click through to detailed
 
 | Test Type | What to Test | AI Gets Wrong | Correct Pattern | Details |
 |-----------|-------------|---------------|-----------------|---------|
-| **Domain Unit** | Entity/ValueObject behavior | Uses database, skips validation | Pure logic, no DB, ValueObjects | [→ domain-layer-testing.md](references/domain-layer-testing.md) |
-| **UseCase Unit** | UseCase logic | Uses real database | Mock repository, no DB | [→ usecase-testing.md](references/usecase-testing.md) |
-| **Repository Feature** | Repository implementation | Tests Eloquent, not Repository | Test through interface, Entity conversion | [→ repository-testing.md](references/repository-testing.md) |
+| **Model Unit** | Casts, scopes, accessors | Uses database in unit tests | Test casts/scopes with factory | [→ test-structure.md](references/test-structure.md) |
+| **UseCase Unit** | UseCase logic | Uses real database | Mock Repository Interface, no DB | [→ usecase-testing.md](references/usecase-testing.md) |
+| **Repository Feature** | Repository implementation | Tests Eloquent Model directly | Test through Repository methods | [→ repository-testing.md](references/repository-testing.md) |
 | **Controller Feature** | HTTP/Inertia flow | Only checks status code | Inertia assertions, auth, validation | [→ controller-testing.md](references/controller-testing.md) |
 | **Test Structure** | AAA, naming, data providers | Inconsistent structure | Japanese names, AAA pattern, factories | [→ test-structure.md](references/test-structure.md) |
 
 ### Quick Decision Guide
 
 **"Should I use RefreshDatabase?"**
-- ❌ Domain Unit tests → NO
+- ❌ Model Unit tests → NO (for casts/accessors only)
 - ❌ UseCase Unit tests → NO
 - ✅ Repository Feature tests → YES
 - ✅ Controller Feature tests → YES
 
 **"Should I mock the repository?"**
-- ✅ UseCase Unit tests → YES (mock)
+- ✅ UseCase Unit tests → YES (mock Repository Interface)
 - ❌ UseCase Feature tests → NO (real implementation)
 - ❌ Repository tests → NO (testing the repository itself)
 
 **"What should I test?"**
-- Domain: Factory methods, validation, business rules
-- UseCase: Input → Output transformation, error handling
-- Repository: CRUD operations, Entity conversion
+- Model: Casts, scopes, accessors, relationships
+- UseCase: Input DTO → Eloquent Model transformation, error handling
+- Repository: CRUD operations, transaction handling
 - Controller: Component, props, redirects, validation, auth
 
 ---
@@ -99,15 +100,16 @@ Before considering test implementation complete:
 
 ### Unit Tests ⚠️
 - [ ] No database usage (`RefreshDatabase` not needed)
-- [ ] Repository is mocked for UseCase tests
-- [ ] Both valid and invalid cases tested for ValueObjects
-- [ ] Factory methods tested for Entities
+- [ ] Repository Interface is mocked for UseCase tests
+- [ ] Both success and error cases tested
+- [ ] Model casts and scopes tested
 
 ### Feature Tests ⚠️
 - [ ] Uses `RefreshDatabase` trait
 - [ ] Tests actual database operations
 - [ ] Authentication tested (actingAs)
-- [ ] Inertia assertions used for controller tests
+- [ ] Inertia assertions used for Web controller tests
+- [ ] JSON assertions used for API controller tests
 
 ### Test Structure ⚠️
 - [ ] AAA pattern followed
@@ -119,7 +121,7 @@ Before considering test implementation complete:
 - [ ] All public methods tested
 - [ ] All validation rules tested
 - [ ] Error paths tested
-- [ ] Authorization tested
+- [ ] Authorization tested (Policy)
 
 ---
 
@@ -127,8 +129,8 @@ Before considering test implementation complete:
 
 | What to Test | How to Test |
 |--------------|-------------|
-| ValueObject | Unit test with valid/invalid inputs |
-| Entity | Unit test factory methods |
-| UseCase | Unit test with mocked repository |
+| Model | Unit test casts, scopes, accessors |
+| UseCase | Unit test with mocked Repository Interface |
 | Repository | Feature test with real database |
-| Controller | Feature test with Inertia assertions |
+| API Controller | Feature test with JSON assertions |
+| Web Controller | Feature test with Inertia assertions |

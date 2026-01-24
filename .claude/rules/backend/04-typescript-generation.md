@@ -120,6 +120,36 @@ class PostTag extends Model
 
 ## 3. 統合された型生成（ModelTransformer）
 
+### なぜカスタムトランスフォーマーが必要か
+
+標準の `spatie/laravel-typescript-transformer` と `fumeapp/modeltyper` を個別に使用する場合、以下の問題が発生する：
+
+| 問題 | 詳細 |
+|------|------|
+| **別々のコマンド実行が必要** | `php artisan typescript:transform` と `php artisan model:typer` を個別に実行 |
+| **出力ファイルの分離** | `generated.d.ts` と `model.d.ts` が別ファイルになり、インポート管理が煩雑 |
+| **名前空間の不整合** | DTO は `App.Data.*`、Model は `export interface` とフォーマットが異なる |
+| **リレーション型の不一致** | Model 型でリレーション先の型参照が正しく解決されない |
+
+### カスタムトランスフォーマーのメリット
+
+| メリット | 詳細 |
+|---------|------|
+| **単一コマンド** | `php artisan typescript:transform` で全型（DTO + Model + Enum）を一括生成 |
+| **統一された出力** | `generated.d.ts` に全ての型が `declare namespace` 形式で出力 |
+| **名前空間の統一** | `App.Models.*`, `App.Data.*`, `App.Enums.*` で一貫した参照 |
+| **リレーション型の正確な解決** | Model 間のリレーション型が正しい名前空間で参照される |
+
+### 代替手段との比較
+
+| 方法 | 長所 | 短所 |
+|------|------|------|
+| **カスタムTransformer（採用）** | 単一コマンド、統一フォーマット | メンテナンスが必要 |
+| **個別ツール使用** | 標準機能のみ | 複数コマンド、フォーマット不整合 |
+| **手動型定義** | 完全な制御 | 型の同期が手動、ミスの温床 |
+
+**結論**: 開発効率と型安全性のバランスから、カスタムトランスフォーマーを採用。ただし、将来的に公式ツールが統合機能を提供した場合は移行を検討する。
+
 ### カスタムトランスフォーマーの作成
 
 TypeScript Transformerとmodeltyperを統合し、単一のコマンドで全ての型を生成する。

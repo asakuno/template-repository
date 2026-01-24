@@ -76,7 +76,7 @@ $ARGUMENTS
 
 ---
 
-#### Backend実装の場合（Laravel 4層アーキテクチャ）
+#### Backend実装の場合（Laravel 7層アーキテクチャ）
 
 @.claude/docs/phase-execution-backend.md
 

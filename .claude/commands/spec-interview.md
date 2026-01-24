@@ -184,12 +184,12 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 Phase 1: backend-plan-reviewer で実装計画を作成
   → 完了後、計画ドキュメントをコミット:
-    git add . && git commit -m "feat(backend): Phase 1完了 - 4層アーキテクチャ設計と実装計画を作成
+    git add . && git commit -m "feat(backend): Phase 1完了 - 7層アーキテクチャ設計と実装計画を作成
 
-- 4層アーキテクチャ設計（backend-architecture-guidelines準拠）
-- Entity/ValueObject設計
-- UseCase設計
+- 7層アーキテクチャ設計（backend-architecture-guidelines準拠）
+- UseCase/DTO設計（Laravel Data）
 - Repository Interface設計
+- Controller設計（Web/API）
 - 実装計画書（DESIGN.md）作成
 
 Generated with [Claude Code](https://claude.com/claude-code)
@@ -200,8 +200,8 @@ Phase 2a: backend-test-review でテスト作成（RED）
   → 完了後、テストファイルをコミット:
     git add . && git commit -m "test(backend): Phase 2a完了 - TDD RED フェーズ テスト作成
 
-- Unit テスト作成（Domain層）
-- Feature テスト作成（Application層）
+- Unit テスト作成（UseCase層/Model層）
+- Feature テスト作成（Repository層/Controller層）
 - テストケース設計完了
 - Repository Interface モック実装
 
@@ -213,10 +213,10 @@ Phase 2b: backend-implement-review で実装・リファクタリング（GREEN 
   → 完了後、実装ファイルをコミット:
     git add . && git commit -m "feat(backend): Phase 2b完了 - TDD GREEN & REFACTOR フェーズ 実装完了
 
-- Entity/ValueObject実装（create/reconstruct）
-- UseCase実装（Input/Output DTO）
-- Repository実装（Eloquent）
-- Controller実装（Presentation層）
+- Model実装（Eloquent Model）
+- Repository実装（Interface + Implementation）
+- UseCase実装（Laravel Data DTO）
+- FormRequest/Controller実装
 - 全テスト通過（GREEN）
 - リファクタリング実施（REFACTOR）
 - コードレビュー実施
@@ -250,7 +250,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 【Backend（TDD: 4段階）】
 1. Backend Phase 1: backend-plan-reviewer
-   → 完了後コミット: feat(backend): Phase 1完了 - 4層アーキテクチャ設計と実装計画を作成
+   → 完了後コミット: feat(backend): Phase 1完了 - 7層アーキテクチャ設計と実装計画を作成
 
 2. Backend Phase 2a: backend-test-review（テスト作成：RED）
    → 完了後コミット: test(backend): Phase 2a完了 - TDD RED フェーズ テスト作成

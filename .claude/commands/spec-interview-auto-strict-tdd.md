@@ -252,7 +252,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 ---
 
-#### Backend実装の場合（Laravel 4層アーキテクチャ）
+#### Backend実装の場合（Laravel 7層アーキテクチャ）
 
 **Phase 1: 計画・レビュー**
 
@@ -265,20 +265,20 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
   [仕様書の内容をここに展開]
 
   実施内容：
-  - 4層アーキテクチャ設計（backend-architecture-guidelines準拠）
-  - Entity/ValueObject設計
-  - UseCase設計
+  - 7層アーキテクチャ設計（backend-architecture-guidelines準拠）
+  - UseCase/DTO設計（Laravel Data）
   - Repository Interface設計
+  - Controller設計（Web/API）
   - 実装計画書（DESIGN.md）の作成
 
   **重要**: 実装手順はPhase単位で記載してください。
   各PhaseごとにRED → GREEN → REFACTORサイクルを実行します。
 
   例（Backend）:
-  - **Phase 2: Domain層** - ProductId, CategoryId, ProductName ValueObjects, Product Entity, ProductRepositoryInterface
-  - **Phase 3: Infrastructure層** - EloquentProductRepository, Product Model
-  - **Phase 4: Application層** - CreateProductUseCase, GetProductUseCase, Input/Output DTOs
-  - **Phase 5: Presentation層** - ProductController, ProductRequest, APIルート定義
+  - **Phase 2: Model層** - Product Model（Eloquent）、ProductFactory
+  - **Phase 3: Repository層** - ProductRepositoryInterface、ProductRepository
+  - **Phase 4: UseCase層** - CreateProductUseCase、GetProductUseCase、CreateProductData（Laravel Data DTOs）
+  - **Phase 5: Controller層** - ProductController（API）、ProductPageController（Web）、FormRequests
 
   完了したら、計画内容を報告してください。
 
@@ -288,12 +288,12 @@ Phase 1が完了したら、以下のコマンドで計画ドキュメントを�
 
 ```bash
 git add .
-git commit -m "feat(backend): Phase 1完了 - 4層アーキテクチャ設計と実装計画を作成
+git commit -m "feat(backend): Phase 1完了 - 7層アーキテクチャ設計と実装計画を作成
 
-- 4層アーキテクチャ設計（backend-architecture-guidelines準拠）
-- Entity/ValueObject設計
-- UseCase設計
+- 7層アーキテクチャ設計（backend-architecture-guidelines準拠）
+- UseCase/DTO設計（Laravel Data）
 - Repository Interface設計
+- Controller設計（Web/API）
 - 実装計画書（DESIGN.md）作成
 - Phase単位の実装ステップ定義
 
@@ -317,7 +317,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
   2. 各Phaseについて以下のサイクルを実行：
 
     **RED（テスト作成）**:
-    - Phase内の全コンポーネント（Entity/ValueObject/UseCase等）のUnit/Featureテストを作成
+    - Phase内の全コンポーネント（Model/UseCase/Repository等）のUnit/Featureテストを作成
     - テストが失敗することを確認（RED）
     - コミット:
       ```
@@ -334,7 +334,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
     **GREEN（実装）**:
     - Phase内の全コンポーネントを実装
-    - Entity/ValueObject/UseCase/Repository実装
+    - Model/UseCase/Repository/Controller実装
     - テストが成功することを確認（GREEN）
     - コミット:
       ```
@@ -372,9 +372,9 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
   3. 次のPhaseへ進む（RED → GREEN → REFACTOR を繰り返す）
 
-  例: Phase 2（Domain層）の場合
-    - RED: ProductId, CategoryId, ProductName 全ValueObjectのテスト作成
-    - GREEN: ProductId, CategoryId, ProductName 全ValueObjectの実装
+  例: Phase 2（Model層）の場合
+    - RED: Product、Category 全Modelのテスト作成
+    - GREEN: Product、Category 全Modelの実装（Eloquent Model）
     - REFACTOR: Pint適用、コード品質改善
 
   完了したら、実装したPhaseリストと全テストがパスしたことを報告してください。
@@ -394,7 +394,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 - `phpstan analyse`: 静的解析（型チェック、潜在的バグ検出）
 - `pint --test`: コーディング規約チェック（Laravel Pint）
 - `phpunit`: PHPUnit テスト実行
-- `deptrac`: 依存関係チェック（4層アーキテクチャ検証）
+- `deptrac`: 依存関係チェック（7層アーキテクチャ検証）
 
 **重要**: すべてのチェックがパスするまで次に進まない。
 
@@ -408,7 +408,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 - `phpstan` 失敗: 型定義の不足、潜在的バグ → 適切な型を追加、コードを修正
 - `pint` 失敗: コーディング規約違反 → `./vendor/bin/pint` で自動修正
 - `phpunit` 失敗: テストケースの不足または実装のバグ → 修正して再実行
-- `deptrac` 失敗: 依存関係の違反 → 4層アーキテクチャに従って修正
+- `deptrac` 失敗: 依存関係の違反 → 7層アーキテクチャに従って修正
 
 **Phase 3完了後のGitコミット**:
 
@@ -438,10 +438,10 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 1. **Backend Phase 1**（backend-plan-reviewer） - 計画・設計
 2. **Backend Phase 2以降**（backend-implement-review） - 厳格TDDサイクル（Phase単位）
-   - Phase 2（Domain層）: RED → GREEN → REFACTOR
-   - Phase 3（Infrastructure層）: RED → GREEN → REFACTOR
-   - Phase 4（Application層）: RED → GREEN → REFACTOR
-   - Phase 5（Presentation層）: RED → GREEN → REFACTOR
+   - Phase 2（Model層）: RED → GREEN → REFACTOR
+   - Phase 3（Repository層）: RED → GREEN → REFACTOR
+   - Phase 4（UseCase層）: RED → GREEN → REFACTOR
+   - Phase 5（Controller層）: RED → GREEN → REFACTOR
 3. **Backend Quality Checks** - バックエンドの品質チェック
 4. **Frontend Phase 1**（plan-reviewer） - 計画・設計
 5. **Frontend Phase 2以降**（implement-review） - 厳格TDDサイクル（Phase単位）

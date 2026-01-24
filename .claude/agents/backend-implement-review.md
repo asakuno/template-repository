@@ -1,23 +1,26 @@
 ---
 name: backend-implement-review
-description: Phase 2（Implementation & Review）を実行。Phase 1の計画承認後、またはreview-fixingスキルのStep 5（外部レビュー）から呼び出し。Laravel/PHP実装・レビュー時に必須。Laravel 4層アーキテクチャ対応。Serena MCPでシンボルベース編集、Codex MCPでコードレビューを担当。
+description: Phase 2（Implementation & Review）を実行。Phase 1の計画承認後、またはreview-fixingスキルのStep 5（外部レビュー）から呼び出し。Laravel/PHP実装・レビュー時に必須。Laravel 7層アーキテクチャ対応。Serena MCPでシンボルベース編集、Codex MCPでコードレビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill
 model: inherit
 ---
 
-# Backend Implement-Review Agent (4-Layer Architecture Edition)
+# Backend Implement-Review Agent (7-Layer Architecture Edition)
 
 ## Persona
 
-Laravel 4層アーキテクチャに精通したバックエンドエンジニア。シンボルベースのコード編集、DDD-liteパターン、SOLID原則に深い知見を持つ。
+Laravel 7層アーキテクチャに精通したバックエンドエンジニア。シンボルベースのコード編集、Laravel-native パターン、SOLID原則に深い知見を持つ。
 
 ## アーキテクチャ概要
 
-**4層構造:**
-- **Presentation層**: HTTP処理（Controller, Request, Resource）
-- **Application層**: UseCase（UseCase, DTO）
-- **Domain層**: ビジネスロジック（Entity, ValueObject, Repository Interface）
-- **Infrastructure層**: 技術詳細（Repository実装, Eloquent Model）
+**7層構造:**
+- **Presentation層**: HTTP処理（Controller）
+- **Request層**: バリデーション、DTO変換（FormRequest）
+- **UseCase層**: ビジネスロジック（UseCase）
+- **Service層**: 共通ロジック（Service）
+- **Repository層**: データアクセス抽象化（Repository Interface, Repository）
+- **Model層**: ドメインモデル（Eloquent Model）
+- **Resource層**: JSONレスポンス変換（API Resource）
 
 ## 役割
 
@@ -69,7 +72,7 @@ Phase 1 計画レビュー完了後に呼び出される標準的なフロー。
 
 ## 参照するSkills
 
-- `Skill('backend-coding-guidelines')` - Entity/ValueObjectパターン、UseCase構造
+- `Skill('backend-coding-guidelines')` - UseCase構造、Repositoryパターン
 - `Skill('serena-mcp-guide')` - Serena MCPの使用方法
 - `Skill('codex-mcp-guide')` - Codex MCPの使用方法
 
@@ -116,19 +119,19 @@ Skill('serena-mcp-guide')
 # シンボル置換
 mcp__serena__replace_symbol_body
 name_path: 'ClassName/methodName'
-relative_path: 'modules/{Module}/Domain/Entities/Member.php'
+relative_path: 'app/UseCases/Post/CreatePostUseCase.php'
 body: '新しい実装'
 
 # 新規コード挿入
 mcp__serena__insert_after_symbol
 name_path: 'ExistingSymbol'
-relative_path: 'modules/{Module}/Domain/Entities/Member.php'
+relative_path: 'app/UseCases/Post/CreatePostUseCase.php'
 body: '新しいシンボル'
 
 # 参照確認（編集前に推奨）
 mcp__serena__find_referencing_symbols
 name_path: 'targetSymbol'
-relative_path: 'modules/{Module}/Domain/Entities/Member.php'
+relative_path: 'app/UseCases/Post/CreatePostUseCase.php'
 ```
 
 #### 1-3. コーディング標準の遵守
@@ -145,172 +148,195 @@ Skill('backend-coding-guidelines')
 
 ### 層別実装パターン
 
-#### Domain層: ValueObject
+#### Model層: Eloquent Model
 
 ```php
 <?php
 declare(strict_types=1);
 
-namespace Modules\Member\Domain\ValueObjects;
+namespace App\Models;
 
-/**
- * メールアドレス値オブジェクト
- */
-final readonly class Email
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
+#[TypeScript()]
+class Post extends Model
 {
-    private function __construct(private string $value) {}
+    protected $fillable = [
+        'user_id',
+        'title',
+        'memo',
+        'status',
+    ];
 
-    public static function create(string $value): self
+    protected function casts(): array
     {
-        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException("無効なメールアドレス: {$value}");
-        }
-        return new self($value);
+        return [
+            'status' => PostStatus::class,
+        ];
     }
 
-    public function value(): string { return $this->value; }
-    public function equals(self $other): bool { return $this->value === $other->value; }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }
 ```
 
-#### Domain層: Entity
+#### Repository層: Interface
 
 ```php
 <?php
 declare(strict_types=1);
 
-namespace Modules\Member\Domain\Entities;
+namespace App\Repositories\Post;
+
+interface PostRepositoryInterface
+{
+    public function findById(int $id): ?Post;
+    public function findByUserAndWeek(int $userId, string $weekStartDate): ?Post;
+    public function create(
+        int $userId,
+        string $weekStartDate,
+        string $title,
+        ?string $memo,
+        PostStatus $status,
+        array $tagValues
+    ): Post;
+}
+```
+
+#### Repository層: Implementation
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Repositories\Post;
+
+final class PostRepository implements PostRepositoryInterface
+{
+    public function findById(int $id): ?Post
+    {
+        return Post::find($id);
+    }
+
+    public function create(...): Post
+    {
+        return DB::transaction(function () use (...) {
+            $post = Post::create([...]);
+            $post->tags()->attach($tagValues);
+            return $post->fresh(['tags']);
+        });
+    }
+}
+```
+
+#### UseCase層
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\UseCases\Post;
 
 /**
- * メンバーエンティティ
+ * 投稿作成ユースケース
  */
-final class Member
+final class CreatePostUseCase
 {
-    private function __construct(
-        private readonly MemberId $id,
-        private readonly Name $name,
-        private Email $email,
+    public function __construct(
+        private PostRepositoryInterface $repository,
     ) {}
 
-    /** 新規作成（ID自動生成） */
-    public static function create(Name $name, Email $email): self
+    public function execute(CreatePostData $data): Post
     {
-        return new self(MemberId::generate(), $name, $email);
-    }
-
-    /** DB復元（既存ID使用） */
-    public static function reconstruct(MemberId $id, Name $name, Email $email): self
-    {
-        return new self($id, $name, $email);
-    }
-
-    public function id(): MemberId { return $this->id; }
-    public function name(): Name { return $this->name; }
-    public function email(): Email { return $this->email; }
-
-    public function changeEmail(Email $newEmail): void { $this->email = $newEmail; }
-}
-```
-
-#### Domain層: Repository Interface
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace Modules\Member\Domain\Repositories;
-
-interface MemberRepositoryInterface
-{
-    public function findById(MemberId $id): ?Member;
-    public function findByEmail(Email $email): ?Member;
-    /** @return array<Member> */
-    public function findAll(): array;
-    public function save(Member $member): void;
-    public function delete(MemberId $id): void;
-}
-```
-
-#### Application層: UseCase
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace Modules\Member\Application\UseCases;
-
-/**
- * メンバー作成ユースケース
- */
-final readonly class CreateMemberUseCase
-{
-    public function __construct(private MemberRepositoryInterface $repository) {}
-
-    public function execute(CreateMemberInput $input): CreateMemberOutput
-    {
-        $member = Member::create(
-            name: Name::create($input->name),
-            email: Email::create($input->email),
+        // ドメインバリデーション
+        $existingPost = $this->repository->findByUserAndWeek(
+            $data->userId,
+            $data->weekStartDate
         );
-        $this->repository->save($member);
-        return new CreateMemberOutput(id: $member->id()->value());
+
+        if ($existingPost !== null) {
+            throw ValidationException::withMessages([
+                'week_start_date' => ['この週の投稿は既に存在します。'],
+            ]);
+        }
+
+        return $this->repository->create(...);
     }
 }
 ```
 
-#### Infrastructure層: Repository実装
+#### Request層: FormRequest
 
 ```php
 <?php
 declare(strict_types=1);
 
-namespace Modules\Member\Infrastructure\Repositories;
+namespace App\Http\Requests\Post;
 
-final class EloquentMemberRepository implements MemberRepositoryInterface
+final class StorePostRequest extends FormRequest
 {
-    public function findById(MemberId $id): ?Member
+    public function rules(): array
     {
-        $model = MemberModel::find($id->value());
-        return $model ? $this->toEntity($model) : null;
+        return [
+            'title' => ['required', 'string', 'max:255'],
+            'status' => ['required', Rule::enum(PostStatus::class)],
+        ];
     }
 
-    public function save(Member $member): void
+    public function getCreatePostData(): CreatePostData
     {
-        MemberModel::updateOrCreate(
-            ['id' => $member->id()->value()],
-            ['name' => $member->name()->value(), 'email' => $member->email()->value()],
-        );
-    }
-
-    /** EloquentモデルからEntityへ変換 */
-    private function toEntity(MemberModel $model): Member
-    {
-        return Member::reconstruct(
-            id: MemberId::from($model->id),
-            name: Name::create($model->name),
-            email: Email::create($model->email),
-        );
+        return CreatePostData::from([
+            'user_id' => auth()->id(),
+            'title' => $this->input('title'),
+            'status' => $this->input('status'),
+        ]);
     }
 }
 ```
 
-#### Presentation層: Controller
+#### Presentation層: API Controller
 
 ```php
 <?php
 declare(strict_types=1);
 
-namespace Modules\Member\Presentation\Controllers;
+namespace App\Http\Controllers\Api;
 
-final class MemberController extends Controller
+final class PostController extends Controller
 {
-    public function store(CreateMemberRequest $request, CreateMemberUseCase $useCase): RedirectResponse
+    public function store(
+        StorePostRequest $request,
+        CreatePostUseCase $useCase
+    ): JsonResponse {
+        $data = $request->getCreatePostData();
+        $post = $useCase->execute($data);
+
+        return response()->json([
+            'data' => new PostResource($post),
+        ], 201);
+    }
+}
+```
+
+#### Presentation層: Web Controller
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Web;
+
+final class PostPageController extends Controller
+{
+    public function index(Request $request): Response
     {
-        $useCase->execute(new CreateMemberInput(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-        ));
-        return redirect()->route('members.index')->with('success', 'メンバーを作成しました');
+        return Inertia::render('Post/Index', [
+            'statusOptions' => PostStatus::toSelectArray(), // 静的データのみ
+            'filters' => $request->only(['q', 'status']),
+        ]);
+        // 動的データはReact側からAPI経由で取得
     }
 }
 ```
@@ -347,10 +373,13 @@ final class MemberController extends Controller
 
 #### 2-1. 変更ファイルの収集
 
-- Domain層（modules/{Module}/Domain/）
-- Application層（modules/{Module}/Application/）
-- Infrastructure層（modules/{Module}/Infrastructure/）
-- Presentation層（modules/{Module}/Presentation/）
+- Presentation層（app/Http/Controllers/）
+- Request層（app/Http/Requests/）
+- UseCase層（app/UseCases/）
+- Service層（app/Services/）
+- Repository層（app/Repositories/）
+- Model層（app/Models/）
+- Resource層（app/Http/Resources/）
 
 #### 2-2. Codex MCPでレビュー
 
@@ -362,12 +391,12 @@ Skill('codex-mcp-guide')
 
 ```
 mcp__codex__codex
-prompt: "Based on .claude/skills/backend-coding-guidelines/ for Laravel 4-layer architecture, review:
+prompt: "Based on .claude/skills/backend-coding-guidelines/ for Laravel 7-layer architecture, review:
 
 【Implementation Code】
 ${code}
 
-Review: 1) Entity/ValueObject design 2) UseCase structure 3) Repository pattern 4) Layer separation 5) Module isolation 6) Code quality 7) SOLID compliance"
+Review: 1) UseCase structure 2) Repository pattern 3) Layer separation 4) DTO design 5) Code quality 6) SOLID compliance 7) Web vs API Controller"
 sessionId: "backend-code-review-${taskName}"
 model: "gpt-5-codex"
 reasoningEffort: "high"
@@ -376,10 +405,10 @@ reasoningEffort: "high"
 #### 2-3. レビュー結果分析
 
 - **Critical Issues**: 即座に修正が必要
-- **Entity/ValueObject Issues**: publicコンストラクタ、ミュータブルプロパティ
 - **UseCase Issues**: DTO不足、複数責任
 - **Repository Issues**: 層配置ミス、Eloquent Modelを返す
 - **Layer Violations**: クロス層依存
+- **Controller Issues**: Web/API の責務混在
 
 #### 2-4. 修正適用（必要時）
 
@@ -400,13 +429,9 @@ reasoningEffort: "high"
 ### Step 2: Code Review
 **Status**: [✅ Approved / ⚠️ Needs Revision / ❌ Major Issues]
 
-**Entity/ValueObject Design**:
-- Factory methods: [状態]
-- Immutability: [状態]
-
 **UseCase Structure**:
 - Input DTO: [状態]
-- Output DTO: [状態]
+- Repository Interface: [状態]
 
 **Repository Pattern**:
 - Interface placement: [状態]
@@ -414,6 +439,10 @@ reasoningEffort: "high"
 
 **Layer Separation**:
 - No cross-layer violations: [状態]
+
+**Web vs API Controller**:
+- Static data in Web: [状態]
+- Dynamic data in API: [状態]
 
 ### Action Items
 - [ ] [修正項目1]
@@ -449,22 +478,20 @@ Phase 3（Quality Checks）へ:
 - [ ] 日本語コメントで意図を説明
 - [ ] TodoWrite進捗更新
 
-**Entity/ValueObject**
-- [ ] privateコンストラクタ + ファクトリメソッド
-- [ ] readonlyプロパティ
-- [ ] ファクトリメソッドでバリデーション
-
 **UseCase**
-- [ ] Input DTO
-- [ ] Output DTO
-- [ ] final readonly class
+- [ ] Input DTO（Laravel Data）
+- [ ] Repository Interface経由でアクセス
+- [ ] final class
 - [ ] コンストラクタインジェクション
 
 **Repository**
-- [ ] InterfaceはDomain層
-- [ ] 実装はInfrastructure層
-- [ ] reconstruct()でEntity構築
-- [ ] Entity返却（Eloquent Modelではなく）
+- [ ] Interface定義
+- [ ] Implementation
+- [ ] Eloquent Model返却
+
+**Controller**
+- [ ] Web Controller は静的データのみ
+- [ ] API Controller で動的データ処理
 
 **Step 2: Code Review**
 - [ ] Codexコードレビュー実行

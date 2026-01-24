@@ -1,350 +1,94 @@
-# ValueObject Design - Validation and Type Safety
+# DTO Design - Laravel Data Patterns
 
 ## AI's Common Failure Patterns
 
-### Pattern 1: Skipping Validation
+### Pattern 1: Using Arrays Instead of DTOs
 
-**❌ AI writes: No validation, accepts any string**
-
-```php
-final readonly class Email
-{
-    public function __construct(public string $value) {}
-}
-
-// This allows invalid emails
-$email = new Email('not-an-email'); // No error!
-$email = new Email(''); // Empty string allowed!
-```
-
-### Pattern 2: Using Primitives Instead of ValueObjects
-
-**❌ AI writes: Using primitives instead of ValueObjects**
+**❌ AI writes: Using arrays for data transfer**
 
 ```php
-final class Member
+final readonly class CreatePostUseCase
 {
-    public function __construct(
-        private readonly string $id,    // Should be MemberId
-        private readonly string $name,  // Should be Name
-        private readonly string $email, // Should be Email
-    ) {}
-}
-
-// Problems:
-// - No validation on email format
-// - No type safety (can pass email as name)
-// - No domain modeling
-```
-
----
-
-## ✅ Correct Pattern: Validation at Creation Time
-
-### Basic ValueObject with Validation
-
-```php
-final readonly class Email
-{
-    private function __construct(private string $value) {}
-
-    public static function create(string $value): self
+    public function execute(array $data): Post
     {
-        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException("無効なメールアドレス形式: {$value}");
-        }
-        return new self($value);
-    }
-
-    public function value(): string
-    {
-        return $this->value;
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
-}
-```
-
-### ID ValueObject with Generation
-
-```php
-final readonly class MemberId
-{
-    private function __construct(private string $value) {}
-
-    public static function generate(): self
-    {
-        return new self((string) Str::uuid());
-    }
-
-    public static function from(string $value): self
-    {
-        return new self($value);
-    }
-
-    public function value(): string
-    {
-        return $this->value;
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
-}
-```
-
----
-
-## Common ValueObject Patterns
-
-### Simple String ValueObject with Constraints
-
-```php
-final readonly class Name
-{
-    private function __construct(private string $value) {}
-
-    public static function create(string $value): self
-    {
-        $trimmed = trim($value);
-
-        if ($trimmed === '') {
-            throw new InvalidArgumentException('名前は空にできません');
-        }
-
-        if (mb_strlen($trimmed) > 100) {
-            throw new InvalidArgumentException('名前は100文字以内にしてください');
-        }
-
-        return new self($trimmed);
-    }
-
-    public function value(): string
-    {
-        return $this->value;
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
-}
-```
-
-### Numeric ValueObject with Range Validation
-
-```php
-final readonly class Age
-{
-    private function __construct(private int $value) {}
-
-    public static function create(int $value): self
-    {
-        if ($value < 0) {
-            throw new InvalidArgumentException('年齢は0以上である必要があります');
-        }
-
-        if ($value > 150) {
-            throw new InvalidArgumentException('年齢は150以下である必要があります');
-        }
-
-        return new self($value);
-    }
-
-    public function value(): int
-    {
-        return $this->value;
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
-
-    public function isAdult(): bool
-    {
-        return $this->value >= 20;
-    }
-}
-```
-
-### Enum-like ValueObject (Status)
-
-```php
-final readonly class MemberStatus
-{
-    private const ACTIVE = 'active';
-    private const INACTIVE = 'inactive';
-    private const SUSPENDED = 'suspended';
-
-    private function __construct(private string $value) {}
-
-    public static function active(): self
-    {
-        return new self(self::ACTIVE);
-    }
-
-    public static function inactive(): self
-    {
-        return new self(self::INACTIVE);
-    }
-
-    public static function suspended(): self
-    {
-        return new self(self::SUSPENDED);
-    }
-
-    public static function from(string $value): self
-    {
-        return match ($value) {
-            self::ACTIVE => self::active(),
-            self::INACTIVE => self::inactive(),
-            self::SUSPENDED => self::suspended(),
-            default => throw new InvalidArgumentException("無効なステータス: {$value}"),
-        };
-    }
-
-    public function value(): string
-    {
-        return $this->value;
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value === $other->value;
-    }
-
-    public function isActive(): bool
-    {
-        return $this->value === self::ACTIVE;
-    }
-}
-```
-
-### Date/Time ValueObject
-
-```php
-final readonly class CreatedAt
-{
-    private function __construct(private DateTimeImmutable $value) {}
-
-    public static function now(): self
-    {
-        return new self(new DateTimeImmutable());
-    }
-
-    public static function fromString(string $value): self
-    {
-        try {
-            return new self(new DateTimeImmutable($value));
-        } catch (Exception $e) {
-            throw new InvalidArgumentException("無効な日時形式: {$value}", 0, $e);
-        }
-    }
-
-    public static function fromDateTime(DateTimeImmutable $value): self
-    {
-        return new self($value);
-    }
-
-    public function value(): DateTimeImmutable
-    {
-        return $this->value;
-    }
-
-    public function format(string $format = 'Y-m-d H:i:s'): string
-    {
-        return $this->value->format($format);
-    }
-
-    public function equals(self $other): bool
-    {
-        return $this->value == $other->value;
-    }
-
-    public function isBefore(self $other): bool
-    {
-        return $this->value < $other->value;
-    }
-
-    public function isAfter(self $other): bool
-    {
-        return $this->value > $other->value;
-    }
-}
-```
-
-### Multi-Property ValueObject
-
-```php
-final readonly class Address
-{
-    private function __construct(
-        private string $postalCode,
-        private string $prefecture,
-        private string $city,
-        private string $street,
-    ) {}
-
-    public static function create(
-        string $postalCode,
-        string $prefecture,
-        string $city,
-        string $street,
-    ): self {
-        // Validate postal code format
-        if (!preg_match('/^\d{3}-\d{4}$/', $postalCode)) {
-            throw new InvalidArgumentException('郵便番号は000-0000の形式で入力してください');
-        }
-
-        // Validate non-empty
-        if (trim($prefecture) === '' || trim($city) === '' || trim($street) === '') {
-            throw new InvalidArgumentException('住所のすべての項目を入力してください');
-        }
-
-        return new self(
-            postalCode: $postalCode,
-            prefecture: trim($prefecture),
-            city: trim($city),
-            street: trim($street),
+        // No type safety
+        // No validation
+        // No IDE autocomplete
+        return $this->repository->create(
+            $data['user_id'],    // Could be anything
+            $data['title'],      // Could be anything
+            $data['status'],     // Could be anything
         );
     }
+}
+```
 
-    public function postalCode(): string
-    {
-        return $this->postalCode;
-    }
+### Pattern 2: Missing TypeScript Generation
 
-    public function prefecture(): string
-    {
-        return $this->prefecture;
-    }
+**❌ AI writes: DTO without TypeScript attribute**
 
-    public function city(): string
-    {
-        return $this->city;
-    }
+```php
+class CreatePostData extends Data
+{
+    public function __construct(
+        public int $userId,
+        public string $title,
+    ) {}
+}
+// No #[TypeScript()] = No frontend type safety
+```
 
-    public function street(): string
-    {
-        return $this->street;
-    }
+---
 
-    public function fullAddress(): string
-    {
-        return "{$this->postalCode} {$this->prefecture}{$this->city}{$this->street}";
-    }
+## ✅ Correct Pattern: Laravel Data with TypeScript
 
-    public function equals(self $other): bool
+### Basic DTO Implementation
+
+```php
+use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Attributes\MapName;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
+#[TypeScript()]
+#[MapName(SnakeCaseMapper::class)]
+final readonly class CreatePostData extends Data
+{
+    public function __construct(
+        public int $userId,
+        public string $weekStartDate,
+        public string $title,
+        public ?string $memo,
+        public PostStatus $status,
+        /** @var array<TagValueData> */
+        #[DataCollectionOf(TagValueData::class)]
+        public array $tagValues,
+    ) {}
+}
+```
+
+### Usage in UseCase
+
+```php
+final readonly class CreatePostUseCase
+{
+    public function __construct(
+        private PostRepositoryInterface $postRepository,
+    ) {}
+
+    public function execute(CreatePostData $data): Post
     {
-        return $this->postalCode === $other->postalCode
-            && $this->prefecture === $other->prefecture
-            && $this->city === $other->city
-            && $this->street === $other->street;
+        // Type-safe access
+        // IDE autocomplete
+        // Validated data
+        return $this->postRepository->create(
+            $data->userId,
+            $data->weekStartDate,
+            $data->title,
+            $data->memo,
+            $data->status,
+            $data->tagValues,
+        );
     }
 }
 ```
@@ -353,112 +97,280 @@ final readonly class Address
 
 ## Key Design Principles
 
-### 1. Private Constructor
-- Prevents direct instantiation
-- Forces validation through factory methods
-- Ensures all instances are valid
+### 1. Required Attributes
 
-### 2. Factory Methods
-- `create()`: For creating from validated input
-- `from()`: For reconstruction from trusted source (DB)
-- Named constructors: `now()`, `active()`, etc.
+Every DTO must have these attributes:
 
-### 3. Readonly Class/Properties
-- Immutable after creation
-- Thread-safe
-- Easier to reason about
+```php
+#[TypeScript()]                    // For TypeScript generation
+#[MapName(SnakeCaseMapper::class)] // For snake_case/camelCase conversion
+final readonly class ExampleData extends Data
+{
+    // ...
+}
+```
 
-### 4. Final Class
-- Prevents inheritance
-- Ensures behavior consistency
-- Simplifies testing
+### 2. Readonly and Final
 
-### 5. Value() Method
-- Returns underlying primitive value
-- Enables conversion back to primitives
-- Used when persisting to database
+All DTOs must be `final readonly` for immutability:
 
-### 6. Equals() Method
-- Compares by value (not identity)
-- Essential for ValueObject equality
-- Used in business logic
+```php
+// ✅ Correct
+final readonly class CreatePostData extends Data
+
+// ❌ Wrong - mutable
+class CreatePostData extends Data
+```
+
+### 3. Constructor Property Promotion
+
+Use constructor property promotion with explicit types:
+
+```php
+public function __construct(
+    public int $userId,           // Required int
+    public string $title,         // Required string
+    public ?string $memo,         // Nullable string
+    public PostStatus $status,    // Enum type
+) {}
+```
+
+### 4. Array Type Annotation
+
+For array properties, use PHPDoc and `#[DataCollectionOf]`:
+
+```php
+/** @var array<TagValueData> */
+#[DataCollectionOf(TagValueData::class)]
+public array $tagValues,
+```
 
 ---
 
-## Usage in Entities
+## Common DTO Patterns
 
-### Before (with primitives)
+### Input DTO (FormRequest → UseCase)
 
 ```php
-final class Member
+#[TypeScript()]
+#[MapName(SnakeCaseMapper::class)]
+final readonly class CreatePostData extends Data
 {
     public function __construct(
-        private readonly string $id,
-        private readonly string $name,
-        private readonly string $email,
+        public int $userId,
+        public string $weekStartDate,
+        public string $title,
+        public ?string $memo,
+        public PostStatus $status,
+        /** @var array<TagValueData> */
+        #[DataCollectionOf(TagValueData::class)]
+        public array $tagValues,
     ) {}
-
-    // No validation
-    // Can pass email as name (type unsafe)
 }
 ```
 
-### After (with ValueObjects)
+### Nested DTO
 
 ```php
-final class Member
+#[TypeScript()]
+final readonly class TagValueData extends Data
 {
-    private function __construct(
-        private readonly MemberId $id,
-        private readonly Name $name,
-        private readonly Email $email,
+    public function __construct(
+        public int $tagId,
+        public string $value,
     ) {}
+}
+```
 
-    public static function create(Name $name, Email $email): self
-    {
-        return new self(
-            id: MemberId::generate(),
-            name: $name,  // Already validated
-            email: $email, // Already validated
-        );
-    }
+### Search/Filter DTO
 
-    // Type-safe, validated, domain-modeled
+```php
+#[TypeScript()]
+#[MapName(SnakeCaseMapper::class)]
+final readonly class SearchPostsData extends Data
+{
+    public function __construct(
+        public ?int $userId,
+        public ?string $q,
+        public ?PostStatus $status,
+        public ?string $weekStartDate,
+        public int $page = 1,
+        public int $perPage = 20,
+    ) {}
+}
+```
+
+### Update DTO (Partial Update)
+
+```php
+#[TypeScript()]
+#[MapName(SnakeCaseMapper::class)]
+final readonly class UpdatePostData extends Data
+{
+    public function __construct(
+        public int $id,
+        public string $weekStartDate,
+        public string $title,
+        public ?string $memo,
+        public PostStatus $status,
+        /** @var array<TagValueData> */
+        #[DataCollectionOf(TagValueData::class)]
+        public array $tagValues,
+    ) {}
 }
 ```
 
 ---
 
-## Checklist: ValueObject Design
+## FormRequest to DTO Conversion
 
-Before considering a ValueObject implementation complete, verify:
+### Standard Pattern
 
-- [ ] Class is marked as `final readonly`
-- [ ] Constructor is `private`
-- [ ] Has factory method (`create()`, `from()`, etc.)
-- [ ] Validation happens in factory method
-- [ ] Has `value()` method to get underlying value
-- [ ] Has `equals()` method for comparison
-- [ ] Immutable after creation
-- [ ] Throws exception for invalid values
-- [ ] No setter methods
-- [ ] No public properties
+```php
+class StorePostRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'week_start_date' => ['required', 'date'],
+            'title' => ['required', 'string', 'max:255'],
+            'memo' => ['nullable', 'string'],
+            'status' => ['required', Rule::enum(PostStatus::class)],
+            'tag_values' => ['required', 'array', 'min:1'],
+            'tag_values.*.tag_id' => ['required', 'integer', 'exists:tags,id'],
+            'tag_values.*.value' => ['required'],
+        ];
+    }
+
+    /**
+     * Convert validated request to DTO
+     */
+    public function getCreatePostData(): CreatePostData
+    {
+        return CreatePostData::from([
+            'user_id' => auth()->id(),
+            'week_start_date' => $this->input('week_start_date'),
+            'title' => $this->input('title'),
+            'memo' => $this->input('memo'),
+            'status' => $this->input('status'),
+            'tag_values' => array_map(
+                fn (array $tagValue) => TagValueData::from($tagValue),
+                $this->input('tag_values', [])
+            ),
+        ]);
+    }
+}
+```
+
+### Controller Usage
+
+```php
+public function store(StorePostRequest $request): JsonResponse
+{
+    $data = $request->getCreatePostData();
+    $post = $this->createPostUseCase->execute($data);
+
+    return response()->json([
+        'data' => new PostResource($post),
+    ], 201);
+}
+```
 
 ---
 
-## Why This Matters
+## TypeScript Generation
 
-**Without ValueObjects**, code suffers from:
-- Primitive Obsession anti-pattern
-- No validation guarantee
-- Type unsafety (string can be anything)
-- Scattered validation logic
-- Poor domain modeling
+### Generated Types
 
-**With ValueObjects**, you get:
-- Guaranteed validation
-- Type safety
-- Self-documenting code
-- Centralized validation logic
-- Rich domain model
-- Immutability and consistency
+Running `php artisan typescript:transform` generates:
+
+```typescript
+// resources/js/types/generated.d.ts
+declare namespace App.Data {
+    export type CreatePostData = {
+        user_id: number;
+        week_start_date: string;
+        title: string;
+        memo?: string;
+        status: App.Enums.PostStatus;
+        tag_values: Array<App.Data.TagValueData>;
+    };
+
+    export type TagValueData = {
+        tag_id: number;
+        value: string;
+    };
+
+    export type SearchPostsData = {
+        user_id?: number;
+        q?: string;
+        status?: App.Enums.PostStatus;
+        week_start_date?: string;
+        page: number;
+        per_page: number;
+    };
+}
+```
+
+### React Usage
+
+```tsx
+import { useForm } from 'laravel-precognition-react';
+
+const form = useForm<App.Data.CreatePostData>(
+    'post',
+    store().url,
+    {
+        userId: 0,
+        weekStartDate: '',
+        title: '',
+        memo: undefined,
+        status: 'draft',
+        tagValues: [],
+    }
+);
+```
+
+---
+
+## Naming Conventions
+
+| Purpose | Naming Pattern | Example |
+|---------|---------------|---------|
+| Create input | `Create[Resource]Data` | `CreatePostData` |
+| Update input | `Update[Resource]Data` | `UpdatePostData` |
+| Search/filter | `Search[Resource]sData` | `SearchPostsData` |
+| Nested data | `[Property]Data` | `TagValueData` |
+
+---
+
+## Checklist: DTO Design
+
+Before considering a DTO implementation complete, verify:
+
+- [ ] Has `#[TypeScript()]` attribute
+- [ ] Has `#[MapName(SnakeCaseMapper::class)]` attribute
+- [ ] Class is `final readonly`
+- [ ] Extends `Spatie\LaravelData\Data`
+- [ ] All properties have explicit types
+- [ ] Nullable properties use `?` prefix
+- [ ] Array properties have PHPDoc type annotation
+- [ ] Array properties have `#[DataCollectionOf()]` attribute
+- [ ] FormRequest has `get[Action][Resource]Data()` method
+- [ ] Naming follows convention
+
+---
+
+## Comparison: ValueObject vs Laravel Data
+
+| Aspect | ValueObject (DDD) | Laravel Data (7-Layer) |
+|--------|-------------------|------------------------|
+| Purpose | Domain modeling | Data transfer |
+| Validation | Factory method | FormRequest |
+| Immutability | Private constructor | `readonly` class |
+| Type generation | Manual | `#[TypeScript()]` |
+| Framework coupling | None | Laravel |
+| Complexity | High | Low |
+| Use case | Domain boundaries | API/Form data |
+
+**Recommendation**: Use Laravel Data for DTOs in 7-layer architecture. It provides TypeScript generation, automatic validation integration, and simpler implementation.

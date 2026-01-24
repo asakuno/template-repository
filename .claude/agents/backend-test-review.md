@@ -1,23 +1,23 @@
 ---
 name: backend-test-review
-description: Testing & Review実行。Laravel 4層アーキテクチャ対応。Serena MCPでテスト作成、Codex MCPでテストコードレビューを担当。
+description: Testing & Review実行。Laravel 7層アーキテクチャ対応。Serena MCPでテスト作成、Codex MCPでテストコードレビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill
 model: inherit
 ---
 
-# Backend Test-Review Agent (4-Layer Architecture Edition)
+# Backend Test-Review Agent (7-Layer Architecture Edition)
 
 ## Persona
 
-PHPUnitとLaravelテストに精通したバックエンドエンジニア。4層アーキテクチャのテスト戦略、AAAパターン、モック戦略に深い知見を持つ。
+PHPUnitとLaravelテストに精通したバックエンドエンジニア。7層アーキテクチャのテスト戦略、AAAパターン、モック戦略に深い知見を持つ。
 
 ## アーキテクチャコンテキスト
 
 **層別テスト戦略:**
-- **Domain層**: Unitテスト（DB不要、純粋PHP）
-- **Application層**: Unitテスト（Repositoryをモック）
-- **Infrastructure層**: Featureテスト（実DB使用）
-- **Presentation層**: Featureテスト（HTTPリクエスト）
+- **UseCase層**: Unitテスト（Repositoryをモック）
+- **Repository層**: Featureテスト（実DB使用）
+- **Controller層**: Featureテスト（HTTPリクエスト）
+- **Model層**: Unitテスト（キャスト、リレーション）
 
 ## 役割
 
@@ -55,23 +55,23 @@ Testing & Reviewワークフローを完遂する。
 
 #### 1-2. テスト要件の特定
 
-**Domain層（Unitテスト）:**
-- ValueObjectバリデーション（有効/無効入力）
-- Entityファクトリメソッド（create, reconstruct）
-- Entityビジネスメソッド
-
-**Application層（Unitテスト）:**
+**UseCase層（Unitテスト）:**
 - UseCase（Repositoryをモック）
+- ドメインバリデーション
 - エラーハンドリング
 
-**Infrastructure層（Featureテスト）:**
+**Repository層（Featureテスト）:**
 - Repository save/find操作
-- Entity復元
+- トランザクション
 
-**Presentation層（Featureテスト）:**
+**Controller層（Featureテスト）:**
 - HTTPリクエスト/レスポンス
 - バリデーションエラー
 - 認証/認可
+
+**Model層（Unitテスト）:**
+- キャスト
+- スコープ
 
 #### 1-3. ガイドライン参照
 
@@ -83,202 +83,127 @@ Skill('backend-test-guidelines')
 
 ### 層別テストパターン
 
-#### Domain層: ValueObject Unitテスト
+#### UseCase層: Unitテスト（Repositoryモック）
 
 ```php
 <?php
 declare(strict_types=1);
 
-namespace Tests\Unit\Modules\Member\Domain\ValueObjects;
+namespace Tests\Unit\UseCases\Post;
 
-use InvalidArgumentException;
-use Modules\Member\Domain\ValueObjects\Email;
+use App\Data\Post\CreatePostData;
+use App\UseCases\Post\CreatePostUseCase;
+use App\Repositories\Post\PostRepositoryInterface;
+use App\Models\Post;
 use PHPUnit\Framework\TestCase;
 
-final class EmailTest extends TestCase
+final class CreatePostUseCaseTest extends TestCase
 {
-    public function test_有効なメールアドレスで生成できる(): void
-    {
-        // Arrange & Act
-        $email = Email::create('test@example.com');
-
-        // Assert
-        $this->assertSame('test@example.com', $email->value());
-    }
-
-    public function test_無効なメールアドレスは例外が発生する(): void
-    {
-        // Assert
-        $this->expectException(InvalidArgumentException::class);
-
-        // Act
-        Email::create('invalid-email');
-    }
-
-    /**
-     * @dataProvider 無効なメールアドレス一覧
-     */
-    public function test_様々な無効なメールアドレスで例外が発生する(string $invalidEmail): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        Email::create($invalidEmail);
-    }
-
-    public static function 無効なメールアドレス一覧(): array
-    {
-        return [
-            'no_at_symbol' => ['testexample.com'],
-            'no_domain' => ['test@'],
-            'empty_string' => [''],
-        ];
-    }
-}
-```
-
-#### Domain層: Entity Unitテスト
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace Tests\Unit\Modules\Member\Domain\Entities;
-
-use Modules\Member\Domain\Entities\Member;
-use Modules\Member\Domain\ValueObjects\{MemberId, Name, Email};
-use PHPUnit\Framework\TestCase;
-
-final class MemberTest extends TestCase
-{
-    public function test_メンバーを作成できる(): void
+    public function test_投稿を作成できる(): void
     {
         // Arrange
-        $name = Name::create('山田太郎');
-        $email = Email::create('taro@example.com');
-
-        // Act
-        $member = Member::create($name, $email);
-
-        // Assert
-        $this->assertNotNull($member->id());
-        $this->assertTrue($member->name()->equals($name));
-    }
-
-    public function test_メンバーを復元できる(): void
-    {
-        // Arrange
-        $id = MemberId::from('test-id-123');
-        $name = Name::create('山田太郎');
-        $email = Email::create('taro@example.com');
-
-        // Act
-        $member = Member::reconstruct($id, $name, $email);
-
-        // Assert
-        $this->assertSame('test-id-123', $member->id()->value());
-    }
-}
-```
-
-#### Application層: UseCase Unitテスト（Repositoryモック）
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace Tests\Unit\Modules\Member\Application\UseCases;
-
-use Modules\Member\Application\DTOs\CreateMemberInput;
-use Modules\Member\Application\UseCases\CreateMemberUseCase;
-use Modules\Member\Domain\Entities\Member;
-use Modules\Member\Domain\Repositories\MemberRepositoryInterface;
-use PHPUnit\Framework\TestCase;
-
-final class CreateMemberUseCaseTest extends TestCase
-{
-    public function test_メンバーを作成できる(): void
-    {
-        // Arrange
-        $repository = $this->createMock(MemberRepositoryInterface::class);
+        $repository = $this->createMock(PostRepositoryInterface::class);
         $repository
             ->expects($this->once())
-            ->method('save')
-            ->with($this->callback(fn (Member $m) =>
-                $m->name()->value() === '山田太郎' &&
-                $m->email()->value() === 'taro@example.com'
-            ));
+            ->method('findByUserAndWeek')
+            ->willReturn(null);
+        $repository
+            ->expects($this->once())
+            ->method('create')
+            ->willReturn(new Post());
 
-        $useCase = new CreateMemberUseCase($repository);
+        $useCase = new CreatePostUseCase($repository);
 
         // Act
-        $output = $useCase->execute(new CreateMemberInput(
-            name: '山田太郎',
-            email: 'taro@example.com',
-        ));
+        $result = $useCase->execute(CreatePostData::from([
+            'user_id' => 1,
+            'week_start_date' => '2025-01-01',
+            'title' => 'テスト投稿',
+            'status' => 'draft',
+        ]));
 
         // Assert
-        $this->assertNotEmpty($output->id);
+        $this->assertInstanceOf(Post::class, $result);
     }
 
-    public function test_無効なメールアドレスで例外が発生する(): void
+    public function test_重複する週の投稿で例外が発生する(): void
     {
         // Arrange
-        $repository = $this->createMock(MemberRepositoryInterface::class);
-        $repository->expects($this->never())->method('save');
-        $useCase = new CreateMemberUseCase($repository);
+        $repository = $this->createMock(PostRepositoryInterface::class);
+        $repository
+            ->expects($this->once())
+            ->method('findByUserAndWeek')
+            ->willReturn(new Post());
+        $repository->expects($this->never())->method('create');
+
+        $useCase = new CreatePostUseCase($repository);
 
         // Assert
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
 
         // Act
-        $useCase->execute(new CreateMemberInput(name: '山田太郎', email: 'invalid'));
+        $useCase->execute(CreatePostData::from([
+            'user_id' => 1,
+            'week_start_date' => '2025-01-01',
+            'title' => 'テスト投稿',
+            'status' => 'draft',
+        ]));
     }
 }
 ```
 
-#### Infrastructure層: Repository Featureテスト
+#### Repository層: Featureテスト
 
 ```php
 <?php
 declare(strict_types=1);
 
-namespace Tests\Feature\Modules\Member\Infrastructure\Repositories;
+namespace Tests\Feature\Repositories\Post;
 
+use App\Repositories\Post\PostRepository;
+use App\Models\Post;
+use App\Models\User;
+use App\Enums\PostStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Modules\Member\Domain\Entities\Member;
-use Modules\Member\Domain\ValueObjects\{Name, Email};
-use Modules\Member\Infrastructure\Repositories\EloquentMemberRepository;
 use Tests\TestCase;
 
-final class EloquentMemberRepositoryTest extends TestCase
+final class PostRepositoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    private EloquentMemberRepository $repository;
+    private PostRepository $repository;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repository = new EloquentMemberRepository();
+        $this->repository = new PostRepository();
     }
 
-    public function test_メンバーを保存して取得できる(): void
+    public function test_投稿を保存して取得できる(): void
     {
         // Arrange
-        $member = Member::create(Name::create('山田太郎'), Email::create('taro@example.com'));
+        $user = User::factory()->create();
 
         // Act
-        $this->repository->save($member);
-        $found = $this->repository->findById($member->id());
+        $post = $this->repository->create(
+            userId: $user->id,
+            weekStartDate: '2025-01-01',
+            title: 'テスト投稿',
+            memo: null,
+            status: PostStatus::Draft,
+            tagValues: []
+        );
+        $found = $this->repository->findById($post->id);
 
         // Assert
         $this->assertNotNull($found);
-        $this->assertTrue($found->id()->equals($member->id()));
+        $this->assertEquals($post->id, $found->id);
     }
 
     public function test_存在しないIDでnullが返る(): void
     {
         // Act
-        $result = $this->repository->findById(MemberId::from('non-existent'));
+        $result = $this->repository->findById(99999);
 
         // Assert
         $this->assertNull($result);
@@ -286,52 +211,53 @@ final class EloquentMemberRepositoryTest extends TestCase
 }
 ```
 
-#### Presentation層: Controller Featureテスト
+#### Controller層: Featureテスト
 
 ```php
 <?php
 declare(strict_types=1);
 
-namespace Tests\Feature\Modules\Member\Presentation\Controllers;
+namespace Tests\Feature\Http\Controllers\Api;
 
 use App\Models\User;
+use App\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
-final class MemberControllerTest extends TestCase
+final class PostControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_メンバーを作成できる(): void
+    public function test_投稿を作成できる(): void
     {
         // Arrange
         $user = User::factory()->create();
 
         // Act
-        $response = $this->actingAs($user)->post(route('members.store'), [
-            'name' => '山田太郎',
-            'email' => 'taro@example.com',
+        $response = $this->actingAs($user)->postJson('/api/posts', [
+            'week_start_date' => '2025-01-01',
+            'title' => 'テスト投稿',
+            'status' => 'draft',
         ]);
 
         // Assert
-        $response->assertRedirect(route('members.index'));
-        $this->assertDatabaseHas('members', ['name' => '山田太郎']);
+        $response->assertCreated();
+        $this->assertDatabaseHas('posts', ['title' => 'テスト投稿']);
     }
 
-    public function test_バリデーションエラーでリダイレクトされる(): void
+    public function test_バリデーションエラーで422が返る(): void
     {
         // Arrange
         $user = User::factory()->create();
 
         // Act
-        $response = $this->actingAs($user)->post(route('members.store'), [
-            'name' => '',
-            'email' => 'invalid',
+        $response = $this->actingAs($user)->postJson('/api/posts', [
+            'title' => '', // 必須フィールドが空
         ]);
 
         // Assert
-        $response->assertSessionHasErrors(['name', 'email']);
+        $response->assertUnprocessable();
+        $response->assertJsonValidationErrors(['title']);
     }
 }
 ```
@@ -342,8 +268,8 @@ final class MemberControllerTest extends TestCase
 
 #### 2-1. テストコード収集
 
-- Unitテスト（tests/Unit/Modules/{Module}/）
-- Featureテスト（tests/Feature/Modules/{Module}/）
+- Unitテスト（tests/Unit/）
+- Featureテスト（tests/Feature/）
 
 #### 2-2. Codex MCPでレビュー
 
@@ -355,7 +281,7 @@ Skill('codex-mcp-guide')
 
 ```
 mcp__codex__codex
-prompt: "Based on .claude/skills/backend-test-guidelines/ for Laravel 4-layer architecture, review:
+prompt: "Based on .claude/skills/backend-test-guidelines/ for Laravel 7-layer architecture, review:
 
 【Test Code】
 ${testCode}
@@ -395,10 +321,9 @@ reasoningEffort: "high"
 **Status**: [✅ Approved / ⚠️ Needs Revision / ❌ Major Issues]
 
 **Test Type Appropriateness**:
-- Domain Layer (Unit): [状態]
-- Application Layer (Unit): [状態]
-- Infrastructure Layer (Feature): [状態]
-- Presentation Layer (Feature): [状態]
+- UseCase Layer (Unit): [状態]
+- Repository Layer (Feature): [状態]
+- Controller Layer (Feature): [状態]
 
 **AAA Pattern**: [状態]
 **Mocking Strategy**: [状態]
@@ -418,8 +343,8 @@ reasoningEffort: "high"
 
 ## ベストプラクティス
 
-1. **DomainはUnit**: Domain層テストはDB不使用
-2. **Repositoryをモック**: UseCaseテストはRepository Interfaceをモック
+1. **UseCaseはUnit**: UseCaseテストはRepositoryをモック
+2. **RepositoryはFeature**: Repository層テストは実DB使用
 3. **AAAパターン**: 常にArrange-Act-Assertで構造化
 4. **日本語名**: 説明的な日本語テストメソッド名
 5. **Data Provider**: 複数入力バリエーションに使用
@@ -430,8 +355,6 @@ reasoningEffort: "high"
 ## Completion Checklist
 
 **Step 1: Testing**
-- [ ] ValueObjectテスト（有効/無効入力）
-- [ ] Entityテスト（ファクトリメソッド、ビジネスメソッド）
 - [ ] UseCaseテスト（Repositoryモック）
 - [ ] Repositoryテスト（実DB）
 - [ ] Controllerテスト（HTTPリクエスト）

@@ -1,11 +1,11 @@
 ---
 name: backend-coding-guidelines
-description: Comprehensive Laravel backend coding guidelines for 4-layer architecture (DDD-lite). **CRITICAL**: Focuses on patterns AI commonly fails to implement correctly, especially Entity/ValueObject design, UseCase structure, and layer separation. Reference this skill when implementing or refactoring backend code during Phase 2.
+description: Comprehensive Laravel backend coding guidelines for 7-layer architecture (Laravel-native). **CRITICAL**: Focuses on patterns AI commonly fails to implement correctly, especially UseCase structure, Repository pattern, and layer separation. Reference this skill when implementing or refactoring backend code during Phase 2.
 ---
 
 # Backend Coding Guidelines - What AI Gets Wrong
 
-This skill focuses on patterns AI commonly fails to implement correctly in Laravel applications following a 4-layer architecture (Presentation, Application, Domain, Infrastructure).
+This skill focuses on patterns AI commonly fails to implement correctly in Laravel applications following a 7-layer Laravel-native architecture.
 
 ## Table of Contents
 
@@ -26,7 +26,7 @@ This skill focuses on patterns AI commonly fails to implement correctly in Larav
 ### Quick Reference - Phase 2: Implementation & Review
 
 **実装前チェック:**
-- [ ] 実装対象に応じたパターンを確認（Entity/ValueObject/UseCase/Repository）
+- [ ] 実装対象に応じたパターンを確認（UseCase/Repository/Service/DTO）
 - [ ] AI's Critical Weaknessesセクションで注意点を把握
 - [ ] Prohibited Patternsを確認
 
@@ -35,230 +35,287 @@ This skill focuses on patterns AI commonly fails to implement correctly in Larav
 - [ ] 禁止パターンが使用されていないか確認
 - [ ] レイヤー分離ルールが守られているか確認
 
-**詳細な実装ガイド:**
-- [Entity Design](references/entity-design.md) - Entityの詳細パターン
-- [ValueObject Design](references/valueobject-design.md) - ValueObjectの詳細パターン
-- [UseCase Structure](references/usecase-structure.md) - UseCaseの詳細パターン
-- [Repository Pattern](references/repository-pattern.md) - Repositoryの詳細パターン
-- [Layer Separation](references/layer-separation.md) - レイヤー分離の詳細
-- [Module Isolation](references/module-isolation.md) - モジュール分離の詳細
+**詳細な規約:**
+- `.claude/rules/backend/` - レイヤー構造、DTO、テスト、コーディング規約の詳細
 
 ---
 
 ## Architecture Overview
 
-**4-Layer Structure:**
-- **Presentation Layer**: HTTP request/response handling (Controller, Request, Resource, Middleware)
-- **Application Layer**: UseCase orchestration (UseCase, DTO)
-- **Domain Layer**: Business logic/rules (Entity, ValueObject, DomainService, Repository Interface)
-- **Infrastructure Layer**: Technical details (Repository Implementation, Eloquent Model, QueryBuilder)
+**7-Layer Structure (Laravel-native):**
+```
+┌─────────────────────────────────────────┐
+│  Presentation (Controllers)             │ ← HTTP Request/Response
+├─────────────────────────────────────────┤
+│  Request (FormRequests)                 │ ← Validation & DTO Conversion
+├─────────────────────────────────────────┤
+│  UseCase (Business Logic)               │ ← Application Logic
+├─────────────────────────────────────────┤
+│  Service (Shared Logic)                 │ ← Reusable Business Logic
+├─────────────────────────────────────────┤
+│  Repository (Data Access)               │ ← Data Abstraction
+├─────────────────────────────────────────┤
+│  Model (Eloquent)                       │ ← Domain Models
+├─────────────────────────────────────────┤
+│  Resource (JSON Transformation)         │ ← Response Transformation
+└─────────────────────────────────────────┘
+```
+
+**Directory Structure (`app/` 配下にフラット配置):**
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Api/              # API Controllers
+│   │   └── Web/              # Web Controllers（Inertia.js）
+│   ├── Requests/             # FormRequests
+│   └── Resources/            # API Resources
+├── UseCases/                 # UseCases
+├── Services/                 # Services
+├── Repositories/             # Repositories
+├── Data/                     # DTOs（Laravel Data）
+├── Models/                   # Eloquent Models
+├── Policies/                 # Policies
+└── Enums/                    # Enums
+```
 
 **Dependency Direction:**
 ```
-Presentation → Application → Domain ← Infrastructure
+Presentation → Request → UseCase → Service/Repository → Model → Resource
 ```
-- Domain layer MUST NOT depend on any other layer
-- Infrastructure implements Domain interfaces (Dependency Inversion)
+- 下位層から上位層への依存は禁止
+- UseCase は Repository Interface 経由でアクセス
 
 ---
 
 ## AI's Critical Weaknesses - Quick Reference
 
-### 1. Entity Design ⚠️ MOST CRITICAL
+### 1. UseCase Structure ⚠️ MOST CRITICAL
 
-**AI gets wrong**: Using public constructors and mutable properties
+**AI gets wrong**: Business logic in controller, no DTOs, or returning Eloquent Models directly
 
 **Correct pattern**:
-- Private constructor with `create()` and `reconstruct()` factory methods
-- All properties `readonly` with ValueObject types
+- Input DTO (Laravel Data) for parameters
+- Output via Eloquent Model or dedicated DTO
+- Uses Repository interface (not Model directly in complex cases)
 - Class marked as `final`
 
 ```php
 // ✅ Correct pattern
-final class Member
+final class CreatePostUseCase
 {
-    private function __construct(
-        private readonly MemberId $id,
-        private readonly Name $name,
-        private readonly Email $email,
+    public function __construct(
+        private PostRepositoryInterface $postRepository,
     ) {}
 
-    public static function create(Name $name, Email $email): self {
-        return new self(MemberId::generate(), $name, $email);
-    }
+    public function execute(CreatePostData $data): Post
+    {
+        // ドメインバリデーション
+        $existingPost = $this->postRepository->findByUserAndWeek(
+            $data->userId,
+            $data->weekStartDate
+        );
 
-    public static function reconstruct(MemberId $id, Name $name, Email $email): self {
-        return new self($id, $name, $email);
-    }
-}
-```
-
-👉 **Detailed guide**: [references/entity-design.md](references/entity-design.md)
-
----
-
-### 2. ValueObject Design ⚠️
-
-**AI gets wrong**: Skipping validation or using primitives in Entities
-
-**Correct pattern**:
-- Private constructor with `create()` factory method
-- Validation at creation time
-- Class marked as `final readonly`
-- Has `value()` and `equals()` methods
-
-```php
-// ✅ Correct pattern
-final readonly class Email
-{
-    private function __construct(private string $value) {}
-
-    public static function create(string $value): self {
-        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException("無効なメールアドレス形式: {$value}");
+        if ($existingPost !== null) {
+            throw ValidationException::withMessages([
+                'week_start_date' => ['この週のレポートは既に存在します。'],
+            ]);
         }
-        return new self($value);
-    }
 
-    public function value(): string { return $this->value; }
-    public function equals(self $other): bool { return $this->value === $other->value; }
-}
-```
-
-👉 **Detailed guide**: [references/valueobject-design.md](references/valueobject-design.md)
-
----
-
-### 3. UseCase Structure ⚠️
-
-**AI gets wrong**: Business logic in controller, no DTOs, or returning Entities
-
-**Correct pattern**:
-- Input DTO for parameters (primitives)
-- Output DTO for results (primitives)
-- Uses Repository interface (not implementation)
-- Class marked as `final readonly`
-
-```php
-// ✅ Correct pattern
-final readonly class CreateMemberUseCase
-{
-    public function __construct(
-        private MemberRepositoryInterface $repository,
-    ) {}
-
-    public function execute(CreateMemberInput $input): CreateMemberOutput {
-        $member = Member::create(
-            name: Name::create($input->name),
-            email: Email::create($input->email),
-        );
-        $this->repository->save($member);
-        return new CreateMemberOutput(id: $member->id()->value());
-    }
-}
-```
-
-👉 **Detailed guide**: [references/usecase-structure.md](references/usecase-structure.md)
-
----
-
-### 4. Repository Pattern ⚠️
-
-**AI gets wrong**: Returning Eloquent Model or missing interface separation
-
-**Correct pattern**:
-- Interface in Domain layer (`MemberRepositoryInterface`)
-- Implementation in Infrastructure layer (`EloquentMemberRepository`)
-- Returns Entity (not Eloquent Model)
-- Uses `reconstruct()` to build Entity from Model
-
-```php
-// ✅ Correct pattern
-final class EloquentMemberRepository implements MemberRepositoryInterface
-{
-    public function findById(MemberId $id): ?Member {
-        $model = MemberModel::find($id->value());
-        if ($model === null) return null;
-
-        return Member::reconstruct(
-            id: MemberId::from($model->id),
-            name: Name::create($model->name),
-            email: Email::create($model->email),
+        // データ作成
+        return $this->postRepository->create(
+            $data->userId,
+            $data->weekStartDate,
+            $data->title,
+            $data->memo,
+            $data->status,
+            $data->tagValues
         );
     }
 }
 ```
 
-👉 **Detailed guide**: [references/repository-pattern.md](references/repository-pattern.md)
+👉 **詳細**: `.claude/rules/backend/02-layers.md`
 
 ---
 
-### 5. Layer Separation ⚠️
+### 2. Repository Pattern ⚠️
 
-**AI gets wrong**: Cross-layer dependencies (Domain → Laravel, UseCase → Eloquent, Controller → DB)
+**AI gets wrong**: Controller directly using Eloquent Model, or Repository returning incorrect types
 
 **Correct pattern**:
-- Domain layer: Pure PHP, no Laravel dependencies
-- Application layer: Uses Repository interfaces
-- Controller: Uses UseCases only
-- No cross-layer shortcuts
+- Interface in `Repositories/` directory
+- Implementation in same directory or separate (for testing)
+- Returns Eloquent Model (not raw arrays)
+- Encapsulates complex queries and transactions
 
 ```php
-// ✅ Correct: Domain layer is pure PHP
-final class Member {
-    // No use statements for Laravel classes
-    // No database operations
-    // Pure business logic only
+// ✅ Correct pattern: Interface
+interface PostRepositoryInterface
+{
+    public function findById(int $id): ?Post;
+    public function findByUserAndWeek(int $userId, string $weekStartDate): ?Post;
+    public function create(
+        int $userId,
+        string $weekStartDate,
+        string $title,
+        ?string $memo,
+        PostStatus $status,
+        array $tagValues
+    ): Post;
 }
 
-// ✅ Correct: UseCase uses Repository interface
-final readonly class ListMembersUseCase {
-    public function __construct(
-        private MemberRepositoryInterface $repository,
-    ) {}
-}
+// ✅ Correct pattern: Implementation
+final class PostRepository implements PostRepositoryInterface
+{
+    public function findById(int $id): ?Post
+    {
+        return Post::find($id);
+    }
 
-// ✅ Correct: Controller uses UseCase
-final class MemberController extends Controller {
-    public function index(ListMembersUseCase $useCase): Response {
-        $output = $useCase->execute();
-        return Inertia::render('Members/Index', ['members' => $output->members]);
+    public function create(...): Post
+    {
+        return DB::transaction(function () use (...) {
+            $post = Post::create([...]);
+            $post->tags()->attach($tagValues);
+            return $post->fresh(['tags']);
+        });
     }
 }
 ```
 
-👉 **Detailed guide**: [references/layer-separation.md](references/layer-separation.md)
+👉 **詳細**: `.claude/rules/backend/02-layers.md`
 
 ---
 
-### 6. Module Isolation ⚠️
+### 3. DTO Design (Laravel Data) ⚠️
 
-**AI gets wrong**: Direct cross-module references to internal classes
+**AI gets wrong**: Not using Laravel Data, missing TypeScript generation attributes, or mutable DTOs
 
 **Correct pattern**:
-- Contract interface in `modules/Contract/{Module}/`
-- Contract DTOs use primitives
-- Module implements Contract
-- Other modules use Contract (not internals)
+- Use `spatie/laravel-data`
+- Add `#[TypeScript()]` attribute for type generation
+- All properties `readonly`
+- Use `#[MapName(SnakeCaseMapper::class)]` for case conversion
 
 ```php
-// ✅ Correct: Use Contract for cross-module communication
-// modules/Contract/Member/MemberServiceInterface.php
-interface MemberServiceInterface {
-    public function exists(string $id): bool;
-}
+// ✅ Correct pattern
+use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Attributes\MapName;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
-// modules/Project/Application/UseCases/CreateProjectUseCase.php
-use Modules\Contract\Member\MemberServiceInterface; // Via Contract
-
-final readonly class CreateProjectUseCase {
+#[TypeScript()]
+#[MapName(SnakeCaseMapper::class)]
+final readonly class CreatePostData extends Data
+{
     public function __construct(
-        private MemberServiceInterface $memberService,
+        public int $userId,
+        public string $weekStartDate,
+        #[Max(255)]
+        public string $title,
+        #[Max(1000)]
+        public ?string $memo,
+        public PostStatus $status,
+        /** @var array<TagValueData> */
+        #[DataCollectionOf(TagValueData::class)]
+        public array $tagValues,
     ) {}
 }
 ```
 
-👉 **Detailed guide**: [references/module-isolation.md](references/module-isolation.md)
+👉 **詳細**: `.claude/rules/backend/03-dto-data.md`
+
+---
+
+### 4. Layer Separation ⚠️
+
+**AI gets wrong**: Cross-layer dependencies (Controller → Model directly, UseCase → HTTP concerns)
+
+**Correct pattern**:
+- Controller only handles HTTP, calls UseCase
+- UseCase contains business logic, uses Repository
+- Repository encapsulates data access
+- FormRequest handles validation and DTO conversion
+
+```php
+// ✅ Correct: Controller uses UseCase only
+final class PostController extends Controller
+{
+    public function store(StorePostRequest $request): JsonResponse
+    {
+        $data = $request->getCreatePostData();
+        $post = $this->createPostUseCase->execute($data);
+
+        return response()->json([
+            'data' => new PostResource($post),
+        ], 201);
+    }
+}
+
+// ✅ Correct: FormRequest converts to DTO
+final class StorePostRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'title' => ['required', 'string', 'max:255'],
+            // ...
+        ];
+    }
+
+    public function getCreatePostData(): CreatePostData
+    {
+        return CreatePostData::from([
+            'user_id' => auth()->id(),
+            'title' => $this->input('title'),
+            // ...
+        ]);
+    }
+}
+```
+
+👉 **詳細**: `.claude/rules/backend/02-layers.md`
+
+---
+
+### 5. Web vs API Controllers ⚠️
+
+**AI gets wrong**: Putting dynamic data in Web Controllers, or mixing concerns
+
+**Correct pattern**:
+- Web Controllers: Initial page render only, static master data
+- API Controllers: CRUD operations, dynamic data
+- Naming: `{Resource}PageController` for Web, `{Resource}Controller` for API
+
+```php
+// ✅ Correct: Web Controller (static data only)
+final class PostPageController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        return Inertia::render('Post/Index', [
+            'statusOptions' => PostStatus::toSelectArray(), // 静的データ
+            'filters' => $request->only(['q', 'status']),
+        ]);
+        // 動的データは React 側から API 経由で取得
+    }
+}
+
+// ✅ Correct: API Controller (dynamic data)
+final class PostController extends Controller
+{
+    public function index(SearchPostsRequest $request): JsonResponse
+    {
+        $posts = $this->getPostsUseCase->execute($request->getSearchData());
+        return response()->json([
+            'data' => PostResource::collection($posts),
+        ]);
+    }
+}
+```
+
+👉 **詳細**: `.claude/rules/backend/05-inertia-backend.md`
 
 ---
 
@@ -266,16 +323,18 @@ final readonly class CreateProjectUseCase {
 
 | Type | Pattern | Example |
 |------|---------|---------|
-| Entity | `{Name}` | `Member`, `Project` |
-| ValueObject | `{Name}` | `Email`, `MemberId`, `Name` |
-| Repository Interface | `{Entity}RepositoryInterface` | `MemberRepositoryInterface` |
-| Repository Impl | `Eloquent{Entity}Repository` | `EloquentMemberRepository` |
-| UseCase | `{Action}{Entity}UseCase` | `CreateMemberUseCase` |
-| Input DTO | `{Action}{Entity}Input` | `CreateMemberInput` |
-| Output DTO | `{Action}{Entity}Output` | `CreateMemberOutput` |
-| Controller | `{Entity}Controller` | `MemberController` |
-| Request | `{Action}{Entity}Request` | `CreateMemberRequest` |
-| Eloquent Model | `{Entity}Model` | `MemberModel` |
+| Web Controller | `{Resource}PageController` | `PostPageController` |
+| API Controller | `{Resource}Controller` | `PostController` |
+| UseCase | `{Action}{Resource}UseCase` | `CreatePostUseCase` |
+| Repository Interface | `{Resource}RepositoryInterface` | `PostRepositoryInterface` |
+| Repository | `{Resource}Repository` | `PostRepository` |
+| FormRequest (作成) | `Store{Resource}Request` | `StorePostRequest` |
+| FormRequest (更新) | `Update{Resource}Request` | `UpdatePostRequest` |
+| DTO | `Create/Update{Resource}Data` | `CreatePostData` |
+| Resource | `{Resource}Resource` | `PostResource` |
+| Service | `{Resource}{Function}Service` | `PostExportService` |
+| Eloquent Model | `{Resource}` | `Post` |
+| Policy | `{Resource}Policy` | `PostPolicy` |
 
 ---
 
@@ -283,68 +342,72 @@ final readonly class CreateProjectUseCase {
 
 | Purpose | Method Name |
 |---------|-------------|
-| Create new | `create` |
-| Reconstruct from DB | `reconstruct` |
+| UseCase execution | `execute` |
 | Find single | `findById`, `findBy{Property}` |
 | Find multiple | `findAll`, `findBy{Criteria}` |
-| Save | `save` |
+| Create | `create` |
+| Update | `update` |
 | Delete | `delete` |
-| Get value | `value` |
-| Compare equality | `equals` |
+| DTO conversion | `get{Action}{Resource}Data` |
 
 ---
 
 ## Class Modifiers
 
 ```php
-// Entity: final with private constructor
-final class Member
+// UseCase: final
+final class CreatePostUseCase
 {
-    private function __construct(...) {}
+    public function __construct(
+        private PostRepositoryInterface $repository,
+    ) {}
 }
 
-// ValueObject: final readonly
-final readonly class Email
+// DTO (Laravel Data): final readonly
+#[TypeScript()]
+final readonly class CreatePostData extends Data
 {
-    private function __construct(...) {}
+    public function __construct(
+        public int $userId,
+        // ...
+    ) {}
 }
-
-// DTO: final readonly with public constructor
-final readonly class CreateMemberInput
-{
-    public function __construct(...) {}
-}
-
-// UseCase: final readonly
-final readonly class CreateMemberUseCase {}
 
 // Repository Implementation: final
-final class EloquentMemberRepository implements MemberRepositoryInterface {}
+final class PostRepository implements PostRepositoryInterface {}
 
-// Controller: final
-final class MemberController extends Controller {}
+// Service: final
+final class PostExportService {}
+
+// Controller: NOT final (テスト時のモック作成のため)
+class PostController extends Controller {}
+
+// Model: NOT final (Laravel の仕様)
+class Post extends Model {}
 ```
 
 ---
 
 ## Prohibited Patterns
 
-### In Domain Layer
-- ❌ Eloquent Model usage
-- ❌ Laravel Facades (`DB::`, `Cache::`, etc.)
-- ❌ HTTP Request/Response
-- ❌ External service calls
-- ❌ File system operations
-
-### In Application Layer
-- ❌ Direct database queries
-- ❌ Returning Entities to Presentation layer
-- ❌ HTTP-specific logic
-
 ### In Controller
 - ❌ Business logic
-- ❌ Direct database access
-- ❌ Data transformation (use UseCase for this)
+- ❌ Direct Model access (`Post::where(...)`)
+- ❌ Data transformation logic
+
+### In UseCase
+- ❌ HTTP-specific logic (`Request`, `Response`)
+- ❌ Direct `DB::` queries (use Repository)
+- ❌ Returning raw arrays (return Model or DTO)
+
+### In Repository
+- ❌ Business logic (only data access)
+- ❌ HTTP concerns
+
+### General
+- ❌ `@inertiajs/react` の `useForm`（Laravel Precognition を使用）
+- ❌ Web Controllers での動的データ提供（API 経由）
+- ❌ ハードコードされた URL（Wayfinder 使用）
 
 ---
 
@@ -352,49 +415,46 @@ final class MemberController extends Controller {}
 
 Before considering implementation complete, verify AI didn't fall into these traps:
 
-### Entity/ValueObject ⚠️ (Most Critical)
-- [ ] Entity has `private` constructor with `create()` and `reconstruct()` factory methods
-- [ ] ValueObject has validation in factory method
-- [ ] All properties are `readonly`
-- [ ] Class is marked as `final`
-- [ ] Uses ValueObjects instead of primitives for Entity properties
-
-### UseCase ⚠️
-- [ ] Uses Input DTO for parameters
-- [ ] Returns Output DTO (not Entity)
-- [ ] Depends on Repository Interface (not implementation)
-- [ ] No direct database access
-- [ ] Marked as `final readonly`
+### UseCase ⚠️ (Most Critical)
+- [ ] Controller は UseCase を呼び出すのみ（ビジネスロジックなし）
+- [ ] UseCase は Input DTO (Laravel Data) を受け取る
+- [ ] UseCase は Repository Interface を使用
+- [ ] UseCase は `final` class
+- [ ] ドメインバリデーションは UseCase 内
 
 ### Repository ⚠️
-- [ ] Interface defined in Domain layer
-- [ ] Implementation in Infrastructure layer
-- [ ] Uses `reconstruct()` to build Entity from model
-- [ ] Returns Entity (not Eloquent Model)
+- [ ] Interface と Implementation が分離されている
+- [ ] トランザクション制御は Repository 内
+- [ ] Eloquent Model を返す（生配列ではない）
+- [ ] Implementation は `final` class
+
+### DTO ⚠️
+- [ ] `spatie/laravel-data` を使用
+- [ ] `#[TypeScript()]` attribute が付与されている
+- [ ] `readonly` property を使用
+- [ ] FormRequest に DTO 変換メソッドがある
 
 ### Layer Separation ⚠️
-- [ ] Domain layer has no Laravel dependencies
-- [ ] Application layer uses interfaces
-- [ ] Controller only handles HTTP
-- [ ] No cross-module internal references
+- [ ] Controller は HTTP handling のみ
+- [ ] UseCase はビジネスロジックのみ
+- [ ] Repository はデータアクセスのみ
+- [ ] 下位層から上位層への依存がない
 
-### Controller ⚠️
-- [ ] Uses method injection for UseCase
-- [ ] No business logic
-- [ ] Returns Inertia response with DTOs/arrays (not Entities)
-- [ ] Uses FormRequest for validation
+### Web vs API ⚠️
+- [ ] Web Controllers は静的データのみ提供
+- [ ] 動的データは API 経由で取得
+- [ ] Web Controller は `{Resource}PageController` 命名
 
 ---
 
 ## Summary: What to Watch For
 
 AI will confidently write code that:
-1. **Uses public constructors** in Entities (should use factory methods)
-2. **Skips ValueObjects** and uses primitives
-3. **Returns Entities** from UseCases (should return Output DTOs)
-4. **Returns Eloquent Models** from Repositories
-5. **Puts business logic** in Controllers
-6. **References other modules** directly (should use Contract)
+1. **Puts business logic in Controller** (should be in UseCase)
+2. **Accesses Model directly from Controller** (should use UseCase → Repository)
+3. **Skips DTO conversion** in FormRequest
+4. **Missing TypeScript generation** attributes on DTOs
+5. **Provides dynamic data in Web Controllers** (should use API)
 
 **Trust AI for**:
 - Basic PHP syntax
@@ -402,9 +462,9 @@ AI will confidently write code that:
 - Controller routing
 
 **Scrutinize AI for**:
-- Entity/ValueObject design (factory methods required)
-- UseCase structure (DTOs required)
+- UseCase structure (DTO required)
+- Repository pattern (Interface + Implementation)
 - Layer boundaries (no cross-layer dependencies)
-- Repository pattern (interface + implementation separation)
+- Web vs API Controller responsibility
 
-When in doubt, ask: **"Is each layer isolated with no illegal dependencies?"**
+When in doubt, ask: **"Is each layer handling only its responsibility?"**

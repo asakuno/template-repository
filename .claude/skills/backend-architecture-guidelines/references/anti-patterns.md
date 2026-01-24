@@ -1,139 +1,162 @@
 # Anti-Patterns to Avoid
 
-This document describes common architectural anti-patterns and their correct implementations.
+This document describes common architectural anti-patterns in 7-layer architecture and their correct implementations.
 
 ## Table of Contents
-- [1. Anemic Domain Model](#1-anemic-domain-model)
+- [1. Fat Model](#1-fat-model)
 - [2. God UseCase](#2-god-usecase)
-- [3. Leaky Abstractions](#3-leaky-abstractions)
+- [3. Controller Business Logic](#3-controller-business-logic)
+- [4. Leaky Abstractions](#4-leaky-abstractions)
+- [5. UseCase Returning Resource](#5-usecase-returning-resource)
 
 ---
 
-## 1. Anemic Domain Model
+## 1. Fat Model
 
 ### Problem
 
-An anemic domain model is a model where entities are just data containers with getters/setters, and all business logic is in services. This violates the principle of encapsulation and makes the code procedural rather than object-oriented.
+A fat model is a model that contains business logic, authorization, and validation. This violates the Single Responsibility Principle and makes the code difficult to test and maintain.
 
-### ❌ Anti-Pattern: Anemic Entity
+### ❌ Anti-Pattern: Model with Business Logic
 
 ```php
-// Entity with no behavior - just getters/setters
-final class Member
+// Model with too many responsibilities
+class Post extends Model
 {
-    private string $name;
-    private string $email;
-    private string $status;
+    protected $fillable = ['user_id', 'title', 'status'];
 
-    public function getName(): string
+    protected function casts(): array
     {
-        return $this->name;
+        return ['status' => PostStatus::class];
     }
 
-    public function setName(string $name): void
+    // ❌ Business logic in Model
+    public function submit(): void
     {
-        $this->name = $name;
+        if ($this->status === PostStatus::Submitted) {
+            throw new \Exception('Already submitted');
+        }
+        $this->status = PostStatus::Submitted;
+        $this->save();
     }
 
-    public function getStatus(): string
+    // ❌ Authorization in Model
+    public function canBeEditedBy(User $user): bool
     {
-        return $this->status;
+        return $this->user_id === $user->id;
     }
 
-    public function setStatus(string $status): void
+    // ❌ Validation in Model
+    public function isValid(): bool
     {
-        $this->status = $status;
+        return !empty($this->title) && strlen($this->title) <= 255;
     }
-
-    // No business logic!
 }
 
-// Business logic scattered in Services
-class MemberService
+// Controller calling Model methods
+class PostController extends Controller
 {
-    public function suspend(Member $member): void
+    public function submit(Post $post)
     {
-        if ($member->getStatus() === 'suspended') {
-            throw new Exception('Already suspended');
+        if (!$post->canBeEditedBy(auth()->user())) {  // Wrong place!
+            abort(403);
         }
-        $member->setStatus('suspended');
-    }
-
-    public function canAccessPremiumContent(Member $member): bool
-    {
-        return $member->getStatus() === 'active'
-            && $member->getMembershipType() === 'premium';
+        $post->submit();  // Business logic in Model!
     }
 }
 ```
 
 **Problems**:
-- Business rules are not in the Domain layer
-- Entity doesn't protect its invariants
-- Easy to put entity in invalid state
-- Business logic is scattered across services
+- Business logic is hidden in Model
+- Authorization is not in Policy
+- Validation is not in FormRequest
+- Difficult to test without database
+- Violates Single Responsibility
 
-### ✅ Correct: Rich Domain Model
+### ✅ Correct: Thin Model + UseCase + Policy
 
 ```php
-// Entity with business logic
-final class Member
+// Model - Only data structure concerns
+#[TypeScript()]
+class Post extends Model
 {
-    private function __construct(
-        private readonly MemberId $id,
-        private readonly Name $name,
-        private Email $email,
-        private MemberStatus $status,
-        private MembershipType $membershipType,
+    use HasFactory;
+
+    protected $fillable = ['user_id', 'title', 'status'];
+
+    protected function casts(): array
+    {
+        return ['status' => PostStatus::class];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Only query scopes - no business logic
+    public function scopeByStatus(Builder $query, PostStatus $status): Builder
+    {
+        return $query->where('status', $status);
+    }
+}
+
+// Policy - Authorization
+class PostPolicy
+{
+    public function update(User $user, Post $post): bool
+    {
+        return $user->id === $post->user_id;
+    }
+}
+
+// UseCase - Business logic
+final readonly class SubmitPostUseCase
+{
+    public function __construct(
+        private PostRepositoryInterface $repository,
     ) {}
 
-    public static function create(Name $name, Email $email): self
+    public function execute(int $postId): Post
     {
-        return new self(
-            id: MemberId::generate(),
-            name: $name,
-            email: $email,
-            status: MemberStatus::Active,
-            membershipType: MembershipType::Free,
-        );
-    }
+        $post = $this->repository->findById($postId);
 
-    // Business logic in Entity
-    public function suspend(): void
-    {
-        if ($this->status === MemberStatus::Suspended) {
-            throw new MemberAlreadySuspendedException($this->id);
+        if ($post === null) {
+            throw new PostNotFoundException($postId);
         }
-        $this->status = MemberStatus::Suspended;
-    }
 
-    public function canAccessPremiumContent(): bool
-    {
-        return $this->status === MemberStatus::Active
-            && $this->membershipType === MembershipType::Premium;
-    }
-
-    public function upgradeToPremium(): void
-    {
-        if ($this->membershipType === MembershipType::Premium) {
-            throw new AlreadyPremiumMemberException($this->id);
+        if ($post->status === PostStatus::Submitted) {
+            throw ValidationException::withMessages([
+                'status' => ['This post has already been submitted.'],
+            ]);
         }
-        $this->membershipType = MembershipType::Premium;
-    }
 
-    // Getters only - no setters
-    public function id(): MemberId { return $this->id; }
-    public function name(): Name { return $this->name; }
-    public function email(): Email { return $this->email; }
-    public function status(): MemberStatus { return $this->status; }
+        return $this->repository->updateStatus($postId, PostStatus::Submitted);
+    }
+}
+
+// Controller - Thin, just orchestration
+class PostController extends Controller
+{
+    public function submit(Post $post, SubmitPostUseCase $useCase): JsonResponse
+    {
+        $this->authorize('update', $post);  // Policy
+
+        $updatedPost = $useCase->execute($post->id);
+
+        return response()->json([
+            'data' => new PostResource($updatedPost),
+        ]);
+    }
 }
 ```
 
 **Benefits**:
-- Business rules are encapsulated in Entity
-- Entity protects its invariants
-- Impossible to put entity in invalid state
-- Clear, intention-revealing methods
+- Clear separation of concerns
+- Each layer has single responsibility
+- Easy to test (UseCase with mocked Repository)
+- Authorization is explicit (Policy)
+- Business rules are in UseCase
 
 ---
 
@@ -164,33 +187,17 @@ final readonly class ProcessOrderUseCase
         $subtotal = 0;
         foreach ($input->items as $item) {
             $price = $this->priceCalculator->calculate($item);
-            // ... discount logic
-            // ... tax logic
-            // ... shipping logic
+            // ... discount logic, tax logic, shipping logic
             $subtotal += $price;
         }
 
         // Process payment (80 lines)
         $paymentResult = $this->paymentGateway->charge($subtotal);
-        // ... retry logic
-        // ... error handling
-        // ... refund logic
+        // ... retry logic, error handling, refund logic
 
         // Send notifications (60 lines)
         $this->mailer->send($customer);
         $this->smsService->send($customer);
-        // ... notification templates
-        // ... notification preferences
-
-        // Update analytics (50 lines)
-        $this->analytics->track($order);
-        // ... event tracking
-        // ... conversion tracking
-
-        // Generate reports (60 lines)
-        $this->reportGenerator->generate($order);
-        // ... PDF generation
-        // ... invoice generation
 
         // ... 500+ lines total
     }
@@ -203,9 +210,9 @@ final readonly class ProcessOrderUseCase
 - Hard to understand and maintain
 - Changes in one area affect everything
 
-### ✅ Correct: Focused UseCases
+### ✅ Correct: Focused UseCases with Services
 
-Break down into smaller, focused UseCases:
+Break down into smaller, focused UseCases and use Services for shared logic:
 
 ```php
 // Focused UseCase - single responsibility
@@ -213,72 +220,70 @@ final readonly class PlaceOrderUseCase
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
-        private InventoryServiceInterface $inventoryService,
-        private DomainEventDispatcherInterface $events,
+        private InventoryService $inventoryService,
+        private PriceCalculationService $priceService,
     ) {}
 
-    public function execute(PlaceOrderInput $input): PlaceOrderOutput
+    public function execute(PlaceOrderData $data): Order
     {
-        // Validate inventory
-        $this->inventoryService->reserve($input->items);
+        // 1. Validate inventory (delegated to Service)
+        $this->inventoryService->reserve($data->items);
 
-        // Create order (Domain logic)
-        $order = Order::create(
-            customerId: CustomerId::from($input->customerId),
-            items: $this->mapItems($input->items),
-            shippingAddress: Address::create($input->shippingAddress),
+        // 2. Calculate total (delegated to Service)
+        $total = $this->priceService->calculateTotal($data->items);
+
+        // 3. Create order
+        $order = $this->orderRepository->create(
+            $data->customerId,
+            $data->items,
+            $total,
         );
 
-        // Persist
-        $this->orderRepository->save($order);
+        // 4. Dispatch event for side effects
+        event(new OrderPlaced($order));
 
-        // Dispatch event for other concerns
-        $this->events->dispatch(new OrderPlaced($order));
-
-        return new PlaceOrderOutput(
-            orderId: $order->id()->value(),
-            total: $order->total()->value(),
-        );
-    }
-
-    private function mapItems(array $items): array
-    {
-        return array_map(
-            fn($item) => OrderItem::create(
-                productId: ProductId::from($item->productId),
-                quantity: Quantity::create($item->quantity),
-            ),
-            $items,
-        );
+        return $order;
     }
 }
 
-// Separate UseCases for other concerns
-final readonly class ProcessPaymentUseCase { /* ... */ }
-final readonly class SendOrderConfirmationUseCase { /* ... */ }
-final readonly class UpdateInventoryUseCase { /* ... */ }
-final readonly class GenerateInvoiceUseCase { /* ... */ }
-```
-
-**Use Event Listeners for side effects**:
-
-```php
-// Event listener handles notifications
-final readonly class SendOrderNotificationListener
+// Service - Reusable business logic
+final class InventoryService
 {
-    public function handle(OrderPlaced $event): void
+    public function reserve(array $items): void
     {
-        $this->mailer->sendOrderConfirmation($event->order);
-        $this->smsService->sendOrderNotification($event->order);
+        foreach ($items as $item) {
+            $product = $this->productRepository->find($item->productId);
+            if ($product->stock < $item->quantity) {
+                throw new InsufficientStockException($item->productId);
+            }
+        }
     }
 }
 
-// Event listener handles analytics
-final readonly class TrackOrderAnalyticsListener
+// Service - Price calculation
+final class PriceCalculationService
+{
+    public function calculateTotal(array $items): int
+    {
+        return collect($items)
+            ->sum(fn ($item) => $this->calculateItemPrice($item));
+    }
+
+    private function calculateItemPrice(OrderItem $item): int
+    {
+        $product = $this->productRepository->find($item->productId);
+        return $product->price * $item->quantity;
+    }
+}
+
+// Event Listener handles notifications
+class SendOrderNotificationListener
 {
     public function handle(OrderPlaced $event): void
     {
-        $this->analytics->trackPurchase($event->order);
+        Mail::to($event->order->customer)->send(
+            new OrderConfirmationMail($event->order)
+        );
     }
 }
 ```
@@ -286,68 +291,186 @@ final readonly class TrackOrderAnalyticsListener
 **Benefits**:
 - Each UseCase has single responsibility
 - Easy to test (fewer dependencies)
-- Easy to understand and maintain
+- Services are reusable across UseCases
+- Side effects handled by Event Listeners
 - Changes are isolated
 
 ---
 
-## 3. Leaky Abstractions
+## 3. Controller Business Logic
 
 ### Problem
 
-Leaky abstractions occur when implementation details (like Laravel-specific types) leak through interfaces into the Domain layer. This couples Domain to infrastructure and makes testing difficult.
+Controllers that contain business logic instead of delegating to UseCases violate the layer separation and make the code difficult to test and maintain.
 
-### ❌ Anti-Pattern: Repository Returns Framework Types
+### ❌ Anti-Pattern: Controller with Business Logic
 
 ```php
-// Repository interface leaking Laravel types
-interface MemberRepositoryInterface
+class PostController extends Controller
 {
-    // Returns Laravel Collection instead of array
-    public function findAll(): Collection;  // ❌ Laravel-specific!
-
-    // Returns Laravel Paginator
-    public function paginate(): LengthAwarePaginator;  // ❌ Laravel-specific!
-
-    // Returns Eloquent Builder
-    public function query(): Builder;  // ❌ Exposes implementation!
-}
-
-// Usage in UseCase
-final readonly class ListMembersUseCase
-{
-    public function execute(): Collection  // ❌ Coupled to Laravel
+    public function store(StorePostRequest $request): JsonResponse
     {
-        return $this->memberRepository->findAll();
+        // ❌ Business logic in Controller
+        $existingReport = Post::where('user_id', auth()->id())
+            ->where('week_start_date', $request->week_start_date)
+            ->first();
+
+        if ($existingReport) {
+            return response()->json([
+                'error' => 'A report for this week already exists.',
+            ], 422);
+        }
+
+        // ❌ Direct Model usage in Controller
+        $post = Post::create([
+            'user_id' => auth()->id(),
+            'week_start_date' => $request->week_start_date,
+            'title' => $request->title,
+            'status' => $request->status,
+        ]);
+
+        // ❌ More business logic
+        foreach ($request->tag_values as $tagValue) {
+            $post->tags()->attach($tagValue['tag_id'], [
+                'value' => $tagValue['value'],
+            ]);
+        }
+
+        return response()->json(['data' => new PostResource($post)], 201);
     }
 }
 ```
 
 **Problems**:
-- Domain layer depends on Laravel
-- Cannot test without Laravel
-- Cannot swap implementation easily
-- Violates Dependency Inversion Principle
+- Business logic scattered in Controller
+- Direct Model access (no Repository)
+- Difficult to test without HTTP request
+- No separation of concerns
+- Duplicate logic if same validation needed elsewhere
 
-### ✅ Correct: Repository Uses Domain Types
+### ✅ Correct: Thin Controller + UseCase
 
 ```php
-// Repository interface with pure types
-interface MemberRepositoryInterface
+// Controller - Just orchestration
+class PostController extends Controller
 {
-    /** @return array<Member> */
+    public function __construct(
+        private CreatePostUseCase $createPostUseCase,
+    ) {}
+
+    public function store(StorePostRequest $request): JsonResponse
+    {
+        // 1. Get DTO from FormRequest
+        $data = $request->getCreatePostData();
+
+        // 2. Call UseCase
+        $post = $this->createPostUseCase->execute($data);
+
+        // 3. Return response
+        return response()->json([
+            'data' => new PostResource($post),
+        ], 201);
+    }
+}
+
+// UseCase - Business logic
+final readonly class CreatePostUseCase
+{
+    public function __construct(
+        private PostRepositoryInterface $repository,
+    ) {}
+
+    public function execute(CreatePostData $data): Post
+    {
+        // Business rule: Duplicate check
+        $existing = $this->repository->findByUserAndWeek(
+            $data->userId,
+            $data->weekStartDate,
+        );
+
+        if ($existing !== null) {
+            throw ValidationException::withMessages([
+                'week_start_date' => ['A report for this week already exists.'],
+            ]);
+        }
+
+        // Create via Repository
+        return $this->repository->create(
+            $data->userId,
+            $data->weekStartDate,
+            $data->title,
+            $data->memo,
+            $data->status,
+            $data->tagValues,
+        );
+    }
+}
+```
+
+**Benefits**:
+- Controller is thin and testable
+- Business logic in UseCase
+- Repository abstracts data access
+- Easy to unit test UseCase with mocked Repository
+
+---
+
+## 4. Leaky Abstractions
+
+### Problem
+
+Leaky abstractions occur when implementation details (like Laravel-specific types) leak through Repository interfaces. This couples UseCase to infrastructure and makes testing difficult.
+
+### ❌ Anti-Pattern: Repository Returns Framework Types
+
+```php
+// Repository interface leaking Laravel types
+interface PostRepositoryInterface
+{
+    // ❌ Returns Laravel Collection
+    public function findAll(): Collection;
+
+    // ❌ Returns Laravel Paginator
+    public function paginate(): LengthAwarePaginator;
+
+    // ❌ Returns Eloquent Builder
+    public function query(): Builder;
+}
+
+// UseCase coupled to Laravel
+final readonly class GetPostsUseCase
+{
+    public function execute(): Collection  // ❌ Coupled to Laravel
+    {
+        return $this->repository->findAll();
+    }
+}
+```
+
+**Problems**:
+- UseCase depends on Laravel-specific types
+- Cannot test without Laravel
+- Cannot swap implementation easily
+
+### ✅ Correct: Repository Uses Standard Types
+
+```php
+// Repository interface with standard types
+interface PostRepositoryInterface
+{
+    /** @return array<Post> */
     public function findAll(): array;
 
     public function findPaginated(int $page, int $perPage): PaginatedResult;
 
-    public function findById(MemberId $id): ?Member;
+    public function findById(int $id): ?Post;
 }
 
-// PaginatedResult is a Domain value object
+// PaginatedResult is a simple DTO
 final readonly class PaginatedResult
 {
     /**
-     * @param array<Member> $items
+     * @param array<Post> $items
      */
     public function __construct(
         public array $items,
@@ -360,49 +483,101 @@ final readonly class PaginatedResult
     {
         return $this->page * $this->perPage < $this->total;
     }
-
-    public function totalPages(): int
-    {
-        return (int) ceil($this->total / $this->perPage);
-    }
 }
 
-// Infrastructure implementation converts framework types
-final class EloquentMemberRepository implements MemberRepositoryInterface
+// Implementation converts Laravel types internally
+class PostRepository implements PostRepositoryInterface
 {
     public function findAll(): array
     {
-        return MemberModel::all()
-            ->map(fn($model) => $this->toEntity($model))
-            ->toArray();  // Convert to array before returning
+        return Post::all()->all();  // Convert Collection to array
     }
 
     public function findPaginated(int $page, int $perPage): PaginatedResult
     {
-        $paginator = MemberModel::paginate($perPage, ['*'], 'page', $page);
+        $paginator = Post::paginate($perPage, ['*'], 'page', $page);
 
         return new PaginatedResult(
-            items: $paginator->items()->map(fn($m) => $this->toEntity($m))->toArray(),
+            items: $paginator->items(),
             total: $paginator->total(),
             page: $paginator->currentPage(),
             perPage: $paginator->perPage(),
-        );
-    }
-
-    private function toEntity(MemberModel $model): Member
-    {
-        return Member::reconstruct(
-            id: MemberId::from($model->id),
-            name: Name::create($model->name),
-            email: Email::create($model->email),
-            status: MemberStatus::from($model->status),
         );
     }
 }
 ```
 
 **Benefits**:
-- Domain layer is framework-agnostic
-- Easy to test (use array/simple objects)
-- Can swap implementation (e.g., to in-memory for tests)
-- Follows Dependency Inversion Principle
+- UseCase is framework-agnostic
+- Easy to test (use simple arrays)
+- Can swap implementation easily
+- Clean separation between layers
+
+---
+
+## 5. UseCase Returning Resource
+
+### Problem
+
+UseCases should return Eloquent Models, not API Resources. The transformation to JSON response should happen in the Controller layer.
+
+### ❌ Anti-Pattern: UseCase Returns Resource
+
+```php
+// ❌ UseCase returns Resource
+final readonly class CreatePostUseCase
+{
+    public function execute(CreatePostData $data): PostResource
+    {
+        $post = $this->repository->create(...);
+        return new PostResource($post);  // Wrong layer!
+    }
+}
+
+// Controller just passes through
+class PostController extends Controller
+{
+    public function store(StorePostRequest $request): JsonResponse
+    {
+        $resource = $this->createPostUseCase->execute($data);
+        return response()->json(['data' => $resource], 201);
+    }
+}
+```
+
+**Problems**:
+- UseCase knows about presentation layer
+- Can't reuse UseCase in non-API context
+- Violates layer dependency rules
+
+### ✅ Correct: UseCase Returns Model
+
+```php
+// UseCase returns Model
+final readonly class CreatePostUseCase
+{
+    public function execute(CreatePostData $data): Post
+    {
+        return $this->repository->create(...);
+    }
+}
+
+// Controller transforms to Resource
+class PostController extends Controller
+{
+    public function store(StorePostRequest $request): JsonResponse
+    {
+        $data = $request->getCreatePostData();
+        $post = $this->createPostUseCase->execute($data);
+
+        return response()->json([
+            'data' => new PostResource($post),  // Correct layer!
+        ], 201);
+    }
+}
+```
+
+**Benefits**:
+- UseCase is reusable in any context
+- Clear separation: UseCase returns data, Controller formats response
+- Follows layer dependency rules

@@ -1,4 +1,4 @@
-# Backend実装手順（Laravel 4層アーキテクチャ）
+# Backend実装手順（Laravel 7層アーキテクチャ）
 
 このドキュメントは、spec-interviewコマンドから参照される共通のBackend実装手順を定義します。
 
@@ -13,10 +13,10 @@
   [仕様書の内容をここに展開]
 
   実施内容：
-  - 4層アーキテクチャ設計（backend-architecture-guidelines準拠）
-  - Entity/ValueObject設計
-  - UseCase設計
+  - 7層アーキテクチャ設計（backend-architecture-guidelines準拠）
+  - UseCase/DTO設計（Laravel Data）
   - Repository Interface設計
+  - Controller設計（Web/API）
   - 実装計画書（DESIGN.md）の作成
 
   完了したら、計画内容を報告してください。
@@ -27,12 +27,12 @@ Phase 1が完了したら、以下のコマンドで計画ドキュメントを�
 
 ```bash
 git add .
-git commit -m "feat(backend): Phase 1完了 - 4層アーキテクチャ設計と実装計画を作成
+git commit -m "feat(backend): Phase 1完了 - 7層アーキテクチャ設計と実装計画を作成
 
-- 4層アーキテクチャ設計（backend-architecture-guidelines準拠）
-- Entity/ValueObject設計
-- UseCase設計
+- 7層アーキテクチャ設計（backend-architecture-guidelines準拠）
+- UseCase/DTO設計（Laravel Data）
 - Repository Interface設計
+- Controller設計（Web/API）
 - 実装計画書（DESIGN.md）作成
 
 Generated with [Claude Code](https://claude.com/claude-code)
@@ -54,10 +54,12 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
   **TDD RED フェーズ**：
   - テストケースの設計
-  - Unit テスト作成（Domain層）
-    - Entity/ValueObjectのテスト（まだ実装されていないのでREDになる）
-  - Feature テスト作成（Application層）
-    - UseCaseのテスト（まだ実装されていないのでREDになる）
+  - Unit テスト作成（UseCase層）
+    - UseCaseのテスト（Repository Interfaceをモック）
+  - Unit テスト作成（Model層）
+    - Casts, Scopes, Accessorsのテスト
+  - Feature テスト作成（Repository層/Controller層）
+    - Repository実装のテスト（まだ実装されていないのでREDになる）
   - Repository Interfaceのモックを使用
 
   目標：
@@ -75,8 +77,8 @@ Phase 2aが完了したら、以下のコマンドでテストファイルをコ
 git add .
 git commit -m "test(backend): Phase 2a完了 - TDD RED フェーズ テスト作成
 
-- Unit テスト作成（Domain層）
-- Feature テスト作成（Application層）
+- Unit テスト作成（UseCase層/Model層）
+- Feature テスト作成（Repository層/Controller層）
 - テストケース設計完了
 - Repository Interface モック実装
 
@@ -98,10 +100,11 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
   Phase 2aで作成したテストをパスする実装を行ってください。
 
   **TDD GREEN & REFACTOR フェーズ**：
-  - Entity/ValueObject実装（create/reconstruct）
-  - UseCase実装（Input/Output DTO）
-  - Repository実装（Eloquent）
-  - Controller実装（Presentation層）
+  - Model実装（Eloquent Model）
+  - Repository実装（Interface + Implementation）
+  - UseCase実装（Laravel Data DTO）
+  - FormRequest実装（バリデーション + DTO変換）
+  - Controller実装（Web/API）
   - すべてのテストをパスさせる（GREEN）
   - コードをリファクタリング（REFACTOR）
   - Codex MCP でコードレビュー
@@ -121,10 +124,10 @@ Phase 2bが完了したら、以下のコマンドで実装ファイルをコミ
 git add .
 git commit -m "feat(backend): Phase 2b完了 - TDD GREEN & REFACTOR フェーズ 実装完了
 
-- Entity/ValueObject実装（create/reconstruct）
-- UseCase実装（Input/Output DTO）
-- Repository実装（Eloquent）
-- Controller実装（Presentation層）
+- Model実装（Eloquent Model）
+- Repository実装（Interface + Implementation）
+- UseCase実装（Laravel Data DTO）
+- FormRequest/Controller実装
 - 全テスト通過（GREEN）
 - リファクタリング実施（REFACTOR）
 - コードレビュー実施

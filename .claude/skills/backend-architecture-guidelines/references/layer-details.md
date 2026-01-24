@@ -1,231 +1,540 @@
 # Layer Responsibilities - Detailed Guide
 
-This document provides detailed explanations and code examples for each layer in the 4-layer architecture.
+This document provides detailed explanations and code examples for each layer in the 7-layer architecture.
 
 ## Table of Contents
-- [Presentation Layer](#presentation-layer)
-- [Application Layer](#application-layer)
-- [Domain Layer](#domain-layer)
-- [Infrastructure Layer](#infrastructure-layer)
+- [Presentation Layer (Controllers)](#presentation-layer-controllers)
+- [Request Layer (Form Requests)](#request-layer-form-requests)
+- [UseCase Layer (Business Logic)](#usecase-layer-business-logic)
+- [Service Layer (Shared Logic)](#service-layer-shared-logic)
+- [Repository Layer (Data Access)](#repository-layer-data-access)
+- [Model Layer (Eloquent Models)](#model-layer-eloquent-models)
+- [Resource Layer (Response Transformation)](#resource-layer-response-transformation)
 
 ---
 
-## Presentation Layer
+## Presentation Layer (Controllers)
 
 **Purpose**: HTTP request/response handling
 
 **Contains**:
-- `Controllers/` - HTTP request handlers
-- `Requests/` - Form validation (FormRequest)
-- `Resources/` - API response transformation
+- `Controllers/Api/` - REST API controllers
+- `Controllers/Web/` - Inertia.js page controllers
 - `Middleware/` - Request pipeline
 
 **Responsibilities**:
 - Receive HTTP request
-- Validate input format (not business rules)
+- Call FormRequest for validation
 - Call appropriate UseCase
 - Return HTTP response (Inertia, JSON, Redirect)
 
 **NOT Responsible For**:
 - Business logic
 - Direct database access
-- Data transformation logic
+- Data transformation logic (use Resource layer)
 
-### Example: Controller Implementation
+### Example: API Controller
 
 ```php
 // ✅ Controller - thin, delegates to UseCase
-final class MemberController extends Controller
+final class PostController extends Controller
 {
-    public function store(
-        CreateMemberRequest $request,
-        CreateMemberUseCase $useCase,
-    ): RedirectResponse {
-        $useCase->execute(new CreateMemberInput(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-        ));
+    public function __construct(
+        private CreatePostUseCase $createPostUseCase,
+    ) {}
 
-        return redirect()->route('members.index');
+    public function store(StorePostRequest $request): JsonResponse
+    {
+        $data = $request->getCreatePostData();
+        $post = $this->createPostUseCase->execute($data);
+
+        return response()->json([
+            'data' => new PostResource($post),
+        ], 201);
+    }
+}
+```
+
+### Example: Web Page Controller
+
+```php
+// ✅ Web Controller - provides static data for Inertia
+final class PostPageController extends Controller
+{
+    public function index(): Response
+    {
+        return Inertia::render('Post/Index', [
+            'statusOptions' => PostStatus::toSelectArray(),  // Static data only
+        ]);
+        // Dynamic data fetched via API by React
+    }
+
+    public function edit(int $id): Response
+    {
+        return Inertia::render('Post/Edit', [
+            'postId' => $id,
+            'statusOptions' => PostStatus::toSelectArray(),
+        ]);
     }
 }
 ```
 
 ---
 
-## Application Layer
+## Request Layer (Form Requests)
 
-**Purpose**: Use case orchestration
+**Purpose**: Input validation and DTO conversion
 
 **Contains**:
-- `UseCases/` - Application-specific business operations
-- `DTOs/` - Input/Output data transfer objects
-- `Services/` - Application services (cross-cutting concerns)
+- `Requests/` - FormRequest classes
 
 **Responsibilities**:
-- Coordinate Domain objects
-- Transaction management
-- Authorization checks
-- Input/Output transformation
+- Validate input format and business rules
+- Convert validated input to DTO
+- Provide custom error messages
 
 **NOT Responsible For**:
-- Business rules (belongs in Domain)
+- Business logic
+- Database access
+- Authorization (use Policy)
+
+### Example: FormRequest with DTO Conversion
+
+```php
+// ✅ FormRequest - validation + DTO conversion
+final class StorePostRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;  // Authorization in Policy
+    }
+
+    public function rules(): array
+    {
+        return [
+            'week_start_date' => ['required', 'date'],
+            'title' => ['required', 'string', 'max:255'],
+            'memo' => ['nullable', 'string'],
+            'status' => ['required', Rule::enum(PostStatus::class)],
+            'tag_values' => ['required', 'array', 'min:1'],
+            'tag_values.*.tag_id' => ['required', 'integer', 'exists:tags,id'],
+            'tag_values.*.value' => ['required'],
+        ];
+    }
+
+    public function getCreatePostData(): CreatePostData
+    {
+        return CreatePostData::from([
+            'user_id' => auth()->id(),
+            'week_start_date' => $this->input('week_start_date'),
+            'title' => $this->input('title'),
+            'memo' => $this->input('memo'),
+            'status' => $this->input('status'),
+            'tag_values' => array_map(
+                fn (array $tagValue) => TagValueData::from($tagValue),
+                $this->input('tag_values', [])
+            ),
+        ]);
+    }
+}
+```
+
+---
+
+## UseCase Layer (Business Logic)
+
+**Purpose**: Application-specific business operations
+
+**Contains**:
+- `UseCases/` - Use case classes
+
+**Responsibilities**:
+- Implement business logic
+- Coordinate Repository and Service calls
+- Transaction management (when needed)
+- Domain validation (business rules)
+
+**NOT Responsible For**:
 - HTTP concerns
-- Database queries
+- Database query details (use Repository)
+- Shared logic (use Service)
 
 ### Example: UseCase Implementation
 
 ```php
-// ✅ UseCase - orchestrates Domain objects
-final readonly class CreateMemberUseCase
+// ✅ UseCase - business logic orchestration
+final readonly class CreatePostUseCase
 {
     public function __construct(
-        private MemberRepositoryInterface $repository,
-        private EventDispatcherInterface $events,
+        private PostRepositoryInterface $postRepository,
+        private TagRepositoryInterface $tagRepository,
     ) {}
 
-    public function execute(CreateMemberInput $input): CreateMemberOutput
+    public function execute(CreatePostData $data): Post
     {
-        // Create Domain object
-        $member = Member::create(
-            name: Name::create($input->name),
-            email: Email::create($input->email),
+        // 1. Domain validation (duplicate check)
+        $existingPost = $this->postRepository->findByUserAndWeek(
+            $data->userId,
+            $data->weekStartDate
         );
 
-        // Persist through interface
-        $this->repository->save($member);
+        if ($existingPost !== null) {
+            throw ValidationException::withMessages([
+                'week_start_date' => ['A report for this week already exists.'],
+            ]);
+        }
 
-        // Dispatch domain event
-        $this->events->dispatch(new MemberCreated($member));
+        // 2. Business rule validation
+        if ($data->status === PostStatus::Submitted) {
+            $this->validateSubmission($data);
+        }
 
-        // Return Output DTO
-        return new CreateMemberOutput(id: $member->id()->value());
+        // 3. Create through repository
+        return $this->postRepository->create(
+            $data->userId,
+            $data->weekStartDate,
+            $data->title,
+            $data->memo,
+            $data->status,
+            $data->tagValues
+        );
+    }
+
+    private function validateSubmission(CreatePostData $data): void
+    {
+        // Business validation logic
     }
 }
 ```
 
 ---
 
-## Domain Layer
+## Service Layer (Shared Logic)
 
-**Purpose**: Business logic and rules
+**Purpose**: Reusable business logic across UseCases
 
 **Contains**:
-- `Entities/` - Business objects with identity
-- `ValueObjects/` - Immutable value types
-- `Repositories/` - Interface definitions only
-- `Services/` - Domain services (cross-entity logic)
-- `Exceptions/` - Domain-specific exceptions
-- `Events/` - Domain events
+- `Services/` - Service classes
 
 **Responsibilities**:
-- Encapsulate business rules
-- Validate business invariants
-- Define repository contracts
+- Implement shared business logic
+- External service integrations
+- Complex calculations
+- Export/Import operations
 
 **NOT Responsible For**:
-- Persistence details
-- External service calls
-- Framework dependencies
+- HTTP concerns
+- Use case orchestration
 
-### Example: Entity Implementation
+### Example: Service Implementation
 
 ```php
-// ✅ Entity - pure business logic
-final class Member
+// ✅ Service - shared business logic
+final class PostExportService
 {
-    private function __construct(
-        private readonly MemberId $id,
-        private readonly Name $name,
-        private Email $email,
-        private MemberStatus $status,
-    ) {}
-
-    public static function create(Name $name, Email $email): self
+    public function exportToCsv(Post $post): string
     {
-        return new self(
-            id: MemberId::generate(),
-            name: $name,
-            email: $email,
-            status: MemberStatus::Active,
-        );
-    }
+        $post->load(['tags', 'user']);
 
-    public function suspend(): void
-    {
-        if ($this->status === MemberStatus::Suspended) {
-            throw new MemberAlreadySuspendedException($this->id);
+        $filename = 'exports/post_' . $post->id . '_' . time() . '.csv';
+
+        // UTF-8 BOM for Excel compatibility
+        $csv = "\xEF\xBB\xBF";
+
+        // Headers
+        $headers = ['Week', 'Title', 'Status'];
+        foreach ($post->tags as $tag) {
+            $headers[] = $tag->name;
         }
-        $this->status = MemberStatus::Suspended;
+        $csv .= $this->arrayToCsvLine($headers);
+
+        // Data row
+        $row = [
+            $post->week_start_date->format('Y-m-d'),
+            $post->title,
+            $post->status->label(),
+        ];
+
+        foreach ($post->tags as $tag) {
+            $row[] = $tag->pivot->value ?? '';
+        }
+
+        $csv .= $this->arrayToCsvLine($row);
+
+        Storage::disk('local')->put($filename, $csv);
+
+        return $filename;
     }
 
-    public function canAccessPremiumContent(): bool
+    private function arrayToCsvLine(array $array): string
     {
-        return $this->status === MemberStatus::Active
-            && $this->membershipType === MembershipType::Premium;
+        $fp = fopen('php://temp', 'r+');
+        fputcsv($fp, $array);
+        rewind($fp);
+        $line = stream_get_contents($fp);
+        fclose($fp);
+
+        return $line;
     }
 }
 ```
 
 ---
 
-## Infrastructure Layer
+## Repository Layer (Data Access)
 
-**Purpose**: Technical implementation details
+**Purpose**: Data access abstraction
 
 **Contains**:
-- `Repositories/` - Repository implementations
-- `Models/` - Eloquent models
-- `QueryBuilders/` - Complex query builders
-- `Services/` - External service integrations
+- `Repositories/` - Repository interfaces and implementations
 
 **Responsibilities**:
-- Implement Domain interfaces
-- Database operations
-- External API calls
-- File system operations
+- Abstract database operations
+- Encapsulate Eloquent queries
+- Transaction management
+- Return Eloquent Models (not DTOs)
 
 **NOT Responsible For**:
 - Business logic
-- HTTP handling
+- HTTP concerns
+
+### Example: Repository Interface
+
+```php
+// ✅ Repository Interface
+interface PostRepositoryInterface
+{
+    public function findById(int $id): ?Post;
+
+    public function findByUserAndWeek(int $userId, string $weekStartDate): ?Post;
+
+    public function create(
+        int $userId,
+        string $weekStartDate,
+        string $title,
+        ?string $memo,
+        PostStatus $status,
+        array $tagValues
+    ): Post;
+
+    public function update(
+        int $id,
+        string $weekStartDate,
+        string $title,
+        ?string $memo,
+        PostStatus $status,
+        array $tagValues
+    ): Post;
+
+    public function delete(int $id): bool;
+}
+```
 
 ### Example: Repository Implementation
 
 ```php
 // ✅ Repository Implementation - technical details
-final class EloquentMemberRepository implements MemberRepositoryInterface
+final class PostRepository implements PostRepositoryInterface
 {
-    public function findById(MemberId $id): ?Member
+    public function findById(int $id): ?Post
     {
-        $model = MemberModel::find($id->value());
-
-        if ($model === null) {
-            return null;
-        }
-
-        return $this->toEntity($model);
+        return Post::find($id);
     }
 
-    public function save(Member $member): void
+    public function findByUserAndWeek(int $userId, string $weekStartDate): ?Post
     {
-        MemberModel::updateOrCreate(
-            ['id' => $member->id()->value()],
-            [
-                'name' => $member->name()->value(),
-                'email' => $member->email()->value(),
-                'status' => $member->status()->value,
-            ],
-        );
+        return Post::where('user_id', $userId)
+            ->where('week_start_date', $weekStartDate)
+            ->first();
     }
 
-    private function toEntity(MemberModel $model): Member
-    {
-        return Member::reconstruct(
-            id: MemberId::from($model->id),
-            name: Name::create($model->name),
-            email: Email::create($model->email),
-            status: MemberStatus::from($model->status),
-        );
+    public function create(
+        int $userId,
+        string $weekStartDate,
+        string $title,
+        ?string $memo,
+        PostStatus $status,
+        array $tagValues
+    ): Post {
+        return DB::transaction(function () use (
+            $userId,
+            $weekStartDate,
+            $title,
+            $memo,
+            $status,
+            $tagValues
+        ) {
+            $post = Post::create([
+                'user_id' => $userId,
+                'week_start_date' => $weekStartDate,
+                'title' => $title,
+                'memo' => $memo,
+                'status' => $status,
+            ]);
+
+            foreach ($tagValues as $tagData) {
+                $post->tags()->attach($tagData['tag_id'], ['value' => $tagData['value']]);
+            }
+
+            return $post->fresh(['tags']);
+        });
     }
 }
 ```
+
+---
+
+## Model Layer (Eloquent Models)
+
+**Purpose**: Data representation and relationships
+
+**Contains**:
+- `Models/` - Eloquent Model classes
+
+**Responsibilities**:
+- Define table structure
+- Define relationships
+- Define casts and accessors
+- Define query scopes
+
+**NOT Responsible For**:
+- Business logic (use UseCase)
+- Data access abstraction (use Repository)
+- Validation (use FormRequest)
+
+### Example: Model Implementation
+
+```php
+// ✅ Model - data representation
+#[TypeScript()]
+class Post extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'week_start_date',
+        'title',
+        'memo',
+        'status',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'week_start_date' => 'date',
+            'status' => PostStatus::class,
+        ];
+    }
+
+    // Relationships
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'post_tag')
+            ->withPivot('value')
+            ->withTimestamps();
+    }
+
+    // Query Scopes
+    public function scopeByStatus(Builder $query, PostStatus $status): Builder
+    {
+        return $query->where('status', $status);
+    }
+
+    public function scopeByUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+}
+```
+
+---
+
+## Resource Layer (Response Transformation)
+
+**Purpose**: JSON response transformation
+
+**Contains**:
+- `Resources/` - API Resource classes
+
+**Responsibilities**:
+- Transform Models to JSON
+- Control response structure
+- Handle conditional loading (lazy loading)
+- Filter sensitive data
+
+**NOT Responsible For**:
+- Business logic
+- Database access
+
+### Example: Resource Implementation
+
+```php
+// ✅ Resource - response transformation
+class PostResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'week_start_date' => $this->week_start_date->format('Y-m-d'),
+            'title' => $this->title,
+            'memo' => $this->memo,
+            'status' => $this->status->value,
+
+            // Conditional loading (lazy loading)
+            'user' => $this->whenLoaded('user', fn () => [
+                'id' => $this->user->id,
+                'name' => $this->user->name,
+            ]),
+
+            // Computed properties
+            'is_owner' => $request->user()?->id === $this->user_id,
+
+            // Nested relationships
+            'tags' => $this->whenLoaded('tags', fn () =>
+                $this->tags->map(fn ($tag) => [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'value' => $tag->pivot->value,
+                ])
+            ),
+
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
+        ];
+    }
+}
+```
+
+---
+
+## Layer Dependency Rules
+
+```
+┌─────────────────────────────────────────┐
+│  Presentation (Controllers)             │ → Request, UseCase, Resource
+├─────────────────────────────────────────┤
+│  Request (Form Requests)                │ → DTO (Laravel Data)
+├─────────────────────────────────────────┤
+│  UseCase (Business Logic)               │ → Repository, Service, Policy
+├─────────────────────────────────────────┤
+│  Service (Shared Logic)                 │ → Repository, Model
+├─────────────────────────────────────────┤
+│  Repository (Data Access)               │ → Model
+├─────────────────────────────────────────┤
+│  Model (Eloquent)                       │ → (no dependencies)
+├─────────────────────────────────────────┤
+│  Resource (JSON Transformation)         │ → Model
+└─────────────────────────────────────────┘
+```
+
+**Prohibited Dependencies**:
+- Model → Repository (reverse direction)
+- UseCase → Resource
+- Controller → Model directly (use Repository via UseCase)

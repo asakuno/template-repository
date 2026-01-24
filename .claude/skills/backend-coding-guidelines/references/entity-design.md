@@ -1,265 +1,300 @@
-# Entity Design - Factory Methods and Immutability
+# Model Design - Eloquent Patterns
 
 ## AI's Most Critical Failure Pattern
 
-**Pattern AI ALWAYS gets wrong**: Using public constructors and mutable properties
+**Pattern AI ALWAYS gets wrong**: Putting business logic in Models instead of UseCases
 
-### ❌ Typical AI Pattern (Mutable, No Factory Methods)
+### ❌ Typical AI Pattern (Fat Model with Business Logic)
 
 ```php
-class Member
+class Post extends Model
 {
-    public function __construct(
-        public ?string $id,
-        public string $name,
-        public string $email,
-    ) {}
-}
+    public function submit(): void
+    {
+        // Business logic in Model - WRONG!
+        if ($this->status === PostStatus::Submitted) {
+            throw new \Exception('Already submitted');
+        }
+        $this->status = PostStatus::Submitted;
+        $this->save();
+    }
 
-// AI creates Entities without distinguishing creation vs reconstruction
-$member = new Member(null, 'Taro', 'taro@example.com'); // 新規作成?
-$member = new Member('123', 'Taro', 'taro@example.com'); // DB復元?
+    public function canBeEditedBy(User $user): bool
+    {
+        // Authorization logic in Model - WRONG!
+        return $this->user_id === $user->id;
+    }
+}
 ```
 
 **Problems with this approach**:
-1. No distinction between creating new entities and reconstructing from DB
-2. Mutable properties allow invalid state changes after creation
-3. ID generation is inconsistent (sometimes null, sometimes provided)
-4. No validation at creation time
-5. Violates encapsulation (public properties)
+1. Business logic mixed with data access
+2. Difficult to test without database
+3. Violates Single Responsibility Principle
+4. Authorization should be in Policy
+5. Business rules should be in UseCase
 
 ---
 
-## ✅ Correct Pattern: Private Constructor with Factory Methods
+## ✅ Correct Pattern: Thin Model + UseCase
 
-### Complete Entity Implementation
+### Complete Model Implementation
 
 ```php
-final class Member
+#[TypeScript()]
+class Post extends Model
 {
-    private function __construct(
-        private readonly MemberId $id,
-        private readonly Name $name,
-        private readonly Email $email,
-    ) {}
+    use HasFactory;
 
-    // 新規作成用 - IDは自動生成
-    public static function create(Name $name, Email $email): self
+    protected $fillable = [
+        'user_id',
+        'week_start_date',
+        'title',
+        'memo',
+        'status',
+    ];
+
+    protected function casts(): array
     {
-        return new self(
-            id: MemberId::generate(),
-            name: $name,
-            email: $email,
-        );
+        return [
+            'week_start_date' => 'date',
+            'status' => PostStatus::class,
+        ];
     }
 
-    // DB復元用 - 既存データの再構築
-    public static function reconstruct(
-        MemberId $id,
-        Name $name,
-        Email $email,
-    ): self {
-        return new self($id, $name, $email);
+    // Relationships
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
-    // Getter methods
-    public function id(): MemberId { return $this->id; }
-    public function name(): Name { return $this->name; }
-    public function email(): Email { return $this->email; }
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'post_tag')
+            ->withPivot('value')
+            ->withTimestamps();
+    }
+
+    // Query Scopes (NOT business logic)
+    public function scopeByStatus(Builder $query, PostStatus $status): Builder
+    {
+        return $query->where('status', $status);
+    }
+
+    public function scopeByUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
 }
 ```
 
-### Usage Examples
+### Business Logic in UseCase
 
 ```php
-// Creating new entity
-$member = Member::create(
-    name: Name::create('山田太郎'),
-    email: Email::create('taro@example.com'),
-);
-// ID is automatically generated
+final readonly class SubmitPostUseCase
+{
+    public function __construct(
+        private PostRepositoryInterface $postRepository,
+    ) {}
 
-// Reconstructing from database
-$member = Member::reconstruct(
-    id: MemberId::from('existing-uuid'),
-    name: Name::create('山田太郎'),
-    email: Email::create('taro@example.com'),
-);
-// Uses existing ID from database
+    public function execute(int $postId, int $userId): Post
+    {
+        $post = $this->postRepository->findById($postId);
+
+        if ($post === null) {
+            throw new PostNotFoundException($postId);
+        }
+
+        // Business rule: Already submitted check
+        if ($post->status === PostStatus::Submitted) {
+            throw ValidationException::withMessages([
+                'status' => ['This post has already been submitted.'],
+            ]);
+        }
+
+        // Business rule: Ownership check
+        if ($post->user_id !== $userId) {
+            throw new UnauthorizedAccessException('You cannot submit this post.');
+        }
+
+        return $this->postRepository->updateStatus($postId, PostStatus::Submitted);
+    }
+}
 ```
 
 ---
 
 ## Key Design Principles
 
-### 1. Private Constructor
-- Prevents direct instantiation
-- Forces use of factory methods
-- Ensures all instances go through validation
+### 1. Model Responsibilities (ONLY these)
 
-### 2. Two Factory Methods
-- `create()`: For new entities (generates ID)
-- `reconstruct()`: For database restoration (uses existing ID)
-- Clear semantic distinction
+- **Define table structure** (`$fillable`, `$casts`)
+- **Define relationships** (`belongsTo`, `hasMany`, etc.)
+- **Define query scopes** (reusable query constraints)
+- **Define accessors/mutators** (data transformation)
 
-### 3. Readonly Properties
-- Entity is immutable after creation
-- Prevents accidental state changes
-- Guarantees consistency
+### 2. NOT Model Responsibilities (put elsewhere)
 
-### 4. Final Class
-- Prevents inheritance
-- Ensures entity behavior can't be modified
-- Simplifies reasoning about code
+| Responsibility | Where to Put |
+|---------------|--------------|
+| Business logic | UseCase |
+| Authorization | Policy |
+| Validation | FormRequest |
+| Data access abstraction | Repository |
+| Response transformation | Resource |
 
-### 5. ValueObject Properties
-- Use `MemberId`, `Name`, `Email` instead of primitives
-- Validation happens in ValueObject creation
-- Type safety and domain modeling
+### 3. Readonly Properties via Casts
 
----
-
-## Common Variations
-
-### Entity with Business Logic
+Use Eloquent casts for type safety:
 
 ```php
-final class Member
+protected function casts(): array
 {
-    private function __construct(
-        private readonly MemberId $id,
-        private readonly Name $name,
-        private readonly Email $email,
-        private readonly MemberStatus $status,
-    ) {}
-
-    public static function create(Name $name, Email $email): self
-    {
-        return new self(
-            id: MemberId::generate(),
-            name: $name,
-            email: $email,
-            status: MemberStatus::active(), // Default status
-        );
-    }
-
-    public static function reconstruct(
-        MemberId $id,
-        Name $name,
-        Email $email,
-        MemberStatus $status,
-    ): self {
-        return new self($id, $name, $email, $status);
-    }
-
-    // Business logic methods
-    public function deactivate(): self
-    {
-        return new self(
-            id: $this->id,
-            name: $this->name,
-            email: $this->email,
-            status: MemberStatus::inactive(),
-        );
-    }
-
-    public function isActive(): bool
-    {
-        return $this->status->equals(MemberStatus::active());
-    }
-
-    public function id(): MemberId { return $this->id; }
-    public function name(): Name { return $this->name; }
-    public function email(): Email { return $this->email; }
-    public function status(): MemberStatus { return $this->status; }
+    return [
+        'week_start_date' => 'date',        // Carbon instance
+        'status' => PostStatus::class,       // Enum
+        'is_active' => 'boolean',            // Boolean
+        'metadata' => 'array',               // Array
+    ];
 }
 ```
 
-### Entity with Validation Logic
+### 4. TypeScript Generation
+
+Add `#[TypeScript()]` attribute for automatic type generation:
 
 ```php
-final class Project
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
+
+#[TypeScript()]
+class Post extends Model
 {
-    private function __construct(
-        private readonly ProjectId $id,
-        private readonly ProjectName $name,
-        private readonly MemberId $managerId,
-        private readonly ProjectStatus $status,
-    ) {}
-
-    public static function create(
-        ProjectName $name,
-        MemberId $managerId,
-    ): self {
-        return new self(
-            id: ProjectId::generate(),
-            name: $name,
-            managerId: $managerId,
-            status: ProjectStatus::draft(),
-        );
-    }
-
-    public static function reconstruct(
-        ProjectId $id,
-        ProjectName $name,
-        MemberId $managerId,
-        ProjectStatus $status,
-    ): self {
-        return new self($id, $name, $managerId, $status);
-    }
-
-    public function start(): self
-    {
-        if ($this->status->equals(ProjectStatus::completed())) {
-            throw new DomainException('完了したプロジェクトは開始できません');
-        }
-
-        return new self(
-            id: $this->id,
-            name: $this->name,
-            managerId: $this->managerId,
-            status: ProjectStatus::inProgress(),
-        );
-    }
-
-    public function id(): ProjectId { return $this->id; }
-    public function name(): ProjectName { return $this->name; }
-    public function managerId(): MemberId { return $this->managerId; }
-    public function status(): ProjectStatus { return $this->status; }
+    // ...
 }
 ```
 
 ---
 
-## Checklist: Entity Design
+## Common Model Patterns
 
-Before considering an Entity implementation complete, verify:
+### Model with Enum Status
 
-- [ ] Class is marked as `final`
-- [ ] Constructor is `private`
-- [ ] Has `create()` factory method for new entities
-- [ ] Has `reconstruct()` factory method for DB restoration
-- [ ] All properties are `readonly`
-- [ ] All properties use ValueObjects (not primitives)
-- [ ] Has getter methods for all properties
-- [ ] Business logic returns new instance (immutability)
-- [ ] No setter methods
-- [ ] No public property access
+```php
+#[TypeScript()]
+class Post extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'title',
+        'status',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => PostStatus::class,
+        ];
+    }
+
+    // Scope for filtering by status
+    public function scopeByStatus(Builder $query, PostStatus $status): Builder
+    {
+        return $query->where('status', $status);
+    }
+
+    // Scope for filtering submitted posts
+    public function scopeSubmitted(Builder $query): Builder
+    {
+        return $query->where('status', PostStatus::Submitted);
+    }
+
+    // Scope for filtering draft posts
+    public function scopeDraft(Builder $query): Builder
+    {
+        return $query->where('status', PostStatus::Draft);
+    }
+}
+```
+
+### Model with Pivot Table
+
+```php
+#[TypeScript()]
+class Post extends Model
+{
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class, 'post_tag')
+            ->withPivot('value')
+            ->withTimestamps();
+    }
+
+    public function sharedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'post_shares')
+            ->withTimestamps();
+    }
+}
+```
+
+### Model with Accessor
+
+```php
+#[TypeScript()]
+class Post extends Model
+{
+    // Accessor for formatted week start
+    protected function formattedWeekStart(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->week_start_date->format('Y年n月j日週'),
+        );
+    }
+
+    // Accessor for status label
+    protected function statusLabel(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->status->label(),
+        );
+    }
+}
+```
+
+---
+
+## Checklist: Model Design
+
+Before considering a Model implementation complete, verify:
+
+- [ ] Only data structure concerns (no business logic)
+- [ ] `$fillable` explicitly defined
+- [ ] `casts()` method for type conversions
+- [ ] Relationships properly defined with return types
+- [ ] Query scopes are pure query constraints
+- [ ] No authorization logic (use Policy)
+- [ ] No validation logic (use FormRequest)
+- [ ] No data transformation for API (use Resource)
+- [ ] `#[TypeScript()]` attribute for type generation
+- [ ] Factory defined for testing
 
 ---
 
 ## Why This Matters
 
-**Without factory methods**, AI will:
-- Mix creation and reconstruction logic
-- Generate inconsistent IDs
-- Skip validation
-- Create mutable entities
-- Use primitives instead of ValueObjects
+**With fat models**, code suffers from:
+- Mixed responsibilities
+- Difficult testing
+- Tight coupling
+- Hidden business rules
+- Scattered authorization
 
-**With factory methods**, you get:
-- Clear distinction between new and existing entities
-- Consistent ID generation
-- Guaranteed validation
-- Immutable, consistent state
-- Type-safe domain modeling
+**With thin models + UseCase**, you get:
+- Clear separation of concerns
+- Easy unit testing
+- Loose coupling
+- Explicit business rules
+- Centralized authorization (Policy)
+- TypeScript type generation

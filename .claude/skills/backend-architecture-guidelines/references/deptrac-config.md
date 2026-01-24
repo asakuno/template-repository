@@ -4,7 +4,6 @@ This document explains how to enforce architectural rules using [Deptrac](https:
 
 ## Table of Contents
 - [What is Deptrac?](#what-is-deptrac)
-- [Module Dependencies Configuration](#module-dependencies-configuration)
 - [Layer Dependencies Configuration](#layer-dependencies-configuration)
 - [Running Deptrac](#running-deptrac)
 
@@ -13,9 +12,9 @@ This document explains how to enforce architectural rules using [Deptrac](https:
 ## What is Deptrac?
 
 Deptrac is a static analysis tool that enforces architectural boundaries in PHP projects. It verifies:
-- Modules only depend on allowed modules
 - Layers only depend on allowed layers
-- Contract pattern is properly enforced
+- Dependency direction is correct (downward only)
+- No circular dependencies
 
 **Benefits**:
 - Catches architectural violations at build time
@@ -25,106 +24,156 @@ Deptrac is a static analysis tool that enforces architectural boundaries in PHP 
 
 ---
 
-## Module Dependencies Configuration
-
-This configuration ensures modules only communicate through Contract interfaces.
-
-```yaml
-# deptrac/module.yaml
-deptrac:
-  paths:
-    - ./modules
-  layers:
-    - name: Contract
-      collectors:
-        - type: directory
-          value: modules/Contract/.*
-    - name: Member
-      collectors:
-        - type: directory
-          value: modules/Member/.*
-    - name: Project
-      collectors:
-        - type: directory
-          value: modules/Project/.*
-  ruleset:
-    Contract:
-      - Contract
-    Member:
-      - Contract
-      - Member
-    Project:
-      - Contract
-      - Project
-```
-
-**Explanation**:
-- `Contract` layer can only depend on itself
-- `Member` module can depend on `Contract` and itself
-- `Project` module can depend on `Contract` and itself
-- Direct `Member` → `Project` dependency is **prohibited**
-
-**Violation Example**:
-```php
-// In Project module
-use Modules\Member\Domain\Entities\Member;  // ❌ Deptrac error!
-```
-
----
-
 ## Layer Dependencies Configuration
 
-This configuration enforces the 4-layer architecture dependency rules.
+This configuration enforces the 7-layer architecture dependency rules.
 
 ```yaml
-# deptrac/layer.yaml
+# deptrac.yaml
 deptrac:
   paths:
-    - ./modules
+    - ./app
   layers:
+    # 1. Presentation Layer (Controllers)
     - name: Presentation
       collectors:
         - type: directory
-          value: modules/.*/Presentation/.*
-    - name: Application
+          value: app/Http/Controllers/.*
+
+    # 2. Request Layer (Form Requests)
+    - name: Request
       collectors:
         - type: directory
-          value: modules/.*/Application/.*
-    - name: Domain
+          value: app/Http/Requests/.*
+
+    # 3. UseCase Layer
+    - name: UseCase
       collectors:
         - type: directory
-          value: modules/.*/Domain/.*
-    - name: Infrastructure
+          value: app/UseCases/.*
+
+    # 4. Service Layer
+    - name: Service
       collectors:
         - type: directory
-          value: modules/.*/Infrastructure/.*
+          value: app/Services/.*
+
+    # 5. Repository Layer
+    - name: Repository
+      collectors:
+        - type: directory
+          value: app/Repositories/.*
+
+    # 6. Model Layer
+    - name: Model
+      collectors:
+        - type: directory
+          value: app/Models/.*
+
+    # 7. Resource Layer
+    - name: Resource
+      collectors:
+        - type: directory
+          value: app/Http/Resources/.*
+
+    # Additional layers
+    - name: Data
+      collectors:
+        - type: directory
+          value: app/Data/.*
+
+    - name: Policy
+      collectors:
+        - type: directory
+          value: app/Policies/.*
+
+    - name: Enum
+      collectors:
+        - type: directory
+          value: app/Enums/.*
+
   ruleset:
+    # Presentation can depend on: Request, UseCase, Resource
     Presentation:
       - Presentation
-      - Application
-    Application:
-      - Application
-      - Domain
-    Domain:
-      - Domain
-    Infrastructure:
-      - Infrastructure
-      - Domain
+      - Request
+      - UseCase
+      - Resource
+
+    # Request can depend on: Data (DTOs)
+    Request:
+      - Request
+      - Data
+      - Enum
+
+    # UseCase can depend on: Repository, Service, Policy, Data
+    UseCase:
+      - UseCase
+      - Repository
+      - Service
+      - Policy
+      - Data
+      - Model
+      - Enum
+
+    # Service can depend on: Repository, Model
+    Service:
+      - Service
+      - Repository
+      - Model
+      - Enum
+
+    # Repository can depend on: Model
+    Repository:
+      - Repository
+      - Model
+      - Enum
+
+    # Model has no dependencies (bottom layer)
+    Model:
+      - Model
+      - Enum
+
+    # Resource can depend on: Model
+    Resource:
+      - Resource
+      - Model
+      - Enum
+
+    # Data (DTOs) has minimal dependencies
+    Data:
+      - Data
+      - Enum
+
+    # Policy can depend on: Model
+    Policy:
+      - Policy
+      - Model
+
+    # Enum has no dependencies
+    Enum:
+      - Enum
 ```
 
 **Explanation**:
-- `Presentation` can depend on `Application` (and itself)
-- `Application` can depend on `Domain` (and itself)
-- `Domain` can only depend on itself (no external dependencies)
-- `Infrastructure` can depend on `Domain` (Dependency Inversion)
+- `Presentation` can depend on `Request`, `UseCase`, and `Resource` (and itself)
+- `Request` can depend on `Data` for DTOs (and itself)
+- `UseCase` can depend on `Repository`, `Service`, `Policy`, `Data`, `Model` (and itself)
+- `Service` can depend on `Repository` and `Model` (and itself)
+- `Repository` can depend on `Model` only (and itself)
+- `Model` can only depend on itself and `Enum` (bottom layer)
+- `Resource` can depend on `Model` (and itself)
 
 **Violation Examples**:
 ```php
-// In Domain layer
-use Illuminate\Database\Eloquent\Model;  // ❌ Deptrac error!
+// In Model layer
+use App\Repositories\PostRepository;  // ❌ Deptrac error!
 
-// In Application layer
-use Modules\Member\Infrastructure\Models\MemberModel;  // ❌ Deptrac error!
+// In UseCase layer
+use App\Http\Resources\PostResource;  // ❌ Deptrac error!
+
+// In Repository layer
+use App\UseCases\CreatePostUseCase;  // ❌ Deptrac error!
 ```
 
 ---
@@ -140,15 +189,14 @@ composer require --dev qossmic/deptrac
 ### Run Analysis
 
 ```bash
-# Check module dependencies
-./vendor/bin/deptrac analyse --config-file=deptrac/module.yaml
-
 # Check layer dependencies
-./vendor/bin/deptrac analyse --config-file=deptrac/layer.yaml
+./vendor/bin/deptrac analyse
 
-# Run both checks
-./vendor/bin/deptrac analyse --config-file=deptrac/module.yaml && \
-./vendor/bin/deptrac analyse --config-file=deptrac/layer.yaml
+# With specific config file
+./vendor/bin/deptrac analyse --config-file=deptrac.yaml
+
+# Fail on uncovered dependencies
+./vendor/bin/deptrac analyse --fail-on-uncovered
 ```
 
 ### Add to CI Pipeline
@@ -156,68 +204,172 @@ composer require --dev qossmic/deptrac
 ```yaml
 # .github/workflows/ci.yml
 - name: Deptrac Analysis
-  run: |
-    ./vendor/bin/deptrac analyse --config-file=deptrac/module.yaml
-    ./vendor/bin/deptrac analyse --config-file=deptrac/layer.yaml
+  run: ./vendor/bin/deptrac analyse
+```
+
+### Add to Quality Checks
+
+```bash
+# Full quality check command
+./vendor/bin/phpstan analyse && ./vendor/bin/pint --test && ./vendor/bin/phpunit && ./vendor/bin/deptrac
 ```
 
 ### Generate Dependency Graph (Optional)
 
 ```bash
 # Generate visual dependency graph
-./vendor/bin/deptrac analyse --config-file=deptrac/module.yaml --formatter=graphviz-image --output=module-graph.png
+./vendor/bin/deptrac analyse --formatter=graphviz-image --output=layer-graph.png
 ```
 
 ---
 
 ## Common Deptrac Violations and Fixes
 
-### Violation: Domain depends on Framework
+### Violation: Controller directly accessing Model
 
 ```php
-// ❌ Domain layer using Laravel
-namespace Modules\Member\Domain\ValueObjects;
+// ❌ Controller using Model directly
+namespace App\Http\Controllers\Api;
 
-use Illuminate\Support\Str;
+use App\Models\Post;
 
-final readonly class MemberId
+final class PostController extends Controller
 {
-    public static function generate(): self
+    public function index()
     {
-        return new self(Str::uuid()->toString());  // Laravel dependency!
+        return Post::all();  // Deptrac violation!
     }
 }
 ```
 
-**Fix**: Use pure PHP
-```php
-// ✅ Pure PHP implementation
-namespace Modules\Member\Domain\ValueObjects;
+**Fix**: Use UseCase and Repository
 
-final readonly class MemberId
+```php
+// ✅ Controller using UseCase
+namespace App\Http\Controllers\Api;
+
+use App\UseCases\Post\GetPostsUseCase;
+
+final class PostController extends Controller
 {
-    public static function generate(): self
+    public function __construct(
+        private GetPostsUseCase $getPostsUseCase,
+    ) {}
+
+    public function index(SearchPostsRequest $request)
     {
-        // Use Symfony's Uuid (installed separately, not Laravel)
-        return new self(\Symfony\Component\Uid\Uuid::v7()->toRfc4122());
+        $posts = $this->getPostsUseCase->execute(
+            $request->getSearchPostsData()
+        );
+
+        return PostResource::collection($posts);
     }
 }
 ```
 
-### Violation: Cross-Module Direct Reference
+### Violation: UseCase accessing Resource
 
 ```php
-// ❌ Project module directly using Member entity
-namespace Modules\Project\Application\UseCases;
+// ❌ UseCase using Resource
+namespace App\UseCases\Post;
 
-use Modules\Member\Domain\Entities\Member;  // Deptrac violation!
+use App\Http\Resources\PostResource;  // Deptrac violation!
+
+final class CreatePostUseCase
+{
+    public function execute(CreatePostData $data): PostResource
+    {
+        $post = $this->repository->create(...);
+        return new PostResource($post);  // Wrong!
+    }
+}
 ```
 
-**Fix**: Use Contract
+**Fix**: Return Model, let Controller handle Resource
+
 ```php
-// ✅ Use Contract interface
-namespace Modules\Project\Application\UseCases;
+// ✅ UseCase returns Model
+namespace App\UseCases\Post;
 
-use Modules\Contract\Member\MemberServiceInterface;
-use Modules\Contract\Member\DTOs\MemberDto;
+use App\Models\Post;
+
+final class CreatePostUseCase
+{
+    public function execute(CreatePostData $data): Post
+    {
+        return $this->repository->create(...);
+    }
+}
+
+// Controller wraps with Resource
+public function store(StorePostRequest $request): JsonResponse
+{
+    $post = $this->createPostUseCase->execute($data);
+    return response()->json(['data' => new PostResource($post)], 201);
+}
 ```
+
+### Violation: Repository accessing UseCase
+
+```php
+// ❌ Repository using UseCase (reverse dependency)
+namespace App\Repositories\Post;
+
+use App\UseCases\Post\ValidatePostUseCase;  // Deptrac violation!
+
+final class PostRepository implements PostRepositoryInterface
+{
+    public function create(...): Post
+    {
+        // Calling UseCase from Repository is wrong!
+        $this->validatePostUseCase->execute(...);
+    }
+}
+```
+
+**Fix**: Keep validation in UseCase
+
+```php
+// ✅ Validation in UseCase, not Repository
+namespace App\UseCases\Post;
+
+final class CreatePostUseCase
+{
+    public function execute(CreatePostData $data): Post
+    {
+        // Validation here
+        $this->validateSubmission($data);
+
+        // Repository only handles data access
+        return $this->postRepository->create(...);
+    }
+}
+```
+
+---
+
+## Layer Dependency Summary
+
+```
+┌─────────────────────────────────────────┐
+│  Presentation (Controllers)             │ → Request, UseCase, Resource
+├─────────────────────────────────────────┤
+│  Request (Form Requests)                │ → Data (DTOs)
+├─────────────────────────────────────────┤
+│  UseCase (Business Logic)               │ → Repository, Service, Policy, Data
+├─────────────────────────────────────────┤
+│  Service (Shared Logic)                 │ → Repository, Model
+├─────────────────────────────────────────┤
+│  Repository (Data Access)               │ → Model
+├─────────────────────────────────────────┤
+│  Model (Eloquent)                       │ → (no dependencies)
+├─────────────────────────────────────────┤
+│  Resource (JSON Transformation)         │ → Model
+└─────────────────────────────────────────┘
+```
+
+**Key Rules**:
+- Dependencies flow downward only
+- No reverse dependencies allowed
+- Model is the bottom layer with no dependencies
+- Controller never accesses Model directly

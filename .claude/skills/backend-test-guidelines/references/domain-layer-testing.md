@@ -1,200 +1,245 @@
-# Domain Layer Testing - Entity & ValueObject
+# Model Layer Testing - Eloquent Models
 
-This reference covers testing patterns for Domain layer components (Entity and ValueObject) in the 4-layer architecture.
+This reference covers testing patterns for Model layer components (Eloquent Models) in the 7-layer architecture.
 
 ## Core Principles
 
-- **No Database**: Domain tests are pure unit tests
-- **No Laravel Dependencies**: Test business logic in isolation
-- **ValueObject Validation**: Test both valid and invalid cases
-- **Factory Methods**: Test Entity creation and reconstruction
+- **Unit Tests for Casts/Scopes**: Test model logic in isolation
+- **Feature Tests for Relationships**: Test with database for relationship verification
+- **Factory Usage**: Use model factories for test data generation
+- **No Business Logic in Models**: Models should be data containers, not business logic holders
 
 ---
 
-## 1. Domain Layer Testing (Unit)
+## 1. Model Unit Testing
 
-**Pattern AI gets wrong**: Testing with database, skipping ValueObject validation
+**Pattern AI gets wrong**: Putting business logic in Models and testing it there
 
 ```php
-// ❌ AI writes: Uses database in Domain tests
-final class MemberTest extends TestCase
+// ❌ AI writes: Business logic in Model
+final class PostTest extends TestCase
 {
-    use RefreshDatabase; // Wrong! Domain tests shouldn't need DB
-
-    public function test_メンバーを作成できる(): void
+    public function test_週報を提出できる(): void
     {
-        $member = Member::create(
-            name: 'Taro',  // Using primitives
-            email: 'taro@example.com',
-        );
+        $post = Post::factory()->create();
+        $post->submit();  // Wrong! Business logic should be in UseCase
 
-        $this->assertDatabaseHas('members', ['name' => 'Taro']); // Wrong!
+        $this->assertEquals(PostStatus::Submitted, $post->status);
     }
 }
 ```
 
-**Correct pattern**: Pure unit tests with ValueObjects
+**Correct pattern**: Test only Model-specific logic (casts, scopes, accessors)
 
 ```php
-// ✅ Correct: Domain Unit Test - no database
-final class MemberTest extends TestCase
+// ✅ Correct: Test Model casts and scopes
+final class PostTest extends TestCase
 {
-    public function test_メンバーを作成できる(): void
+    use RefreshDatabase;
+
+    public function test_ステータスがEnumにキャストされる(): void
     {
         // Arrange
-        $name = Name::create('山田太郎');
-        $email = Email::create('taro@example.com');
+        $post = Post::factory()->create(['status' => 'draft']);
 
         // Act
-        $member = Member::create($name, $email);
+        $freshPost = Post::find($post->id);
 
         // Assert
-        $this->assertNotNull($member->id());
-        $this->assertTrue($member->name()->equals($name));
-        $this->assertTrue($member->email()->equals($email));
+        $this->assertInstanceOf(PostStatus::class, $freshPost->status);
+        $this->assertEquals(PostStatus::Draft, $freshPost->status);
     }
 
-    public function test_IDが自動生成される(): void
+    public function test_week_start_dateがCarbonにキャストされる(): void
     {
         // Arrange
-        $name = Name::create('山田太郎');
-        $email = Email::create('taro@example.com');
+        $post = Post::factory()->create(['week_start_date' => '2025-01-13']);
 
         // Act
-        $member1 = Member::create($name, $email);
-        $member2 = Member::create($name, $email);
+        $freshPost = Post::find($post->id);
 
-        // Assert - 異なるIDが生成される
-        $this->assertFalse($member1->id()->equals($member2->id()));
+        // Assert
+        $this->assertInstanceOf(Carbon::class, $freshPost->week_start_date);
+        $this->assertEquals('2025-01-13', $freshPost->week_start_date->format('Y-m-d'));
     }
 }
 ```
 
 ---
 
-## 2. ValueObject Testing
+## 2. Scope Testing
 
-**Pattern AI gets wrong**: Only testing happy path
+**Pattern AI gets wrong**: Not testing scope with actual database queries
 
 ```php
-// ❌ AI writes: Only tests valid case
-final class EmailTest extends TestCase
+// ❌ AI writes: No database verification
+final class PostTest extends TestCase
 {
-    public function test_メールアドレスを作成できる(): void
+    public function test_ステータスでフィルタできる(): void
     {
-        $email = Email::create('test@example.com');
-        $this->assertSame('test@example.com', $email->value());
+        $query = Post::query()->byStatus(PostStatus::Submitted);
+        $this->assertStringContainsString('status', $query->toSql());  // Only checks SQL
     }
-    // Missing: Invalid email tests!
 }
 ```
 
-**Correct pattern**: Test both valid and invalid cases
+**Correct pattern**: Test scopes with actual data
 
 ```php
-// ✅ Correct: Complete ValueObject test
-final class EmailTest extends TestCase
+// ✅ Correct: Scope test with database
+final class PostTest extends TestCase
 {
-    public function test_有効なメールアドレスで生成できる(): void
-    {
-        // Arrange & Act
-        $email = Email::create('test@example.com');
+    use RefreshDatabase;
 
-        // Assert
-        $this->assertSame('test@example.com', $email->value());
-    }
-
-    public function test_無効なメールアドレスは例外が発生する(): void
-    {
-        // Assert
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('無効なメールアドレス形式');
-
-        // Act
-        Email::create('invalid-email');
-    }
-
-    public function test_空文字列は例外が発生する(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        Email::create('');
-    }
-
-    public function test_等価判定ができる(): void
+    public function test_scopeByStatusでフィルタできる(): void
     {
         // Arrange
-        $email1 = Email::create('test@example.com');
-        $email2 = Email::create('test@example.com');
-        $email3 = Email::create('other@example.com');
+        Post::factory()->create(['status' => PostStatus::Draft]);
+        Post::factory()->create(['status' => PostStatus::Submitted]);
+        Post::factory()->create(['status' => PostStatus::Submitted]);
+
+        // Act
+        $submittedPosts = Post::byStatus(PostStatus::Submitted)->get();
 
         // Assert
-        $this->assertTrue($email1->equals($email2));
-        $this->assertFalse($email1->equals($email3));
+        $this->assertCount(2, $submittedPosts);
+        $this->assertTrue($submittedPosts->every(fn ($p) => $p->status === PostStatus::Submitted));
     }
 
-    /**
-     * @dataProvider 有効なメールアドレス一覧
-     */
-    public function test_様々な有効なメールアドレスで生成できる(string $validEmail): void
+    public function test_scopeByUserでフィルタできる(): void
     {
-        $email = Email::create($validEmail);
-        $this->assertSame($validEmail, $email->value());
-    }
+        // Arrange
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        Post::factory()->count(3)->create(['user_id' => $user->id]);
+        Post::factory()->count(2)->create(['user_id' => $otherUser->id]);
 
-    public static function 有効なメールアドレス一覧(): array
-    {
-        return [
-            'basic' => ['test@example.com'],
-            'subdomain' => ['test@sub.example.com'],
-            'plus' => ['test+tag@example.com'],
-            'numbers' => ['test123@example.com'],
-        ];
-    }
+        // Act
+        $userPosts = Post::byUser($user->id)->get();
 
-    /**
-     * @dataProvider 無効なメールアドレス一覧
-     */
-    public function test_様々な無効なメールアドレスで例外が発生する(string $invalidEmail): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        Email::create($invalidEmail);
-    }
-
-    public static function 無効なメールアドレス一覧(): array
-    {
-        return [
-            'no_at' => ['testexample.com'],
-            'no_domain' => ['test@'],
-            'spaces' => ['test @example.com'],
-            'special_chars' => ['test<>@example.com'],
-        ];
+        // Assert
+        $this->assertCount(3, $userPosts);
+        $this->assertTrue($userPosts->every(fn ($p) => $p->user_id === $user->id));
     }
 }
 ```
 
 ---
 
-## ValueObject Testing Checklist
+## 3. Relationship Testing
 
-When testing ValueObjects, ensure:
+**Pattern AI gets wrong**: Not verifying relationship data
 
-- [ ] Valid input creates ValueObject successfully
-- [ ] Invalid input throws InvalidArgumentException
-- [ ] Empty/null input is handled appropriately
-- [ ] Edge cases are tested (boundaries, special characters)
-- [ ] `equals()` method works correctly
-- [ ] `value()` method returns expected value
-- [ ] Data providers used for multiple test cases
-- [ ] Exception messages are verified
+```php
+// ❌ AI writes: Only checks relationship exists
+final class PostTest extends TestCase
+{
+    use RefreshDatabase;
 
-## Entity Testing Checklist
+    public function test_ユーザーとの関連がある(): void
+    {
+        $post = Post::factory()->create();
+        $this->assertNotNull($post->user);  // Not enough verification
+    }
+}
+```
 
-When testing Entities, ensure:
+**Correct pattern**: Verify relationship data
 
-- [ ] `create()` factory method generates new Entity with ID
-- [ ] `reconstruct()` factory method recreates Entity from data
-- [ ] All ValueObject properties are properly set
-- [ ] ID generation works (multiple creates produce different IDs)
-- [ ] Getter methods return correct ValueObjects
-- [ ] No database access in tests
-- [ ] No RefreshDatabase trait used
+```php
+// ✅ Correct: Complete relationship test
+final class PostTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_userリレーションでユーザーを取得できる(): void
+    {
+        // Arrange
+        $user = User::factory()->create(['name' => 'Test User']);
+        $post = Post::factory()->create(['user_id' => $user->id]);
+
+        // Act
+        $freshPost = Post::with('user')->find($post->id);
+
+        // Assert
+        $this->assertInstanceOf(User::class, $freshPost->user);
+        $this->assertEquals($user->id, $freshPost->user->id);
+        $this->assertEquals('Test User', $freshPost->user->name);
+    }
+
+    public function test_tagsリレーションでタグ一覧を取得できる(): void
+    {
+        // Arrange
+        $post = Post::factory()->create();
+        $tags = Tag::factory()->count(3)->create();
+        $post->tags()->attach($tags->pluck('id')->toArray(), ['value' => '100']);
+
+        // Act
+        $freshPost = Post::with('tags')->find($post->id);
+
+        // Assert
+        $this->assertCount(3, $freshPost->tags);
+        $this->assertEquals('100', $freshPost->tags->first()->pivot->value);
+    }
+
+    public function test_sharedUsersリレーションで共有ユーザーを取得できる(): void
+    {
+        // Arrange
+        $post = Post::factory()->create();
+        $sharedUsers = User::factory()->count(2)->create();
+        $post->sharedUsers()->attach($sharedUsers->pluck('id')->toArray());
+
+        // Act
+        $freshPost = Post::with('sharedUsers')->find($post->id);
+
+        // Assert
+        $this->assertCount(2, $freshPost->sharedUsers);
+    }
+}
+```
+
+---
+
+## 4. Accessor/Mutator Testing
+
+```php
+// ✅ Correct: Accessor test
+final class PostTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_formatted_week_startアクセサで週開始日をフォーマットできる(): void
+    {
+        // Arrange
+        $post = Post::factory()->create(['week_start_date' => '2025-01-13']);
+
+        // Assert
+        $this->assertEquals('2025年1月13日週', $post->formatted_week_start);
+    }
+}
+```
+
+---
+
+## Model Testing Checklist
+
+When testing Models, ensure:
+
+- [ ] Casts are correctly defined and working
+- [ ] Scopes filter data correctly
+- [ ] Relationships return correct data
+- [ ] Accessors/Mutators transform data correctly
+- [ ] Factories create valid model instances
+- [ ] RefreshDatabase trait is used for database tests
+- [ ] Each test is independent (no test order dependency)
+
+## Model Layer vs UseCase Layer
+
+| Concern | Model Layer | UseCase Layer |
+|---------|-------------|---------------|
+| **Casts** | ✅ Test here | ❌ Not relevant |
+| **Scopes** | ✅ Test here | ❌ Not relevant |
+| **Relationships** | ✅ Test here | ❌ Not relevant |
+| **Business Logic** | ❌ Don't put here | ✅ Test here |
+| **Validation Rules** | ❌ Don't put here | ✅ In FormRequest |
+| **Authorization** | ❌ Don't put here | ✅ In Policy |

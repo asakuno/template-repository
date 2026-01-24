@@ -1,18 +1,17 @@
 ---
 name: backend-architecture-guidelines
-description: 4-layer architecture design guidelines for Laravel applications. Covers layer responsibilities, dependency rules, module isolation, and DDD-lite patterns. Reference this skill when planning backend architecture decisions during Phase 1 (Planning & Review).
+description: 7-layer architecture design guidelines for Laravel applications. Covers layer responsibilities, dependency rules, and Laravel-native patterns. Reference this skill when planning backend architecture decisions during Phase 1 (Planning & Review).
 ---
 
-# Backend Architecture Guidelines - 4-Layer DDD-Lite
+# Backend Architecture Guidelines - 7-Layer Laravel-Native
 
-This skill provides architectural guidelines for Laravel applications following a 4-layer architecture with Domain-Driven Design principles.
+This skill provides architectural guidelines for Laravel applications following a 7-layer Laravel-native architecture.
 
 ## Table of Contents
 - [How to Use This Skill](#how-to-use-this-skill)
 - [Architecture Overview](#architecture-overview)
 - [Dependency Rules](#dependency-rules)
 - [Layer Responsibilities](#layer-responsibilities)
-- [Module Structure and Isolation](#module-structure-and-isolation)
 - [Static Analysis with Deptrac](#static-analysis-with-deptrac)
 - [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
 - [Decision Framework](#decision-framework)
@@ -26,230 +25,356 @@ This skill provides architectural guidelines for Laravel applications following 
 ### Quick Reference - Phase 1: Architecture Planning
 
 **Architecture Decision Checklist:**
-- [ ] 要件からモジュール配置を決定 ([Decision Framework](#decision-framework))
-- [ ] レイヤー構造を設計 ([Layer Responsibilities](#layer-responsibilities))
+- [ ] 要件から適切なレイヤーを決定 ([Layer Responsibilities](#layer-responsibilities))
 - [ ] 依存関係ルールを検証 ([Dependency Rules](#dependency-rules))
-- [ ] Contractインターフェース設計（クロスモジュール通信時）
+- [ ] DTO設計（Laravel Data）を検討
+- [ ] Repository の必要性を判断 ([Decision Framework](#decision-framework))
 - [ ] Anti-patternsチェック ([Anti-Patterns](#anti-patterns-to-avoid))
 - [ ] Deptrac設定を計画
 
-**詳細な実装ガイド:**
-- [Layer Details](references/layer-details.md) - 各レイヤーの詳細パターンとコード例
-- [Module Structure](references/module-structure.md) - モジュール構成とContract実装
-- [Anti-Patterns](references/anti-patterns.md) - よくある間違いと正しい実装
-- [Deptrac Configuration](references/deptrac-config.md) - 静的解析の設定方法
+**詳細な規約:**
+- `.claude/rules/backend/` - レイヤー構造、DTO、テスト、コーディング規約の詳細
 
 ---
 
 ## Architecture Overview
 
 ```
+7層レイヤードアーキテクチャ（Laravel-native）
+
 ┌─────────────────────────────────────────────────────────────┐
-│                    Presentation Layer                        │
-│  (Controller, Request, Resource, Middleware, Inertia)       │
+│                   Presentation Layer                         │
+│               (Controller, Middleware, Inertia)             │
 └─────────────────────────────┬───────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Application Layer                         │
-│            (UseCase, DTO, ApplicationService)               │
+│                     Request Layer                            │
+│                (FormRequest, Validation)                    │
 └─────────────────────────────┬───────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                      Domain Layer                            │
-│  (Entity, ValueObject, DomainService, Repository Interface) │
-└─────────────────────────────▲───────────────────────────────┘
+│                     UseCase Layer                            │
+│                  (Business Logic, DTO)                      │
+└─────────────────────────────┬───────────────────────────────┘
                               │
-┌─────────────────────────────┴───────────────────────────────┐
-│                   Infrastructure Layer                       │
-│      (Repository Implementation, Eloquent Model, Query)     │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Service Layer                            │
+│                 (Shared/Reusable Logic)                     │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Repository Layer                          │
+│              (Data Access Abstraction)                      │
+└─────────────────────────────┬───────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Model Layer                             │
+│                  (Eloquent Models)                          │
 └─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Resource Layer                            │
+│               (JSON Response Transformation)                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### ディレクトリ構造 (`app/` 配下にフラット配置)
+
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Api/              # API Controllers（REST API）
+│   │   └── Web/              # Web Controllers（Inertia.js用）
+│   ├── Requests/             # FormRequests（バリデーション）
+│   └── Resources/            # API Resources（JSONレスポンス）
+├── UseCases/                 # UseCases（ビジネスロジック）
+│   └── {Resource}/
+│       ├── Create{Resource}UseCase.php
+│       └── Update{Resource}UseCase.php
+├── Services/                 # Services（共通ロジック）
+├── Repositories/             # Repositories（データアクセス）
+│   └── {Resource}/
+│       ├── {Resource}RepositoryInterface.php
+│       └── {Resource}Repository.php
+├── Data/                     # DTOs（Laravel Data）
+│   └── {Resource}/
+│       ├── Create{Resource}Data.php
+│       └── Update{Resource}Data.php
+├── Models/                   # Eloquent Models
+├── Policies/                 # Policies（認可）
+└── Enums/                    # Enums（列挙型）
 ```
 
 ---
 
 ## Dependency Rules
 
-### Fundamental Rule
-**Dependencies point inward - outer layers depend on inner layers.**
+### 基本ルール
+**依存は上位層から下位層への一方向のみ**
 
 ```
-Presentation → Application → Domain ← Infrastructure
+Presentation → Request → UseCase → Service/Repository → Model → Resource
 ```
 
-- **Domain Layer**: ZERO external dependencies (pure PHP only)
-- **Infrastructure Layer**: Implements Domain interfaces (Dependency Inversion)
-- **Application Layer**: Orchestrates Domain objects through interfaces
-- **Presentation Layer**: Handles HTTP concerns, uses Application layer
+### 各レイヤーの依存関係
 
-### What Each Layer Can Depend On
-
-| Layer | Can Depend On |
-|-------|---------------|
-| Presentation | Application, (Domain DTOs for display) |
-| Application | Domain |
-| Domain | Nothing (Pure PHP) |
-| Infrastructure | Domain (for implementing interfaces) |
+| レイヤー | 依存可能 | 依存禁止 |
+|---------|----------|----------|
+| **Presentation (Controllers)** | Request, UseCase, Resource | Model直接, Service直接 |
+| **Request (FormRequests)** | DTO (Laravel Data) | Model, UseCase |
+| **UseCase** | Repository Interface, Service, Policy | Controller, Request |
+| **Service** | Repository, Model | Controller, UseCase |
+| **Repository** | Model | Controller, UseCase |
+| **Model** | なし（最下層） | 全ての上位層 |
+| **Resource** | Model | Controller, UseCase |
 
 ---
 
 ## Layer Responsibilities
 
-### Quick Reference
+### 各層の責務一覧
 
-**Presentation Layer**: HTTP request/response handling
-- Controllers, Requests, Resources, Middleware
-- **Detailed guide**: [Layer Details - Presentation](references/layer-details.md#presentation-layer)
+| レイヤー | 責務 | 配置 |
+|---------|------|------|
+| **Presentation** | HTTP Request/Response, 認可チェック | `app/Http/Controllers/` |
+| **Request** | バリデーション、DTO変換 | `app/Http/Requests/` |
+| **UseCase** | ビジネスロジック、トランザクション制御 | `app/UseCases/` |
+| **Service** | 汎用的なビジネスロジック（複数UseCaseで共有） | `app/Services/` |
+| **Repository** | データアクセス抽象化、複雑なクエリ | `app/Repositories/` |
+| **Model** | ドメインモデル、リレーション定義 | `app/Models/` |
+| **Resource** | JSONレスポンス整形 | `app/Http/Resources/` |
 
-**Application Layer**: Use case orchestration
-- UseCases, DTOs, Application Services
-- **Detailed guide**: [Layer Details - Application](references/layer-details.md#application-layer)
+### Web Controllers vs API Controllers
 
-**Domain Layer**: Business logic and rules
-- Entities, ValueObjects, Repository Interfaces, Domain Services
-- **Detailed guide**: [Layer Details - Domain](references/layer-details.md#domain-layer)
+| 種別 | 責務 | 命名 |
+|------|------|------|
+| **Web Controller** | 初期ページ描画、静的マスターデータ提供 | `{Resource}PageController` |
+| **API Controller** | CRUD操作、動的データ処理 | `{Resource}Controller` |
 
-**Infrastructure Layer**: Technical implementation details
-- Repository Implementations, Eloquent Models, QueryBuilders
-- **Detailed guide**: [Layer Details - Infrastructure](references/layer-details.md#infrastructure-layer)
-
-📖 **See [Layer Details](references/layer-details.md) for comprehensive examples and patterns.**
-
----
-
-## Module Structure and Isolation
-
-### Rule: Modules communicate ONLY through Contract
-
-Modules must not directly reference another module's internal implementation. All cross-module communication goes through `modules/Contract/{Module}/` interfaces.
-
-```php
-// ❌ WRONG: Direct cross-module reference
-use Modules\Member\Domain\Entities\Member;
-
-// ✅ CORRECT: Use Contract interface
-use Modules\Contract\Member\MemberServiceInterface;
-```
-
-📖 **See [Module Structure](references/module-structure.md) for:**
-- Complete directory layout
-- Contract pattern implementation
-- Module isolation rules and examples
+📖 **詳細**: `.claude/rules/backend/02-layers.md`
 
 ---
 
 ## Static Analysis with Deptrac
 
-Deptrac enforces architectural boundaries at build time. Two configuration files verify:
-- **Module dependencies**: Modules only communicate through Contract
-- **Layer dependencies**: Dependency rules are respected
+Deptrac を使用してアーキテクチャ境界を静的解析で検証する。
 
-```bash
-# Verify module boundaries
-./vendor/bin/deptrac analyse --config-file=deptrac/module.yaml
+```yaml
+# deptrac/layer.yaml
+deptrac:
+  paths:
+    - ./app
+  layers:
+    - name: Presentation
+      collectors:
+        - type: directory
+          value: app/Http/Controllers
+    - name: Request
+      collectors:
+        - type: directory
+          value: app/Http/Requests
+    - name: UseCase
+      collectors:
+        - type: directory
+          value: app/UseCases
+    - name: Service
+      collectors:
+        - type: directory
+          value: app/Services
+    - name: Repository
+      collectors:
+        - type: directory
+          value: app/Repositories
+    - name: Model
+      collectors:
+        - type: directory
+          value: app/Models
+    - name: Resource
+      collectors:
+        - type: directory
+          value: app/Http/Resources
 
-# Verify layer boundaries
-./vendor/bin/deptrac analyse --config-file=deptrac/layer.yaml
+  ruleset:
+    Presentation:
+      - Request
+      - UseCase
+      - Resource
+    Request:
+      - Data
+    UseCase:
+      - Repository
+      - Service
+      - Policy
+    Service:
+      - Repository
+      - Model
+    Repository:
+      - Model
+    Resource:
+      - Model
+    Model: []
 ```
 
-📖 **See [Deptrac Configuration](references/deptrac-config.md) for:**
-- Complete configuration files
-- Common violations and fixes
-- CI pipeline integration
+```bash
+# 検証コマンド
+./vendor/bin/deptrac analyse --config-file=deptrac/layer.yaml
+```
 
 ---
 
 ## Anti-Patterns to Avoid
 
-Common architectural mistakes and their solutions:
+### 1. Controller でのビジネスロジック
+```php
+// ❌ WRONG
+class PostController extends Controller
+{
+    public function store(Request $request)
+    {
+        // ビジネスロジックがControllerに
+        if (Post::where('user_id', auth()->id())->count() > 10) {
+            throw new \Exception('Limit exceeded');
+        }
+        $post = Post::create($request->all());
+        return response()->json($post);
+    }
+}
 
-1. **Anemic Domain Model**: Entities with no behavior → Put business logic in Entities
-2. **God UseCase**: UseCase doing too much → Split into focused UseCases
-3. **Leaky Abstractions**: Framework types in interfaces → Use Domain types
+// ✅ CORRECT
+class PostController extends Controller
+{
+    public function store(StorePostRequest $request, CreatePostUseCase $useCase)
+    {
+        $data = $request->getCreatePostData();
+        $post = $useCase->execute($data);
+        return response()->json(new PostResource($post), 201);
+    }
+}
+```
 
-📖 **See [Anti-Patterns](references/anti-patterns.md) for detailed examples and correct implementations.**
+### 2. UseCase での HTTP 依存
+```php
+// ❌ WRONG
+class CreatePostUseCase
+{
+    public function execute(Request $request): Post  // HTTP依存
+    {
+        return Post::create($request->all());
+    }
+}
+
+// ✅ CORRECT
+class CreatePostUseCase
+{
+    public function execute(CreatePostData $data): Post  // DTOを使用
+    {
+        return $this->repository->create(...);
+    }
+}
+```
+
+### 3. Web Controller での動的データ提供
+```php
+// ❌ WRONG
+class PostPageController extends Controller
+{
+    public function index()
+    {
+        return Inertia::render('Post/Index', [
+            'posts' => Post::all(),  // 動的データをWeb Controllerで
+        ]);
+    }
+}
+
+// ✅ CORRECT
+class PostPageController extends Controller
+{
+    public function index()
+    {
+        return Inertia::render('Post/Index', [
+            'statusOptions' => PostStatus::toSelectArray(),  // 静的データのみ
+        ]);
+        // 動的データはReact側からAPI経由で取得
+    }
+}
+```
 
 ---
 
 ## Decision Framework
 
-### When to Create a New Module
+### Repository を作成すべきケース
 
-Create a new module when:
-- Feature has its own business domain
-- Feature can be developed independently
-- Feature has clear boundaries
-- Feature might be extracted as microservice later
+| ケース | 理由 |
+|--------|------|
+| 複雑なクエリ | 複数テーブル結合、サブクエリ、集計処理 |
+| トランザクション制御 | 複数のDB操作を1つのトランザクションで管理 |
+| テスト容易性 | モック可能なインターフェース提供 |
 
-### When to Create a Domain Service
+### Repository を作成しなくても良いケース
 
-Use Domain Service when:
-- Logic involves multiple entities
-- Logic doesn't naturally belong to one entity
-- Operation requires coordination between aggregates
+| ケース | 理由 |
+|--------|------|
+| シンプルな CRUD | Eloquent の標準機能で十分 |
+| 単一モデル操作 | 複雑なクエリロジックがない |
 
-```php
-// ✅ Domain Service for cross-entity logic
-final readonly class MemberTransferService
-{
-    public function transfer(
-        Member $member,
-        Project $fromProject,
-        Project $toProject,
-    ): void {
-        $fromProject->removeMember($member->id());
-        $toProject->addMember($member->id());
-    }
-}
-```
+📖 **詳細**: `.claude/rules/backend/02-layers.md`
 
-### When to Create a ValueObject
+### Service を作成すべきケース
 
-Create ValueObject when:
-- Value has validation rules
-- Value has behavior (formatting, comparison)
-- Value is used in multiple places
-- Primitive obsession is emerging
+| ケース | 例 |
+|--------|-----|
+| 複数UseCase間で共有されるロジック | ファイルエクスポート、通知送信 |
+| 外部サービス連携 | API呼び出し、メール送信 |
+| 複雑な計算処理 | レポート集計、統計計算 |
 
 ---
 
 ## Architecture Decision Checklist
 
-When making architecture decisions, verify:
+### レイヤー配置
+- [ ] コードは正しいレイヤーに配置されているか？
+- [ ] 依存方向は上位→下位の一方向か？
+- [ ] ビジネスロジックは UseCase に集約されているか？
 
-### Layer Placement
-- [ ] Is this code in the correct layer?
-- [ ] Does it depend only on allowed layers?
-- [ ] Is business logic in Domain layer?
+### Controller 設計
+- [ ] Controller は HTTP handling のみか？
+- [ ] UseCase を呼び出しているか？
+- [ ] Web Controller は静的データのみ提供しているか？
 
-### Module Boundaries
-- [ ] Does this belong to an existing module?
-- [ ] If cross-module, using Contract?
-- [ ] Are module boundaries respected?
+### UseCase 設計
+- [ ] Input DTO (Laravel Data) を使用しているか？
+- [ ] Repository Interface 経由でアクセスしているか？
+- [ ] HTTP 依存がないか？
 
-### Dependencies
-- [ ] Domain layer has no framework imports?
-- [ ] Repository interface in Domain, implementation in Infrastructure?
-- [ ] Controller depends on UseCase, not Repository?
+### Repository 設計
+- [ ] Interface と Implementation が分離されているか？
+- [ ] トランザクション制御が適切か？
+- [ ] Eloquent Model を返しているか？
 
-### Entity Design
-- [ ] Using factory methods (create/reconstruct)?
-- [ ] Properties are readonly?
-- [ ] Business logic in Entity, not Service?
-
-### UseCase Design
-- [ ] Using Input/Output DTOs?
-- [ ] Single responsibility?
-- [ ] Depending on interfaces?
+### DTO 設計
+- [ ] `#[TypeScript()]` attribute が付与されているか？
+- [ ] `readonly` property を使用しているか？
+- [ ] FormRequest に DTO 変換メソッドがあるか？
 
 ---
 
 ## Reference Documentation
 
-For detailed implementation guides and examples:
+詳細な実装ガイドと例:
 
-- **[Layer Details](references/layer-details.md)** - Detailed explanations and code examples for each layer
-- **[Module Structure](references/module-structure.md)** - Module organization and Contract pattern
-- **[Deptrac Configuration](references/deptrac-config.md)** - Static analysis setup and common violations
-- **[Anti-Patterns](references/anti-patterns.md)** - Common mistakes and correct implementations
+- **`.claude/rules/backend/01-overview.md`** - アーキテクチャ全体像
+- **`.claude/rules/backend/02-layers.md`** - 各レイヤーの詳細責務とコード例
+- **`.claude/rules/backend/03-dto-data.md`** - Laravel Data による DTO 実装
+- **`.claude/rules/backend/04-typescript-generation.md`** - TypeScript 型生成
+- **`.claude/rules/backend/05-inertia-backend.md`** - Inertia.js バックエンド実装
+- **`.claude/rules/backend/06-testing.md`** - テスト戦略
+- **`.claude/rules/backend/07-best-practices.md`** - ベストプラクティス
+- **`.claude/rules/backend/08-coding-standards.md`** - コーディング規約
