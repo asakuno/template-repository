@@ -151,17 +151,18 @@ Skill({
 
 ### 計画書ディレクトリの確認・作成
 
-計画書を格納するディレクトリを確認・作成：
+仕様書パス `tests/e2e/specs/{category}/{screen}.spec.md` から `{category}` を抽出し、計画書を格納するディレクトリを確認・作成：
 
 ```bash
-mkdir -p .claude/e2e-impl-plans
+# {category} は仕様書パスから抽出（例: tests/e2e/specs/auth/login.spec.md → auth）
+mkdir -p .claude/e2e-impl-plans/{category}
 ```
 
 ### 実装計画書の生成
 
 仕様書の内容に基づいて、以下のフォーマットで実装計画書を生成してください。
 
-**出力先**: `.claude/e2e-impl-plans/{screen}-impl-plan.md`
+**出力先**: `.claude/e2e-impl-plans/{category}/{screen}-impl-plan.md`
 
 ```markdown
 # {画面名} E2E実装計画書
@@ -178,9 +179,9 @@ mkdir -p .claude/e2e-impl-plans
 
 ## Page Object設計
 
-### {Screen}Page
+### {Category}{Screen}Page
 - 継承: BasePage
-- ファイル: tests/e2e/pages/{Screen}Page.ts
+- ファイル: tests/e2e/pages/{category}/{Category}{Screen}Page.ts
 
 #### ロケーター一覧
 | 名前 | セレクタ種別 | セレクタ値 |
@@ -245,7 +246,7 @@ mkdir -p .claude/e2e-impl-plans
 ## 実装手順
 
 1. [ ] BasePage確認・作成
-2. [ ] {Screen}Page生成
+2. [ ] {Category}{Screen}Page生成
 3. [ ] testSetup.ts更新
 4. [ ] テストコード生成（正常系）
 5. [ ] テストコード生成（異常系）
@@ -295,7 +296,7 @@ AskUserQuestionツールで実装方法を選択させてください：
 AskUserQuestion({
   questions: [
     {
-      question: "実装計画書が生成されました。実装方法を選択してください。\n\n計画書: .claude/e2e-impl-plans/{screen}-impl-plan.md",
+      question: "実装計画書が生成されました。実装方法を選択してください。\n\n計画書: .claude/e2e-impl-plans/{category}/{screen}-impl-plan.md",
       header: "実装方法",
       options: [
         {
@@ -329,18 +330,28 @@ Task({
 ## 実装計画書
 ${Readツールで計画書の内容を読み込み、ここに展開}
 
+## ディレクトリ構造
+- 計画書: .claude/e2e-impl-plans/{category}/{screen}-impl-plan.md
+- Page Object: tests/e2e/pages/{category}/{Category}{Screen}Page.ts
+- テストコード: tests/e2e/tests/{category}/{screen}.spec.ts
+
 ## 実装手順
 1. BasePage確認・作成
    - tests/e2e/pages/BasePage.ts が存在しない場合は作成
-2. {Screen}Page生成
+2. ディレクトリ作成
+   - mkdir -p tests/e2e/pages/{category}
+3. {Category}{Screen}Page生成
+   - 出力先: tests/e2e/pages/{category}/{Category}{Screen}Page.ts
+   - インポート: import { BasePage } from '../BasePage' (親ディレクトリへ)
    - 計画書のロケーター一覧、アクションメソッド一覧、アサーションメソッド一覧に基づいて生成
-3. testSetup.ts更新
+4. testSetup.ts更新
    - tests/e2e/fixtures/testSetup.ts にPage Objectを追加
-4. テストコード生成
+   - インポート: import { {Category}{Screen}Page } from '../pages/{category}/{Category}{Screen}Page'
+5. テストコード生成
    - 正常系、異常系、境界値のテストケースを計画書の詳細に基づいて生成
-5. テスト実行・検証
+6. テスト実行・検証
    - npx playwright test tests/e2e/tests/{category}/{screen}.spec.ts で実行
-6. 完了レポート
+7. 完了レポート
    - 生成したファイル一覧とテスト結果を報告
 
 ## 重要事項
@@ -348,6 +359,7 @@ ${Readツールで計画書の内容を読み込み、ここに展開}
 - ロールベースセレクタを優先（getByRole, getByLabel）
 - 手動waitは禁止（Auto-waitingを信頼）
 - 各ステップ完了後に進捗を報告
+- Page ObjectのBasePageインポートは '../BasePage' を使用（親ディレクトリ参照）
 
 ## 参照スキル
 必要に応じて Skill('playwright-guidelines') を参照してください。`,
@@ -369,18 +381,18 @@ ${Readツールで計画書の内容を読み込み、ここに展開}
 
 ```
 ---
-実装計画書を保存しました: .claude/e2e-impl-plans/{screen}-impl-plan.md
+実装計画書を保存しました: .claude/e2e-impl-plans/{category}/{screen}-impl-plan.md
 
 手動で実装を開始するには：
 
 オプション1: 新しいセッションで実装
 1. `/clear` を入力してセッションをクリア
 2. 以下を入力：
-   @.claude/e2e-impl-plans/{screen}-impl-plan.md
+   @.claude/e2e-impl-plans/{category}/{screen}-impl-plan.md
    この計画書に基づいてE2Eテストを実装してください。
 
 オプション2: CLIで自動実装
-claude --yes -p "この計画書に基づいてE2Eテストを実装" .claude/e2e-impl-plans/{screen}-impl-plan.md
+claude --yes -p "この計画書に基づいてE2Eテストを実装" .claude/e2e-impl-plans/{category}/{screen}-impl-plan.md
 ---
 ```
 
@@ -427,14 +439,20 @@ export abstract class BasePage {
 
 #### 画面固有Page Object生成
 
+Page Objectを格納するディレクトリを作成：
+
+```bash
+mkdir -p tests/e2e/pages/{category}
+```
+
 計画書の「Page Object設計」セクションに基づいて、Page Objectを生成：
 
 ```typescript
-// tests/e2e/pages/{Screen}Page.ts
+// tests/e2e/pages/{category}/{Category}{Screen}Page.ts
 import { type Page, type Locator, expect } from '@playwright/test';
-import { BasePage } from './BasePage';
+import { BasePage } from '../BasePage';
 
-export class {Screen}Page extends BasePage {
+export class {Category}{Screen}Page extends BasePage {
   // 計画書のロケーター一覧に基づいて定義
   readonly {locatorName}: Locator;
   // ...
@@ -470,17 +488,17 @@ export class {Screen}Page extends BasePage {
 ```typescript
 // tests/e2e/fixtures/testSetup.ts
 import { test as baseTest, expect } from '@playwright/test';
-import { {Screen}Page } from '../pages/{Screen}Page';
+import { {Category}{Screen}Page } from '../pages/{category}/{Category}{Screen}Page';
 
 type Pages = {
-  {screen}Page: {Screen}Page;
+  {category}{Screen}Page: {Category}{Screen}Page;
 };
 
 export const test = baseTest.extend<Pages>({
-  {screen}Page: async ({ page }, use) => {
-    const {screen}Page = new {Screen}Page(page);
-    await {screen}Page.goto();
-    await use({screen}Page);
+  {category}{Screen}Page: async ({ page }, use) => {
+    const {category}{Screen}Page = new {Category}{Screen}Page(page);
+    await {category}{Screen}Page.goto();
+    await use({category}{Screen}Page);
   },
 });
 
@@ -498,7 +516,7 @@ import { test, expect } from '../../fixtures/testSetup';
 test.describe('{画面名}', () => {
   // 正常系
   test.describe('正常系', () => {
-    test('{テストID}: {テスト名}', async ({ {screen}Page, page }) => {
+    test('{テストID}: {テスト名}', async ({ {category}{Screen}Page, page }) => {
       // Arrange（計画書のArrange内容）
       // ...
 
@@ -512,7 +530,7 @@ test.describe('{画面名}', () => {
 
   // 異常系
   test.describe('異常系', () => {
-    test('{テストID}: {テスト名}', async ({ {screen}Page }) => {
+    test('{テストID}: {テスト名}', async ({ {category}{Screen}Page }) => {
       // Arrange
       // ...
 
@@ -526,7 +544,7 @@ test.describe('{画面名}', () => {
 
   // 境界値
   test.describe('境界値', () => {
-    test('{テストID}: {テスト名}', async ({ {screen}Page }) => {
+    test('{テストID}: {テスト名}', async ({ {category}{Screen}Page }) => {
       // Arrange
       // ...
 
@@ -610,7 +628,7 @@ AskUserQuestion({
 ✓ Playwrightテストコードの生成が完了しました
 
 生成ファイル:
-- tests/e2e/pages/{Screen}Page.ts (Page Object)
+- tests/e2e/pages/{category}/{Category}{Screen}Page.ts (Page Object)
 - tests/e2e/tests/{category}/{screen}.spec.ts (テストコード)
 - tests/e2e/fixtures/testSetup.ts (フィクスチャ)
 
@@ -657,9 +675,9 @@ AskUserQuestion({
 **「コミット (Recommended)」を選択された場合**：
 ```bash
 git add tests/e2e/
-git commit -m "test(e2e): add {screen} E2E tests
+git commit -m "test(e2e): add {category}/{screen} E2E tests
 
-- Add {Screen}Page Page Object
+- Add {Category}{Screen}Page Page Object
 - Add {screen}.spec.ts test cases
 - Configure test fixtures
 
