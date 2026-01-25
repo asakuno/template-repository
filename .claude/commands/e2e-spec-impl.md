@@ -640,12 +640,8 @@ AskUserQuestion({
       header: "次のアクション",
       options: [
         {
-          label: "コミット",
+          label: "コミット (Recommended)",
           description: "変更をコミットする"
-        },
-        {
-          label: "別の仕様書を実装",
-          description: "別のテスト仕様書からテストコードを生成"
         },
         {
           label: "完了",
@@ -658,7 +654,7 @@ AskUserQuestion({
 })
 ```
 
-**「コミット」を選択された場合**：
+**「コミット (Recommended)」を選択された場合**：
 ```bash
 git add tests/e2e/
 git commit -m "test(e2e): add {screen} E2E tests
@@ -669,9 +665,6 @@ git commit -m "test(e2e): add {screen} E2E tests
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
-
-**「別の仕様書を実装」を選択された場合**：
-- [1/4] 仕様書読み込み・環境確認に戻る
 
 **「完了」を選択された場合**：
 - コマンドを終了
