@@ -338,6 +338,7 @@ export default defineConfig({
 - **[references/laravel-integration.md](references/laravel-integration.md)**: Laravel統合パターン
 - **[references/ci-config.md](references/ci-config.md)**: CI/CD設定詳細
 - **[references/test-stability.md](references/test-stability.md)**: テスト安定性のベストプラクティス
+- **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/e2e-spec-impl用）
 
 ## Summary
 

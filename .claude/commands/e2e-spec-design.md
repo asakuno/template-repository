@@ -1,25 +1,12 @@
 ---
-description: "画面仕様書（Excel/Markdown）からE2Eテスト仕様書を生成。テストケースの網羅性、優先度設定、データ要件を含む構造化されたテスト仕様書を作成。"
-argument-hint: "<画面仕様書パス> (例: docs/specs/login-screen.xlsx)"
-allowed-tools: ["Read", "Write", "Glob", "Grep", "AskUserQuestion", "TodoWrite", "Skill"]
+description: "画面仕様書からE2Eテスト仕様書を生成"
+argument-hint: "<画面仕様書パス> (例: docs/specs/login-screen.md)"
+allowed-tools: ["Read", "Write", "Glob", "AskUserQuestion", "Skill"]
 ---
 
 # /e2e-spec-design - E2Eテスト仕様書作成コマンド
 
-このコマンドは、画面仕様書（Excel/Markdown）からE2Eテスト仕様書を生成します。
-生成されたテスト仕様書は `/e2e-spec-impl` コマンドで Playwright テストコードに変換できます。
-
-## 使い方
-
-### 引数付き起動
-```
-/e2e-spec-design docs/specs/login-screen.md
-```
-
-### 引数なし起動（対話的）
-```
-/e2e-spec-design
-```
+画面仕様書（Markdown/Excel）からE2Eテスト仕様書を生成する。生成したテスト仕様書は `/e2e-spec-impl` でPlaywrightテストコードに変換可能。
 
 ---
 
@@ -27,73 +14,40 @@ allowed-tools: ["Read", "Write", "Glob", "Grep", "AskUserQuestion", "TodoWrite",
 
 ### 仕様書パスの取得
 
-引数から仕様書パスを取得します：
-- `$1`が存在する場合: そのまま使用
-- `$1`が空の場合: ユーザーに質問
-
 ```
 仕様書パス: $1
 ```
 
-$1が空の場合、以下の質問をしてください：
+$1が空の場合、ユーザーに質問：
 
 「テスト仕様書を作成する画面仕様書のパスを入力してください。
-
-対応形式：
-- Markdown形式: docs/specs/login-screen.md
-- Excel形式: docs/specs/login-screen.xlsx
-
-例：
-- docs/specs/auth/login.md
-- docs/specs/dashboard/widgets.xlsx
-」
+対応形式: Markdown (.md), Excel (.xlsx)
+例: docs/specs/auth/login.md」
 
 ### 仕様書の読み込み
 
-Readツールで仕様書ファイルを読み込み、以下を特定してください：
+Readツールで仕様書を読み込み、以下を特定：
 
-1. **画面情報**:
-   - 画面ID
-   - 画面名
-   - URL（エンドポイント）
-   - 認証要否
-
-2. **画面要素**:
-   - フォーム要素（入力フィールド、ボタン、チェックボックス等）
-   - 表示要素（テーブル、リスト、メッセージ等）
-   - ナビゲーション要素（リンク、メニュー等）
-
-3. **機能一覧**:
-   - 主要機能（ユーザーが行う操作）
-   - 副次機能（自動処理、バリデーション等）
+1. **画面情報**: 画面ID、画面名、URL、認証要否
+2. **画面要素**: フォーム要素、表示要素、ナビゲーション要素
+3. **機能一覧**: 主要機能、副次機能
 
 ### 対象画面の確認
 
-複数画面が含まれる場合、AskUserQuestionツールで対象画面を確認してください：
+複数画面が含まれる場合、AskUserQuestionで対象画面を確認：
 
 ```javascript
 AskUserQuestion({
-  questions: [
-    {
-      question: "以下の画面が検出されました。テスト仕様書を作成する画面を選択してください。",
-      header: "対象画面",
-      options: [
-        {
-          label: "[検出した画面名1]",
-          description: "[画面の概要]"
-        },
-        {
-          label: "[検出した画面名2]",
-          description: "[画面の概要]"
-        },
-        {
-          label: "すべて",
-          description: "検出したすべての画面のテスト仕様書を作成"
-        }
-      ],
-      multiSelect: true
-    }
-  ]
+  questions: [{
+    question: "テスト仕様書を作成する画面を選択してください。",
+    header: "対象画面",
+    options: [
+      { label: "[画面名1]", description: "[概要]" },
+      { label: "[画面名2]", description: "[概要]" },
+      { label: "すべて", description: "検出したすべての画面" }
+    ],
+    multiSelect: true
+  }]
 })
 ```
 
@@ -103,170 +57,69 @@ AskUserQuestion({
 
 ### スキル参照
 
-テストケース設計前に、Skillツールでplaywright-guidelinesを参照してください：
-
 ```javascript
-Skill({
-  skill: "playwright-guidelines"
-})
+Skill({ skill: "playwright-guidelines" })
 ```
 
 ### テストケースの抽出
 
-選択された各画面に対して、以下のテストケースを設計してください：
+選択された各画面に対して、以下のテストケースを設計：
 
-#### 正常系テストケース
-
-- **基本フロー**: 主要な操作が正常に完了するケース
-- **代替フロー**: 別ルートで目的を達成するケース
-- **オプショナルフロー**: 任意項目を含むケース
-
-#### 異常系テストケース
-
-- **バリデーションエラー**: 不正入力に対するエラー表示
-- **認証エラー**: 未認証・権限不足のケース
-- **サーバーエラー**: API失敗時の表示（任意）
-
-#### 境界値テストケース
-
-- **空入力**: 必須フィールドの空入力
-- **最大長**: 最大文字数入力
-- **特殊文字**: 特殊文字・絵文字等
+| 分類 | 内容 |
+|------|------|
+| **正常系** | 基本フロー、代替フロー、オプショナルフロー |
+| **異常系** | バリデーションエラー、認証エラー、サーバーエラー |
+| **境界値** | 空入力、最大長、特殊文字 |
 
 ### 優先度の設定
 
-各テストケースに優先度を設定してください：
-
 | 優先度 | 条件 | 例 |
 |--------|------|-----|
-| 高 | クリティカルパス、主要機能の正常系 | ログイン成功、注文完了 |
-| 中 | エラーハンドリング、準主要機能 | バリデーションエラー、検索機能 |
-| 低 | エッジケース、UI詳細確認 | 特殊文字入力、レスポンシブ確認 |
+| 高 | クリティカルパス、主要機能の正常系 | ログイン成功 |
+| 中 | エラーハンドリング、準主要機能 | バリデーションエラー |
+| 低 | エッジケース、UI詳細確認 | 特殊文字入力 |
 
 ### テストケース確認
 
-AskUserQuestionツールで設計したテストケースを確認してください：
-
 ```javascript
 AskUserQuestion({
-  questions: [
-    {
-      question: "以下のテストケースを設計しました：\n\n[画面名]\n- 正常系: X件\n- 異常系: Y件\n- 境界値: Z件\n\n優先度別:\n- 高: A件\n- 中: B件\n- 低: C件\n\nこのテストケース構成で進めてよろしいですか？",
-      header: "テストケース確認",
-      options: [
-        {
-          label: "承認",
-          description: "このテストケースでテスト仕様書を生成"
-        },
-        {
-          label: "高優先度のみ",
-          description: "優先度「高」のテストケースのみ生成"
-        },
-        {
-          label: "却下",
-          description: "コマンドを終了"
-        }
-      ],
-      multiSelect: false
-    }
-  ]
+  questions: [{
+    question: "テストケースを設計しました：\n\n- 正常系: X件\n- 異常系: Y件\n- 境界値: Z件\n\nこの構成で進めてよろしいですか？",
+    header: "テストケース確認",
+    options: [
+      { label: "承認", description: "このテストケースで生成" },
+      { label: "高優先度のみ", description: "優先度「高」のみ生成" },
+      { label: "却下", description: "コマンドを終了" }
+    ],
+    multiSelect: false
+  }]
 })
 ```
-
-**「承認」を選択された場合**：
-- 次のフェーズ（テスト仕様書生成）に進む
-
-**「高優先度のみ」を選択された場合**：
-- 優先度「高」のテストケースのみを含めて次のフェーズに進む
-
-**「却下」を選択された場合**：
-- コマンドを終了
-
-**「Other」を選択された場合**：
-- ユーザーの指示に従ってテストケースを調整
-- 再度確認を取得
 
 ---
 
 ## [3/4] テスト仕様書生成
 
-### 出力先の決定
+### 出力先
 
-テスト仕様書の出力先を決定：
-- パス: `tests/e2e/specs/{category}/{screen}.spec.md`
-- category: 画面の分類（auth, dashboard, settings 等）
+```
+tests/e2e/specs/{category}/{screen}.spec.md
+```
+
+- category: 画面の分類（auth, dashboard 等）
 - screen: 画面名（kebab-case）
 
-例：`tests/e2e/specs/auth/login.spec.md`
+### テスト仕様書フォーマット
 
-### テスト仕様書の作成
+**Skill('playwright-guidelines')** のテスト仕様書フォーマット（SKILL.md 83-108行）に従って作成：
 
-Writeツールで以下のフォーマットのテスト仕様書を作成してください：
+- 画面概要（画面ID、画面名、URL、認証）
+- 前提条件
+- テストケーステーブル（テストID、テスト名、前提条件、操作手順、期待結果、優先度）
+- データ要件（テストデータ、Laravelファクトリー）
+- Page Object要件
 
-```markdown
-# [画面名] E2Eテスト仕様書
-
-## 画面概要
-
-| 項目 | 値 |
-|------|-----|
-| 画面ID | SCR-XXX |
-| 画面名 | [画面名] |
-| URL | [エンドポイント] |
-| 認証 | 必要 / 不要 |
-
-## 前提条件
-
-- [前提条件1]
-- [前提条件2]
-
-## テストケース
-
-### 正常系
-
-| テストID | テスト名 | 前提条件 | 操作手順 | 期待結果 | 優先度 |
-|----------|----------|----------|----------|----------|--------|
-| {CATEGORY}_{SCREEN}_001 | [テスト名] | [前提条件] | 1. [手順1]<br>2. [手順2] | [期待結果] | 高 |
-
-### 異常系
-
-| テストID | テスト名 | 前提条件 | 操作手順 | 期待結果 | 優先度 |
-|----------|----------|----------|----------|----------|--------|
-| {CATEGORY}_{SCREEN}_ERR_001 | [テスト名] | [前提条件] | 1. [手順1]<br>2. [手順2] | [期待結果] | 中 |
-
-### 境界値
-
-| テストID | テスト名 | 前提条件 | 操作手順 | 期待結果 | 優先度 |
-|----------|----------|----------|----------|----------|--------|
-| {CATEGORY}_{SCREEN}_BND_001 | [テスト名] | [前提条件] | 1. [手順1]<br>2. [手順2] | [期待結果] | 低 |
-
-## データ要件
-
-### テストデータ
-
-| データ種別 | 用途 | 値 |
-|------------|------|-----|
-| 正常ユーザー | ログインテスト | user@example.com / password123 |
-| 無効ユーザー | エラーテスト | invalid@example.com |
-
-### Laravelファクトリー
-
-```php
-// 必要なファクトリーの定義
-User::factory()->create(['email' => 'user@example.com']);
-```
-
-## Page Object要件
-
-| Page Object | 用途 | 主要要素 |
-|-------------|------|----------|
-| {Category}{Screen}Page | [画面名]操作 | [要素リスト] |
-
-## 関連画面
-
-- [関連画面1] → [遷移条件]
-- [関連画面2] → [遷移条件]
-```
+**テストID命名規則**: `{CATEGORY}_{SCREEN}_{連番}` または `{CATEGORY}_{SCREEN}_{種別}_{連番}`
 
 ---
 
@@ -274,70 +127,42 @@ User::factory()->create(['email' => 'user@example.com']);
 
 ### サマリー表示
 
-以下の情報を表示してください：
-
 ```
 ✓ テスト仕様書が生成されました
 
-生成ファイル:
-- tests/e2e/specs/{category}/{screen}.spec.md
+生成ファイル: tests/e2e/specs/{category}/{screen}.spec.md
 
 テストケース数:
-- 正常系: X件
-- 異常系: Y件
-- 境界値: Z件
+- 正常系: X件, 異常系: Y件, 境界値: Z件
 - 合計: N件（高: A件, 中: B件, 低: C件）
 
-推定Page Object:
-- {Category}{Screen}Page
+推定Page Object: {Category}{Screen}Page
 ```
 
 ### 次のアクション確認
 
-AskUserQuestionツールで次のアクションを確認してください：
-
 ```javascript
 AskUserQuestion({
-  questions: [
-    {
-      question: "テスト仕様書が生成されました。次のアクションを選択してください。",
-      header: "次のアクション",
-      options: [
-        {
-          label: "テストコード生成 (Recommended)",
-          description: "/e2e-spec-impl でPlaywrightテストコードを生成"
-        },
-        {
-          label: "レビュー指摘を反映",
-          description: "テスト仕様書の修正箇所を指示してください"
-        },
-        {
-          label: "完了",
-          description: "テスト仕様書作成のみで終了"
-        }
-      ],
-      multiSelect: false
-    }
-  ]
+  questions: [{
+    question: "次のアクションを選択してください。",
+    header: "次のアクション",
+    options: [
+      { label: "テストコード生成 (Recommended)", description: "/e2e-spec-impl でPlaywrightテストを生成" },
+      { label: "レビュー指摘を反映", description: "テスト仕様書を修正" },
+      { label: "完了", description: "テスト仕様書作成のみで終了" }
+    ],
+    multiSelect: false
+  }]
 })
 ```
 
-**「テストコード生成 (Recommended)」を選択された場合**：
+**「テストコード生成」選択時**:
 ```javascript
-Skill({
-  skill: "e2e-spec-impl",
-  args: "tests/e2e/specs/{category}/{screen}.spec.md"
-})
+Skill({ skill: "e2e-spec-impl", args: "tests/e2e/specs/{category}/{screen}.spec.md" })
 ```
 
-**「レビュー指摘を反映」を選択された場合**：
-1. ユーザーからの修正指示を受け取る（Other入力欄またはフォローアップメッセージ）
-2. 指示に基づいてテスト仕様書を修正
-3. 修正完了後、再度「次のアクション確認」に戻る
-
-**「完了」を選択された場合**：
-- コマンドを終了
-- 「テスト仕様書が完成しました。テストコードを生成する場合は /e2e-spec-impl を使用してください」と表示
+**「レビュー指摘を反映」選択時**:
+ユーザーの修正指示を受け取り、仕様書を修正後、再度「次のアクション確認」に戻る。
 
 ---
 
@@ -345,21 +170,13 @@ Skill({
 
 ### テスト仕様書作成のルール
 
-1. **テストIDは一意に**: `{CATEGORY}_{SCREEN}_{連番}` または `{CATEGORY}_{SCREEN}_{種別}_{連番}` 形式
-2. **操作手順は具体的に**: 曖昧な表現を避け、再現可能な手順を記述
-3. **期待結果は検証可能に**: 「正しく表示される」ではなく「"ログイン成功"メッセージが表示される」
+1. **テストIDは一意に**: `{CATEGORY}_{SCREEN}_{連番}` 形式
+2. **操作手順は具体的に**: 再現可能な手順を記述
+3. **期待結果は検証可能に**: 「"ログイン成功"メッセージが表示される」のように具体的に
 4. **前提条件は明確に**: 認証状態、データ状態を明示
 
 ### playwright-guidelinesとの連携
 
-テスト仕様書は以下のガイドラインに準拠して作成：
-
-- **セレクタ戦略**: ロールベースロケーターを想定した要素特定
-- **AAAパターン**: Arrange-Act-Assert の構造を意識した手順記述
+- **セレクタ戦略**: ロールベースロケーターを想定
+- **AAAパターン**: Arrange-Act-Assert の構造を意識
 - **テスト独立性**: 各テストケースが独立して実行可能
-
-### エラーハンドリング
-
-- ファイル読み込みエラー時は明確なエラーメッセージを表示
-- 対応していない形式の場合は対応形式を案内
-- 最大再試行回数: 各フェーズ3回まで
