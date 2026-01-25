@@ -1,12 +1,13 @@
 ---
-description: "E2Eテスト仕様書からPlaywrightテストコードを生成。Page Object Modelパターンを適用し、hyvor/laravel-playwright統合でLaravelファクトリーを活用。"
+description: "E2Eテスト仕様書から実装計画書を生成し、Playwrightテストコードを実装。コンテキスト蓄積による実装ブレを防ぐ2段階ワークフロー。Page Object Modelパターンを適用し、hyvor/laravel-playwright統合でLaravelファクトリーを活用"
 argument-hint: "<テスト仕様書パス> (例: tests/e2e/specs/auth/login.spec.md)"
-allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "AskUserQuestion", "TodoWrite", "Task", "Skill"]
+allowed-tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "AskUserQuestion", "Task", "Skill"]
 ---
 
-# /e2e-spec-impl - Playwrightテストコード生成コマンド
+# /e2e-spec-impl - Playwrightテスト実装コマンド
 
-このコマンドは、E2Eテスト仕様書からPlaywrightテストコードを生成します。
+このコマンドは、E2Eテスト仕様書から実装計画書を生成し、Playwrightテストコードを実装します。
+「計画書作成 → 実装方法選択 → 実装」の2段階ワークフローで、コンテキスト蓄積による実装ブレを防ぎます。
 Page Object Modelパターンを適用し、hyvor/laravel-playwright統合でLaravelファクトリーを活用します。
 
 ## 使い方
@@ -23,7 +24,7 @@ Page Object Modelパターンを適用し、hyvor/laravel-playwright統合でLar
 
 ---
 
-## [1/5] 仕様書読み込み・環境確認
+## [1/4] 仕様書読み込み・環境確認
 
 ### 仕様書パスの取得
 
@@ -134,18 +135,9 @@ Skill({
 })
 ```
 
-```bash
-# Playwrightインストール
-npm init playwright@latest
-
-# hyvor/laravel-playwright インストール
-composer require hyvor/laravel-playwright --dev
-npm install @hyvor/laravel-playwright
-```
-
 ---
 
-## [2/5] Page Object生成
+## [2/4] 実装計画書の生成
 
 ### スキル参照
 
@@ -157,20 +149,248 @@ Skill({
 })
 ```
 
-### TodoWriteでタスク管理
+### 計画書ディレクトリの確認・作成
 
-Page Object生成のタスクを登録：
+計画書を格納するディレクトリを確認・作成：
+
+```bash
+mkdir -p .claude/e2e-impl-plans
+```
+
+### 実装計画書の生成
+
+仕様書の内容に基づいて、以下のフォーマットで実装計画書を生成してください。
+
+**出力先**: `.claude/e2e-impl-plans/{screen}-impl-plan.md`
+
+```markdown
+# {画面名} E2E実装計画書
+
+## 参照仕様書
+- パス: {テスト仕様書パス}
+- 画面ID: {画面ID}
+- テストケース数: {正常系X件, 異常系Y件, 境界値Z件}
+
+## Playwright環境
+- 設定ファイル: playwright.config.ts
+- ベースURL: {baseURL}
+- Laravel統合: {hyvor/laravel-playwright使用有無}
+
+## Page Object設計
+
+### {Screen}Page
+- 継承: BasePage
+- ファイル: tests/e2e/pages/{Screen}Page.ts
+
+#### ロケーター一覧
+| 名前 | セレクタ種別 | セレクタ値 |
+|------|-------------|-----------|
+| {locatorName} | getByLabel | {ラベル名} |
+| {locatorName} | getByRole | button, { name: '{ボタン名}' } |
+| ... | ... | ... |
+
+#### アクションメソッド一覧
+| メソッド名 | 引数 | 処理内容 |
+|-----------|------|---------|
+| {methodName}(args) | {型定義} | {処理の説明} |
+| ... | ... | ... |
+
+#### アサーションメソッド一覧
+| メソッド名 | 検証内容 |
+|-----------|---------|
+| {methodName}() | {検証内容の説明} |
+| ... | ... |
+
+## テストコード設計
+
+### ファイル構成
+- tests/e2e/tests/{category}/{screen}.spec.ts
+
+### テストケース一覧
+| テストID | テスト名 | AAAパターン概要 |
+|----------|----------|----------------|
+| {ID} | {name} | Arrange: {準備内容}, Act: {操作内容}, Assert: {検証内容} |
+| ... | ... | ... |
+
+### 正常系テストケース詳細
+#### {テストID}: {テスト名}
+- **Arrange**: {前提条件・データ準備}
+- **Act**: {実行する操作}
+- **Assert**: {期待結果の検証}
+
+### 異常系テストケース詳細
+#### {テストID}: {テスト名}
+- **Arrange**: {前提条件・データ準備}
+- **Act**: {実行する操作}
+- **Assert**: {エラー検証}
+
+### 境界値テストケース詳細
+#### {テストID}: {テスト名}
+- **Arrange**: {境界値データ準備}
+- **Act**: {実行する操作}
+- **Assert**: {境界条件の検証}
+
+## フィクスチャ設計
+
+### testSetup.ts
+- Page Objectの自動初期化
+- カスタムフィクスチャ定義
+
+### テストデータ
+| データ種別 | ファイル/値 |
+|-----------|------------|
+| {dataType} | {value} |
+| ... | ... |
+
+## 実装手順
+
+1. [ ] BasePage確認・作成
+2. [ ] {Screen}Page生成
+3. [ ] testSetup.ts更新
+4. [ ] テストコード生成（正常系）
+5. [ ] テストコード生成（異常系）
+6. [ ] テストコード生成（境界値）
+7. [ ] テスト実行・検証
+8. [ ] 完了レポート
+
+## 重要な実装ルール
+
+### テストコード作成のルール
+1. **AAAパターン遵守**: Arrange-Act-Assert の構造を厳守
+2. **テスト独立性**: 各テストは他のテストに依存しない
+3. **手動waitは禁止**: `waitForTimeout()` を使用しない、Auto-waitingを信頼
+4. **Web-first Assertions**: `expect(locator).toBeVisible()` を使用
+
+### セレクタのルール
+1. **ロールベース優先**: `getByRole()`, `getByLabel()` を最優先
+2. **CSSセレクタ禁止**: クラス名やIDに依存しない
+3. **XPath禁止**: DOM構造に依存しない
+4. **TestIDは最後の手段**: 上記で特定できない場合のみ
+
+### セレクタ優先順位
+1. `getByRole()` - ボタン、チェックボックス、見出し、リンク
+2. `getByLabel()` - ラベル付きフォーム要素
+3. `getByPlaceholder()` - プレースホルダー付き入力欄
+4. `getByText()` - 非インタラクティブ要素
+5. `getByTestId()` - 上記で特定できない場合のみ（最後の手段）
+```
+
+### 計画書のセルフレビュー（任意）
+
+生成した計画書を確認し、問題があれば修正してください：
+
+1. **Page Object設計の妥当性**: ロケーターとメソッドが仕様書の要件を満たしているか
+2. **テストケースの網羅性**: 正常系・異常系・境界値が適切に設計されているか
+3. **AAAパターンの明確さ**: 各テストケースのArrange-Act-Assertが明確か
+
+---
+
+## [3/4] 実装方法の選択
+
+### 実装方法の確認
+
+AskUserQuestionツールで実装方法を選択させてください：
 
 ```javascript
-TodoWrite({
-  todos: [
-    { content: "BasePage 確認・作成", activeForm: "BasePageを確認中", status: "pending" },
-    { content: "[Screen]Page 生成", activeForm: "[Screen]Pageを生成中", status: "pending" }
+AskUserQuestion({
+  questions: [
+    {
+      question: "実装計画書が生成されました。実装方法を選択してください。\n\n計画書: .claude/e2e-impl-plans/{screen}-impl-plan.md",
+      header: "実装方法",
+      options: [
+        {
+          label: "Yes（自動実装）(Recommended)",
+          description: "コンテキストクリア＋サブエージェントで自動実装（大規模テスト向け）"
+        },
+        {
+          label: "このセッションで続行",
+          description: "現在の会話内で実装を続行（小規模テスト向け）"
+        },
+        {
+          label: "完了（手動実装）",
+          description: "計画書のみ保存、後で手動実装"
+        }
+      ],
+      multiSelect: false
+    }
   ]
 })
 ```
 
-### BasePage確認・作成
+### 「Yes（自動実装）」を選択された場合
+
+Taskツールでサブエージェントを起動し、新しいコンテキストで実装を開始：
+
+```javascript
+Task({
+  description: "E2Eテスト自動実装",
+  prompt: `以下の実装計画書に基づいてE2Eテストを実装してください。
+
+## 実装計画書
+${Readツールで計画書の内容を読み込み、ここに展開}
+
+## 実装手順
+1. BasePage確認・作成
+   - tests/e2e/pages/BasePage.ts が存在しない場合は作成
+2. {Screen}Page生成
+   - 計画書のロケーター一覧、アクションメソッド一覧、アサーションメソッド一覧に基づいて生成
+3. testSetup.ts更新
+   - tests/e2e/fixtures/testSetup.ts にPage Objectを追加
+4. テストコード生成
+   - 正常系、異常系、境界値のテストケースを計画書の詳細に基づいて生成
+5. テスト実行・検証
+   - npx playwright test tests/e2e/tests/{category}/{screen}.spec.ts で実行
+6. 完了レポート
+   - 生成したファイル一覧とテスト結果を報告
+
+## 重要事項
+- AAAパターン（Arrange-Act-Assert）を遵守
+- ロールベースセレクタを優先（getByRole, getByLabel）
+- 手動waitは禁止（Auto-waitingを信頼）
+- 各ステップ完了後に進捗を報告
+
+## 参照スキル
+必要に応じて Skill('playwright-guidelines') を参照してください。`,
+  subagent_type: "implement-review",
+  allowed_tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Skill"],
+  model: "sonnet"
+})
+```
+
+サブエージェント完了後、結果を表示してコマンドを終了。
+
+### 「このセッションで続行」を選択された場合
+
+[4/4] 実装実行（このセッション）に進む。
+
+### 「完了（手動実装）」を選択された場合
+
+以下を表示してコマンドを終了：
+
+```
+---
+実装計画書を保存しました: .claude/e2e-impl-plans/{screen}-impl-plan.md
+
+手動で実装を開始するには：
+
+オプション1: 新しいセッションで実装
+1. `/clear` を入力してセッションをクリア
+2. 以下を入力：
+   @.claude/e2e-impl-plans/{screen}-impl-plan.md
+   この計画書に基づいてE2Eテストを実装してください。
+
+オプション2: CLIで自動実装
+claude --yes -p "この計画書に基づいてE2Eテストを実装" .claude/e2e-impl-plans/{screen}-impl-plan.md
+---
+```
+
+---
+
+## [4/4] 実装実行（このセッション）
+
+### Page Object生成
+
+#### BasePage確認・作成
 
 Readツールで `tests/e2e/pages/BasePage.ts` の存在を確認してください。
 
@@ -205,9 +425,9 @@ export abstract class BasePage {
 }
 ```
 
-### 画面固有Page Object生成
+#### 画面固有Page Object生成
 
-仕様書の「Page Object要件」セクションを参照し、以下のパターンでPage Objectを生成：
+計画書の「Page Object設計」セクションに基づいて、Page Objectを生成：
 
 ```typescript
 // tests/e2e/pages/{Screen}Page.ts
@@ -215,102 +435,37 @@ import { type Page, type Locator, expect } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class {Screen}Page extends BasePage {
-  // ロケーター定義（constructor内で初期化）
-  readonly emailInput: Locator;
-  readonly passwordInput: Locator;
-  readonly submitButton: Locator;
-  readonly errorMessage: Locator;
+  // 計画書のロケーター一覧に基づいて定義
+  readonly {locatorName}: Locator;
+  // ...
 
   constructor(page: Page) {
     super(page);
-    // ロールベースロケーター優先
-    this.emailInput = page.getByLabel('メールアドレス');
-    this.passwordInput = page.getByLabel('パスワード');
-    this.submitButton = page.getByRole('button', { name: 'ログイン' });
-    this.errorMessage = page.getByRole('alert');
+    // 計画書のセレクタ種別・セレクタ値に基づいて初期化
+    this.{locatorName} = page.{セレクタ種別}('{セレクタ値}');
+    // ...
   }
 
   async goto() {
-    await this.page.goto('/[endpoint]');
+    await this.page.goto('/{endpoint}');
     await this.waitForPageLoad();
   }
 
-  // アクションメソッド（ユーザー操作を表現）
-  async login(email: string, password: string) {
-    await this.emailInput.fill(email);
-    await this.passwordInput.fill(password);
-    await this.submitButton.click();
+  // 計画書のアクションメソッド一覧に基づいて実装
+  async {methodName}({args}) {
+    // 処理内容
   }
 
-  // アサーションメソッド（期待結果を検証）
-  async expectError(message: string) {
-    await expect(this.errorMessage).toContainText(message);
-  }
-
-  async expectLoginSuccess() {
-    await expect(this.page).toHaveURL(/dashboard/);
+  // 計画書のアサーションメソッド一覧に基づいて実装
+  async {methodName}() {
+    // 検証内容
   }
 }
 ```
 
-### セレクタ戦略
-
-セレクタは以下の優先順位で選択：
-
-1. **`getByRole()`** - ボタン、チェックボックス、見出し、リンク
-2. **`getByLabel()`** - ラベル付きフォーム要素
-3. **`getByPlaceholder()`** - プレースホルダー付き入力欄
-4. **`getByText()`** - 非インタラクティブ要素
-5. **`getByTestId()`** - 上記で特定できない場合のみ（最後の手段）
-
-### Page Object確認
-
-AskUserQuestionツールでPage Objectを確認：
-
-```javascript
-AskUserQuestion({
-  questions: [
-    {
-      question: "以下のPage Objectを生成しました：\n\n- tests/e2e/pages/{Screen}Page.ts\n  - ロケーター: X個\n  - アクションメソッド: Y個\n  - アサーションメソッド: Z個\n\nこのPage Objectで進めてよろしいですか？",
-      header: "Page Object確認",
-      options: [
-        {
-          label: "承認",
-          description: "このPage Objectでテストコード生成に進む"
-        },
-        {
-          label: "却下",
-          description: "コマンドを終了"
-        }
-      ],
-      multiSelect: false
-    }
-  ]
-})
-```
-
----
-
-## [3/5] テストコード生成
-
-### TodoWriteでタスク管理
-
-テストコード生成のタスクを登録：
-
-```javascript
-TodoWrite({
-  todos: [
-    { content: "フィクスチャ確認・作成", activeForm: "フィクスチャを確認中", status: "pending" },
-    { content: "正常系テストコード生成", activeForm: "正常系テストを生成中", status: "pending" },
-    { content: "異常系テストコード生成", activeForm: "異常系テストを生成中", status: "pending" },
-    { content: "境界値テストコード生成", activeForm: "境界値テストを生成中", status: "pending" }
-  ]
-})
-```
-
 ### フィクスチャ確認・作成
 
-`tests/e2e/fixtures/testSetup.ts` を確認し、なければ作成：
+`tests/e2e/fixtures/testSetup.ts` を確認し、なければ作成、あれば更新：
 
 ```typescript
 // tests/e2e/fixtures/testSetup.ts
@@ -334,124 +489,56 @@ export { expect };
 
 ### テストコード生成
 
-仕様書のテストケースに基づいて、AAAパターンでテストコードを生成：
+計画書のテストケース詳細に基づいて、AAAパターンでテストコードを生成：
 
 ```typescript
 // tests/e2e/tests/{category}/{screen}.spec.ts
 import { test, expect } from '../../fixtures/testSetup';
 
-test.describe('[画面名]', () => {
+test.describe('{画面名}', () => {
   // 正常系
   test.describe('正常系', () => {
-    test('[テストID]: [テスト名]', async ({ {screen}Page, page }) => {
-      // Arrange（前提条件）
-      const testData = {
-        email: 'user@example.com',
-        password: 'password123'
-      };
+    test('{テストID}: {テスト名}', async ({ {screen}Page, page }) => {
+      // Arrange（計画書のArrange内容）
+      // ...
 
-      // Act（操作実行）
-      await {screen}Page.login(testData.email, testData.password);
+      // Act（計画書のAct内容）
+      // ...
 
-      // Assert（期待結果検証）
-      await expect(page).toHaveURL(/dashboard/);
+      // Assert（計画書のAssert内容）
+      // ...
     });
   });
 
   // 異常系
   test.describe('異常系', () => {
-    test('[テストID]: [テスト名]', async ({ {screen}Page }) => {
+    test('{テストID}: {テスト名}', async ({ {screen}Page }) => {
       // Arrange
-      const invalidData = {
-        email: 'invalid@example.com',
-        password: 'wrongpassword'
-      };
+      // ...
 
       // Act
-      await {screen}Page.login(invalidData.email, invalidData.password);
+      // ...
 
       // Assert
-      await {screen}Page.expectError('認証情報が正しくありません');
+      // ...
     });
   });
 
   // 境界値
   test.describe('境界値', () => {
-    test('[テストID]: [テスト名]', async ({ {screen}Page }) => {
+    test('{テストID}: {テスト名}', async ({ {screen}Page }) => {
       // Arrange
-      const emptyData = { email: '', password: '' };
+      // ...
 
       // Act
-      await {screen}Page.login(emptyData.email, emptyData.password);
+      // ...
 
       // Assert
-      await expect({screen}Page.submitButton).toBeDisabled();
+      // ...
     });
   });
 });
 ```
-
-### Laravel統合（hyvor/laravel-playwright使用時）
-
-Laravelファクトリーを使用するテストケースの場合：
-
-```typescript
-import { test } from '@hyvor/laravel-playwright';
-
-test.describe('[画面名] with Laravel Integration', () => {
-  test.beforeEach(async ({ laravel }) => {
-    // データベースリセット
-    await laravel.artisan('migrate:fresh');
-  });
-
-  test('[テストID]: [テスト名]', async ({ laravel, page }) => {
-    // Arrange - Laravelファクトリーでデータ作成
-    const user = await laravel.factory('User', {
-      name: 'テストユーザー',
-      email: 'test@example.com'
-    });
-
-    // Act
-    await page.goto('/login');
-    await page.getByLabel('メールアドレス').fill(user.email);
-    await page.getByLabel('パスワード').fill('password');
-    await page.getByRole('button', { name: 'ログイン' }).click();
-
-    // Assert
-    await expect(page).toHaveURL(/dashboard/);
-  });
-});
-```
-
-### テストコード確認
-
-AskUserQuestionツールでテストコードを確認：
-
-```javascript
-AskUserQuestion({
-  questions: [
-    {
-      question: "以下のテストコードを生成しました：\n\n- tests/e2e/tests/{category}/{screen}.spec.ts\n  - 正常系: X件\n  - 異常系: Y件\n  - 境界値: Z件\n\nこのテストコードで実行に進みますか？",
-      header: "テストコード確認",
-      options: [
-        {
-          label: "承認",
-          description: "テスト実行に進む"
-        },
-        {
-          label: "却下",
-          description: "コマンドを終了"
-        }
-      ],
-      multiSelect: false
-    }
-  ]
-})
-```
-
----
-
-## [4/5] テスト実行・検証
 
 ### テスト実行（サブエージェント）
 
@@ -513,17 +600,9 @@ AskUserQuestion({
 
 **「スキップ」を選択された場合**：
 - 失敗したテストに `test.skip()` を追加
-- 次のフェーズに進む
+- 完了レポートに進む
 
-### 成功時の処理
-
-すべてのテストが成功したら、次のフェーズに進む。
-
----
-
-## [5/5] 完了レポート
-
-### サマリー表示
+### 完了レポート
 
 以下の情報を表示してください：
 
@@ -592,7 +671,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
 
 **「別の仕様書を実装」を選択された場合**：
-- [1/5] 仕様書読み込み・環境確認に戻る
+- [1/4] 仕様書読み込み・環境確認に戻る
 
 **「完了」を選択された場合**：
 - コマンドを終了
@@ -600,21 +679,54 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ---
 
+## ワークフロー図
+
+```
+/e2e-spec-design                    /e2e-spec-impl
+      │                                   │
+      ▼                                   ▼
+┌─────────────┐                    ┌─────────────┐
+│ 画面仕様書  │───────────────────▶│ テスト仕様書 │
+│   読み込み   │                    │   読み込み   │
+└─────────────┘                    └─────────────┘
+      │                                   │
+      ▼                                   ▼
+┌─────────────┐                    ┌─────────────┐
+│ テストケース │                    │  実装計画書  │
+│    設計     │                    │    生成     │
+└─────────────┘                    └─────────────┘
+      │                                   │
+      ▼                                   ▼
+┌─────────────┐                    ┌─────────────┐
+│ テスト仕様書 │                    │  実装方法   │
+│    生成     │                    │    選択     │
+└─────────────┘                    └─────────────┘
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    ▼                     ▼                     ▼
+             ┌────────────┐       ┌────────────┐       ┌────────────┐
+             │Yes（自動）  │       │このセッション│       │完了（手動）│
+             │サブエージェント│      │  で続行    │       │計画書保存 │
+             │ 新コンテキスト │      │既存コンテキスト│      │後で実装  │
+             └────────────┘       └────────────┘       └────────────┘
+                    │                     │
+                    ▼                     ▼
+             ┌─────────────────────────────┐
+             │     Page Object生成         │
+             │     テストコード生成        │
+             │     テスト実行・検証        │
+             └─────────────────────────────┘
+```
+
+---
+
 ## 重要な注意事項
 
-### テストコード作成のルール
+### なぜ2段階ワークフローなのか
 
-1. **AAAパターン遵守**: Arrange-Act-Assert の構造を厳守
-2. **テスト独立性**: 各テストは他のテストに依存しない
-3. **手動waitは禁止**: `waitForTimeout()` を使用しない、Auto-waitingを信頼
-4. **Web-first Assertions**: `expect(locator).toBeVisible()` を使用
-
-### セレクタのルール
-
-1. **ロールベース優先**: `getByRole()`, `getByLabel()` を最優先
-2. **CSSセレクタ禁止**: クラス名やIDに依存しない
-3. **XPath禁止**: DOM構造に依存しない
-4. **TestIDは最後の手段**: 上記で特定できない場合のみ
+1. **コンテキスト蓄積問題の解決**: 仕様書読み込み → Page Object設計 → テストコード生成を1セッションで行うと、コンテキストが蓄積し後半で実装がブレる
+2. **計画書が真実の情報源**: 計画書を生成してからサブエージェントに渡すことで、一貫した実装が可能
+3. **柔軟な実行オプション**: 大規模テストは自動実装、小規模テストは現セッション継続など、状況に応じた選択が可能
 
 ### playwright-guidelinesとの連携
 
