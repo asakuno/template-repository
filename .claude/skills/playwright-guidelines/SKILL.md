@@ -103,8 +103,8 @@ tests/e2e/
 | LOGIN_003 | 未入力エラー | - | 1. /loginにアクセス<br>2. 何も入力せずログインボタンクリック | バリデーションエラー表示 | 中 |
 
 ## データ要件
-- ユーザー: user@example.com / password123
-- 無効ユーザー: invalid@example.com
+- ユーザー: Laravelファクトリーで動的生成（セキュリティのため、クレデンシャルはハードコード禁止）
+- 認証情報: `.env.testing` で管理、または `playwright/.auth/` にセキュアに保存
 ```
 
 ### 仕様書作成の考慮事項
@@ -336,6 +336,7 @@ export default defineConfig({
 - **[references/pom-patterns.md](references/pom-patterns.md)**: Page Object Modelの詳細パターン
 - **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細
 - **[references/laravel-integration.md](references/laravel-integration.md)**: Laravel統合パターン
+- **[references/security-testing.md](references/security-testing.md)**: セキュリティテストパターン（XSS/CSRF検証）
 - **[references/ci-config.md](references/ci-config.md)**: CI/CD設定詳細
 - **[references/test-stability.md](references/test-stability.md)**: テスト安定性のベストプラクティス
 - **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/e2e-spec-impl用）

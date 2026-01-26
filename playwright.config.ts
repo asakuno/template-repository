@@ -4,11 +4,21 @@ import { defineConfig, devices } from '@playwright/test';
  * Playwright設定ファイル
  * Laravel + Inertia.js アプリケーション用
  */
+
+// 環境変数の型ガードと検証
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8000';
+if (!baseURL.startsWith('http://') && !baseURL.startsWith('https://')) {
+  throw new Error('PLAYWRIGHT_BASE_URL must start with http:// or https://');
+}
+
+// リトライ回数を環境変数で設定可能に
+const maxRetries = parseInt(process.env.PLAYWRIGHT_RETRIES ?? '2', 10);
+
 export default defineConfig({
   testDir: './tests/e2e/tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? maxRetries : 0,
   workers: process.env.CI ? 1 : undefined,
   timeout: 30000,
   expect: {
@@ -20,7 +30,7 @@ export default defineConfig({
     : [['html', { outputFolder: 'playwright-report' }], ['list']],
 
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8000',
+    baseURL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

@@ -230,6 +230,64 @@ test('テーブル操作', async ({ laravel }) => {
 });
 ```
 
+## セキュアな認証情報管理
+
+E2Eテストでの認証情報の取り扱いに関するセキュリティガイドライン。
+
+### 禁止事項
+
+```typescript
+// ❌ テストコード内に平文パスワードをハードコード
+const password = 'password123';
+
+// ❌ 本番環境の認証情報を使用
+await page.fill('#email', 'admin@production.com');
+await page.fill('#password', 'prodSecretPassword!');
+
+// ❌ ソースコードにクレデンシャルをコミット
+const API_KEY = 'sk-live-xxx...';
+```
+
+### 推奨パターン
+
+```typescript
+// ✅ ファクトリーで動的生成
+const user = await laravel.factory('User', {
+  email: 'test-' + Date.now() + '@example.com',
+});
+
+// ✅ 環境変数から取得
+const testUser = {
+  email: process.env.TEST_USER_EMAIL!,
+  password: process.env.TEST_USER_PASSWORD!,
+};
+
+// ✅ ファクトリーのデフォルトパスワードを使用
+// database/factories/UserFactory.php で定義されたパスワードを使用
+const defaultPassword = 'password'; // ファクトリーデフォルト
+```
+
+### 環境変数設定
+
+```env
+# .env.testing
+# テスト専用の認証情報（本番と異なる値を使用）
+TEST_USER_EMAIL=test@example.com
+TEST_USER_PASSWORD=testpassword123
+
+# Playwrightが使用
+PLAYWRIGHT_ENABLED=true
+```
+
+### 認証状態ファイル
+
+```bash
+# .gitignore
+playwright/.auth/
+```
+
+認証状態ファイルは `playwright/.auth/` に保存し、Gitにコミットしないこと。
+
 ## 認証セットアップ
 
 ### 認証状態の保存

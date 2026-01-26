@@ -57,9 +57,16 @@ AskUserQuestion({
 
 ### スキル参照
 
+**playwright-guidelines** の詳細ガイドラインを参照：
+
 ```javascript
-Skill({ skill: "playwright-guidelines" })
+Skill('playwright-guidelines')
 ```
+
+参照セクション:
+- SKILL.md 83-108行: テスト仕様書フォーマット
+- references/pom-patterns.md: Page Objectパターン
+- references/selector-strategy.md: セレクタ戦略
 
 ### テストケースの抽出
 
@@ -158,7 +165,7 @@ AskUserQuestion({
 
 **「テストコード生成」選択時**:
 ```javascript
-Skill({ skill: "e2e-spec-impl", args: "tests/e2e/specs/{category}/{screen}.spec.md" })
+Skill('e2e-spec-impl', { args: 'tests/e2e/specs/{category}/{screen}.spec.md' })
 ```
 
 **「レビュー指摘を反映」選択時**:

@@ -69,7 +69,7 @@ AskUserQuestion({
 })
 ```
 
-**「セットアップ実行」選択時**: `Skill({ skill: "playwright-guidelines" })` を参照してセットアップ。
+**「セットアップ実行」選択時**: `Skill('playwright-guidelines')` を参照してセットアップ。
 
 ---
 
@@ -77,11 +77,16 @@ AskUserQuestion({
 
 ### スキル参照
 
+**playwright-guidelines** の詳細ガイドラインを参照：
+
 ```javascript
-Skill({ skill: "playwright-guidelines" })
+Skill('playwright-guidelines')
 ```
 
-実装計画書テンプレートは **references/impl-plan-templates.md** を参照。
+参照セクション:
+- references/impl-plan-templates.md: 実装計画書テンプレート
+- references/pom-patterns.md: Page Objectパターン
+- references/laravel-integration.md: Laravel統合
 
 ### 計画書ディレクトリの確認・作成
 
@@ -164,7 +169,8 @@ ${Readツールで計画書の内容を読み込み、ここに展開}
 - 各ステップ完了後に進捗を報告
 
 ## 参照スキル
-必要に応じて Skill('playwright-guidelines') を参照してください。`,
+必要に応じて Skill('playwright-guidelines') を参照。
+参照セクション: pom-patterns.md, selector-strategy.md, laravel-integration.md`,
   subagent_type: "implement-review",
   allowed_tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Skill"],
   model: "sonnet"

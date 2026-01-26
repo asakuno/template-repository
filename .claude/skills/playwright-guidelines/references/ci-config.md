@@ -117,6 +117,54 @@ export default defineConfig({
 });
 ```
 
+## 並列実行の考慮事項
+
+ワーカー数の設定は環境によって適切な値が異なる。
+
+### ワーカー数の推奨設定
+
+| 環境 | Workers | 理由 |
+|------|---------|------|
+| ローカル | `undefined`（自動） | 開発速度優先、CPU数に応じて自動調整 |
+| CI（小規模） | `1` | データベース競合回避、リソース節約 |
+| CI（大規模） | `2-4` | テスト時間短縮（シャーディング併用推奨） |
+
+### 設定例
+
+```typescript
+// playwright.config.ts
+import { defineConfig } from '@playwright/test';
+
+// ワーカー数を環境変数で設定可能に
+const workers = process.env.PLAYWRIGHT_WORKERS
+  ? parseInt(process.env.PLAYWRIGHT_WORKERS, 10)
+  : process.env.CI ? 1 : undefined;
+
+export default defineConfig({
+  workers,
+  // ...
+});
+```
+
+### CI環境変数での制御
+
+```yaml
+# .github/workflows/e2e.yml
+env:
+  PLAYWRIGHT_WORKERS: 2  # ワーカー数を指定
+  PLAYWRIGHT_RETRIES: 2  # フレーキーテスト対策（最大2回リトライ）
+```
+
+### シャーディング vs ワーカー
+
+| 方式 | 説明 | 使い分け |
+|------|------|----------|
+| **Workers** | 1ジョブ内での並列実行 | テスト数が少ない場合（〜50件） |
+| **Sharding** | 複数ジョブでの並列実行 | テスト数が多い場合（50件〜） |
+| **組み合わせ** | シャード×ワーカー | 大規模テストスイート |
+
+シャーディングを使用する場合は、下記「シャーディング対応」セクションを参照。
+
 ## GitHub Actions
 
 ### 基本設定
