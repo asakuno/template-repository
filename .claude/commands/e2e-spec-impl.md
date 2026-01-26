@@ -131,6 +131,7 @@ Skill('playwright-guidelines')
 参照セクション:
 - references/impl-plan-templates.md: 実装計画書テンプレート
 - references/pom-patterns.md: Page Objectパターン
+- references/fixtures-guide.md: フィクスチャ設計
 - references/laravel-integration.md: Laravel統合
 
 ### 計画書ディレクトリの確認・作成
