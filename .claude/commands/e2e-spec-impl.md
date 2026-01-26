@@ -309,9 +309,21 @@ ${Readツールで計画書の内容を読み込み、ここに展開}
 - 手動waitは禁止（Auto-waitingを信頼）
 - 各ステップ完了後に進捗を報告
 
-## 参照スキル
-必要に応じて Skill('playwright-guidelines') を参照。
-参照セクション: pom-patterns.md, selector-strategy.md, laravel-integration.md`,
+## コード生成チェックリスト
+
+**必須参照**: Skill('playwright-guidelines') の以下を確認
+- references/code-generation-checklist.md（禁止パターン、BasePage テンプレート、正例/禁止例）
+- references/pom-patterns.md（Page Object パターン）
+- references/selector-strategy.md（セレクタ戦略）
+
+コード生成後、チェックリストの全項目を検証し、違反があれば即座に修正すること。
+
+**重要チェック項目（抜粋）**:
+- [ ] BasePage は `abstract class`（`export class` 禁止）
+- [ ] `waitForSelector()` メソッドは提供しない
+- [ ] CSSセレクタ未使用（`getByRole`, `getByLabel` を優先）
+- [ ] Web-first Assertion 使用（`page.waitForFunction()` 禁止）
+- [ ] プロパティとメソッドの名前重複なし`,
   subagent_type: "implement-review",
   allowed_tools: ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Skill"],
   model: "sonnet"

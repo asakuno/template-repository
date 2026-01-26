@@ -362,6 +362,7 @@ export default defineConfig({
 
 - **[references/pom-patterns.md](references/pom-patterns.md)**: Page Object Modelの詳細パターン
 - **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細
+- **[references/code-generation-checklist.md](references/code-generation-checklist.md)**: コード生成時の品質チェックリスト（禁止パターン、BasePage要件）
 - **[references/laravel-integration.md](references/laravel-integration.md)**: Laravel統合パターン
 - **[references/security-testing.md](references/security-testing.md)**: セキュリティテストパターン（XSS/CSRF検証）
 - **[references/ci-config.md](references/ci-config.md)**: CI/CD設定詳細
