@@ -9,7 +9,7 @@
 | バックエンド | Laravel 12.x (PHP 8.4+), Inertia.js |
 | フロントエンド | React/TypeScript, Tailwind CSS, shadcn/ui |
 | フォーム | Laravel Precognition（リアルタイムバリデーション） |
-| テスト | PHPUnit (Backend), Vitest + RTL (Frontend), Storybook |
+| テスト | PHPUnit (Backend), Vitest + RTL (Frontend), Playwright (E2E), Storybook |
 | ビルド | Composer (Backend), Vite (Frontend) |
 | Lint/Format | Laravel Pint (Backend), Biome (Frontend) |
 | 静的解析 | PHPStan, deptrac（依存関係） |
@@ -149,6 +149,7 @@ project/
 | `coding-guidelines` | React/TS 規約、Precognition パターン、ハイブリッドアーキテクチャ |
 | `test-guidelines` | Vitest/RTL テスト規約、AAA パターン |
 | `storybook-guidelines` | Storybook ストーリー作成規約 |
+| `playwright-guidelines` | E2Eテスト仕様書作成とPlaywrightテストコード生成 |
 | `ui-design-guidelines` | UI/UX 原則、アクセシビリティ |
 | `backend-coding-guidelines` | UseCase、Repository、DTO パターン |
 | `backend-test-guidelines` | PHPUnit テスト規約 |
