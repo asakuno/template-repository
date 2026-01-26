@@ -31,6 +31,8 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 - [ ] 操作手順を具体的に記述
 - [ ] 期待結果を検証可能な形式で記述
 - [ ] テストIDを一意に付与（画面名_機能_連番）
+- [ ] **トレーサビリティマトリクスを作成（必須）**
+- [ ] **品質チェックで70%以上のスコアを達成**
 
 ### テストコード作成時のチェックリスト
 
@@ -347,8 +349,10 @@ export default defineConfig({
 - **[references/laravel-integration.md](references/laravel-integration.md)**: Laravel統合パターン
 - **[references/security-testing.md](references/security-testing.md)**: セキュリティテストパターン（XSS/CSRF検証）
 - **[references/ci-config.md](references/ci-config.md)**: CI/CD設定詳細
+- **[references/ci-quickstart.md](references/ci-quickstart.md)**: E2E環境クイックスタート・初期化スクリプト
 - **[references/test-stability.md](references/test-stability.md)**: テスト安定性のベストプラクティス
 - **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/e2e-spec-impl用）
+- **[references/examples/login-example.md](references/examples/login-example.md)**: ログイン画面の完全実装例
 
 ## Summary
 
