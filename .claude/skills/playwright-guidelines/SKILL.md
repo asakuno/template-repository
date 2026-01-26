@@ -160,6 +160,47 @@ tests/e2e/
 | 中 | 準主要機能、エラーハンドリング | 推奨 |
 | 低 | エッジケース、UIの細かい確認 | 任意 |
 
+## テストセットアップ戦略
+
+### フィクスチャ vs Before/After フック
+
+Playwrightでは**フィクスチャの使用を推奨**。フィクスチャはSetup/Teardownを同一箇所に記述でき、複数ファイル間で再利用可能。
+
+| ユースケース | 推奨アプローチ |
+|-------------|--------------|
+| POMクラスのセットアップ | フィクスチャ |
+| 認証状態の準備 | フィクスチャ（workerスコープ） |
+| 複数ファイルで共通のセットアップ | フィクスチャ |
+| 特定のdescribeブロック内のみ | beforeEach/afterEach |
+| シンプルな1行のセットアップ | beforeEach |
+
+### スコープ選択ガイドライン
+
+| スコープ | 実行タイミング | 用途 |
+|---------|--------------|------|
+| `test`（デフォルト） | 各テストごと | ページ、一時データ |
+| `worker` | ワーカーごと1回 | DB接続、認証セットアップ |
+
+```typescript
+// カスタムフィクスチャの基本例
+import { test as base } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+
+export const test = base.extend<{ loginPage: LoginPage }>({
+  loginPage: async ({ page }, use) => {
+    // Setup
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+
+    await use(loginPage);  // テスト実行
+
+    // Teardown（同じ場所で記述可能）
+  },
+});
+```
+
+詳細は [references/fixtures-guide.md](references/fixtures-guide.md) を参照。
+
 ## Phase 2: テストコード実装
 
 ### Page Object Model
@@ -361,6 +402,7 @@ export default defineConfig({
 詳細なガイドラインと実装パターン:
 
 - **[references/pom-patterns.md](references/pom-patterns.md)**: Page Object Modelの詳細パターン
+- **[references/fixtures-guide.md](references/fixtures-guide.md)**: フィクスチャの詳細ガイド（カスタムフィクスチャ、スコープ、自動フィクスチャ）
 - **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細
 - **[references/code-generation-checklist.md](references/code-generation-checklist.md)**: コード生成時の品質チェックリスト（禁止パターン、BasePage要件）
 - **[references/laravel-integration.md](references/laravel-integration.md)**: Laravel統合パターン
