@@ -24,10 +24,10 @@ E2Eテスト実装計画書のテンプレートとガイドライン。
 - ファイル: tests/e2e/pages/{category}/{Category}{Screen}Page.ts
 
 #### ロケーター一覧
-| 名前 | セレクタ種別 | セレクタ値 |
-|------|-------------|-----------|
-| {locatorName} | getByLabel | {ラベル名} |
-| {locatorName} | getByRole | button, { name: '{ボタン名}' } |
+| 名前 | セレクタ種別 | セレクタ値 | 代替セレクタ | DOM確認結果 |
+|------|-------------|-----------|-------------|------------|
+| {locatorName} | `getByLabel` | `'メールアドレス'` | `getByRole('textbox')` | ✓ `<input aria-label="メールアドレス">` |
+| {locatorName} | `getByRole` | `'button', { name: 'ログイン' }` | `getByText('ログイン')` | ✓ `<button>ログイン</button>` |
 
 #### アクションメソッド一覧
 | メソッド名 | 引数 | 処理内容 |
@@ -73,10 +73,18 @@ E2Eテスト実装計画書のテンプレートとガイドライン。
 - Page Objectの自動初期化
 - カスタムフィクスチャ定義
 
-### テストデータ
-| データ種別 | ファイル/値 |
-|-----------|------------|
-| {dataType} | {value} |
+### テストデータ設計
+
+| モデル | ファクトリー | ステート | カスタム属性 | 用途 |
+|--------|-------------|---------|-------------|------|
+| User | UserFactory | - | `{ email: 'test@example.com', password: 'password123' }` | 正常ログイン用ユーザー |
+| User | UserFactory | unverified | `{ email: 'unverified@example.com' }` | 未認証エラーテスト用 |
+| User | UserFactory | admin | `{ email: 'admin@example.com' }` | 管理者権限テスト用 |
+
+### テストデータ（固定値）
+| データ種別 | 値 | 用途 |
+|-----------|-----|------|
+| {dataType} | {value} | {用途の説明} |
 
 ## 実装手順
 
