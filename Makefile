@@ -66,6 +66,13 @@ setup-storage:
 story:
 	docker compose exec app npm run storybook
 
+e2e:
+	docker compose --profile e2e run --rm playwright
+e2e-build:
+	docker compose --profile e2e build playwright
+e2e-headed:
+	docker compose --profile e2e run --rm playwright npx playwright test --headed
+
 init:
 	cp .env.example .env
 	@make up-build

@@ -15,36 +15,50 @@ Page Object Model（POM）は、UIテストの保守性を劇的に向上させ�
 
 ### BasePage クラス
 
-すべてのページクラスの基底クラス:
+すべてのページクラスの基底クラス。**必須要件**に注意すること。
+
+#### 必須要件
+
+| 要件 | 説明 |
+|------|------|
+| `abstract class` | `export abstract class BasePage` として定義（`export class` は禁止） |
+| `waitForSelector()` 禁止 | CSSセレクタを助長するため提供しない |
+| `navigateTo()` は `protected` | サブクラスからのみ呼び出し可能 |
+| `goto()` は `abstract` | 各ページで実装必須 |
+
+#### 基本実装
 
 ```typescript
 // pages/BasePage.ts
-import { type Page, type Locator, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 export abstract class BasePage {
-  readonly page: Page;
-  readonly header: Locator;
-  readonly footer: Locator;
-  readonly loadingIndicator: Locator;
+  protected readonly page: Page;
 
   constructor(page: Page) {
     this.page = page;
-    this.header = page.getByRole('banner');
-    this.footer = page.getByRole('contentinfo');
-    this.loadingIndicator = page.getByRole('progressbar');
   }
 
   abstract goto(): Promise<void>;
 
-  async waitForPageLoad() {
-    await expect(this.loadingIndicator).toBeHidden();
+  protected async navigateTo(path: string): Promise<void> {
+    await this.page.goto(path);
+    await this.waitForPageLoad();
   }
 
-  async getPageTitle(): Promise<string> {
-    return await this.page.title();
+  async waitForPageLoad(): Promise<void> {
+    await this.page.waitForLoadState('domcontentloaded');
+    await this.page.waitForLoadState('networkidle');
+  }
+
+  async expectTitle(expectedTitle: string): Promise<void> {
+    await expect(this.page).toHaveTitle(expectedTitle);
   }
 }
 ```
+
+**重要**: `waitForSelector(selector: string)` メソッドは**提供しない**こと。詳細は `references/code-generation-checklist.md` を参照。
 
 ### 具象ページクラス
 

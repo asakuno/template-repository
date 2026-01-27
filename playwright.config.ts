@@ -11,6 +11,9 @@ if (!baseURL.startsWith('http://') && !baseURL.startsWith('https://')) {
   throw new Error('PLAYWRIGHT_BASE_URL must start with http:// or https://');
 }
 
+// Docker環境判定（nginx を含むURLはDocker内部ネットワーク）
+const isDocker = baseURL.includes('nginx');
+
 // リトライ回数を環境変数で設定可能に
 const maxRetries = parseInt(process.env.PLAYWRIGHT_RETRIES ?? '2', 10);
 
@@ -64,10 +67,15 @@ export default defineConfig({
     // },
   ],
 
-  webServer: {
-    command: 'php artisan serve --port=8000',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  // Docker環境ではwebServerを無効化（nginx経由でアクセス）
+  ...(isDocker
+    ? {}
+    : {
+        webServer: {
+          command: 'php artisan serve --port=8000',
+          url: 'http://localhost:8000',
+          reuseExistingServer: !process.env.CI,
+          timeout: 120000,
+        },
+      }),
 });

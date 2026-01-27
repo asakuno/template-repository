@@ -4,12 +4,27 @@ Playwright テストをCI/CD環境で安定して実行するための設定ガ�
 
 ## 目次
 
+- [クイックスタート](#クイックスタート)
 - [playwright.config.ts](#playwrightconfigts)
 - [GitHub Actions](#github-actions)
 - [Docker対応](#docker対応)
 - [環境変数](#環境変数)
 - [レポート設定](#レポート設定)
 - [トラブルシューティング](#トラブルシューティング)
+
+---
+
+## クイックスタート
+
+E2Eテスト環境の初期セットアップについては **[ci-quickstart.md](ci-quickstart.md)** を参照。
+
+クイックスタートに含まれる内容:
+- プロジェクト初期化コマンド
+- `scripts/setup-e2e.sh` 初期化スクリプトテンプレート
+- package.json スクリプト追加例
+- 次のステップガイド
+
+---
 
 ## playwright.config.ts
 
