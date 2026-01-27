@@ -27,10 +27,13 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 
 - [ ] 画面単位でテストケースを整理
 - [ ] 正常系・異常系・境界値を網羅
+- [ ] **バリデーションルール100%網羅（必須）**
 - [ ] 前提条件（認証状態、データ状態）を明記
 - [ ] 操作手順を具体的に記述
 - [ ] 期待結果を検証可能な形式で記述
 - [ ] テストIDを一意に付与（画面名_機能_連番）
+- [ ] **トレーサビリティマトリクスを作成（必須）**
+- [ ] **品質チェックで70%以上のスコアを達成**
 
 ### テストコード作成時のチェックリスト
 
@@ -105,6 +108,15 @@ tests/e2e/
 ## データ要件
 - ユーザー: Laravelファクトリーで動的生成（セキュリティのため、クレデンシャルはハードコード禁止）
 - 認証情報: `.env.testing` で管理、または `playwright/.auth/` にセキュアに保存
+
+## トレーサビリティマトリクス
+
+| 画面要素ID | 要素名 | テストケース | カバレッジ状況 |
+|-----------|--------|-------------|--------------|
+| ELEM_001 | メールアドレス入力 | LOGIN_001, LOGIN_002, LOGIN_003 | 正常系✓ 異常系✓ 境界値✓ |
+| ELEM_002 | パスワード入力 | LOGIN_001, LOGIN_002, LOGIN_003 | 正常系✓ 異常系✓ 境界値✓ |
+| ELEM_003 | ログインボタン | LOGIN_001, LOGIN_002, LOGIN_003 | 正常系✓ 異常系✓ |
+| ELEM_004 | エラーメッセージ | LOGIN_002, LOGIN_003 | 異常系✓ |
 ```
 
 ### 仕様書作成の考慮事項
@@ -116,7 +128,7 @@ tests/e2e/
 - 代替フロー（複数の正常パス）
 
 **異常系**:
-- バリデーションエラー
+- バリデーションエラー（**仕様書記載の全ルールを網羅**）
 - 認証・認可エラー
 - サーバーエラー
 
@@ -125,6 +137,21 @@ tests/e2e/
 - 最大長入力
 - 特殊文字
 
+### バリデーションルール100%網羅（必須）
+
+画面仕様書に記載されているすべてのバリデーションルールに対応するテストケースを作成すること。
+
+| バリデーション種別 | テストケースの作成基準 |
+|------------------|---------------------|
+| **必須チェック** | 未入力/未選択時のエラー表示テスト |
+| **文字数チェック** | 最大文字数+1の入力でエラー + 最大文字数での正常（境界値） |
+| **形式チェック** | 不正形式の入力でエラー表示テスト |
+| **範囲チェック** | 範囲外の値でエラー + 境界値での正常テスト |
+| **相関チェック** | 項目間の整合性エラーテスト |
+| **ファイルチェック** | ファイル形式、サイズ、画像サイズ等のエラーテスト |
+
+**品質ゲート**: バリデーションカバレッジ100%未満の場合は不合格。不足テストケースを追加するまで次に進めない。
+
 #### 2. 優先度の設定
 
 | 優先度 | 説明 | 実装タイミング |
@@ -132,6 +159,47 @@ tests/e2e/
 | 高 | クリティカルパス、主要機能 | 必須 |
 | 中 | 準主要機能、エラーハンドリング | 推奨 |
 | 低 | エッジケース、UIの細かい確認 | 任意 |
+
+## テストセットアップ戦略
+
+### フィクスチャ vs Before/After フック
+
+Playwrightでは**フィクスチャの使用を推奨**。フィクスチャはSetup/Teardownを同一箇所に記述でき、複数ファイル間で再利用可能。
+
+| ユースケース | 推奨アプローチ |
+|-------------|--------------|
+| POMクラスのセットアップ | フィクスチャ |
+| 認証状態の準備 | フィクスチャ（workerスコープ） |
+| 複数ファイルで共通のセットアップ | フィクスチャ |
+| 特定のdescribeブロック内のみ | beforeEach/afterEach |
+| シンプルな1行のセットアップ | beforeEach |
+
+### スコープ選択ガイドライン
+
+| スコープ | 実行タイミング | 用途 |
+|---------|--------------|------|
+| `test`（デフォルト） | 各テストごと | ページ、一時データ |
+| `worker` | ワーカーごと1回 | DB接続、認証セットアップ |
+
+```typescript
+// カスタムフィクスチャの基本例
+import { test as base } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+
+export const test = base.extend<{ loginPage: LoginPage }>({
+  loginPage: async ({ page }, use) => {
+    // Setup
+    const loginPage = new LoginPage(page);
+    await loginPage.goto();
+
+    await use(loginPage);  // テスト実行
+
+    // Teardown（同じ場所で記述可能）
+  },
+});
+```
+
+詳細は [references/fixtures-guide.md](references/fixtures-guide.md) を参照。
 
 ## Phase 2: テストコード実装
 
@@ -334,18 +402,23 @@ export default defineConfig({
 詳細なガイドラインと実装パターン:
 
 - **[references/pom-patterns.md](references/pom-patterns.md)**: Page Object Modelの詳細パターン
+- **[references/fixtures-guide.md](references/fixtures-guide.md)**: フィクスチャの詳細ガイド（カスタムフィクスチャ、スコープ、自動フィクスチャ）
 - **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細
+- **[references/code-generation-checklist.md](references/code-generation-checklist.md)**: コード生成時の品質チェックリスト（禁止パターン、BasePage要件）
 - **[references/laravel-integration.md](references/laravel-integration.md)**: Laravel統合パターン
 - **[references/security-testing.md](references/security-testing.md)**: セキュリティテストパターン（XSS/CSRF検証）
 - **[references/ci-config.md](references/ci-config.md)**: CI/CD設定詳細
+- **[references/ci-quickstart.md](references/ci-quickstart.md)**: E2E環境クイックスタート・初期化スクリプト
 - **[references/test-stability.md](references/test-stability.md)**: テスト安定性のベストプラクティス
 - **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/e2e-spec-impl用）
+- **[references/examples/login-example.md](references/examples/login-example.md)**: ログイン画面の完全実装例
 
 ## Summary
 
 1. **仕様書ファースト**: 画面仕様書→テスト仕様書→テストコードの順序を厳守
 2. **画面単位の粒度**: 画面ごとにテストケースを整理
-3. **POMパターン**: 保守性を高めるためPage Object Modelを適用
-4. **ロールベースセレクタ**: ユーザー視点のセレクタを優先
-5. **Auto-waiting活用**: 手動待機は禁止、Playwrightの自動待機を信頼
-6. **Laravel統合**: hyvor/laravel-playwrightでファクトリー・シーダーを活用
+3. **バリデーション100%網羅**: 仕様書記載の全バリデーションルールをテストでカバー（必須）
+4. **POMパターン**: 保守性を高めるためPage Object Modelを適用
+5. **ロールベースセレクタ**: ユーザー視点のセレクタを優先
+6. **Auto-waiting活用**: 手動待機は禁止、Playwrightの自動待機を信頼
+7. **Laravel統合**: hyvor/laravel-playwrightでファクトリー・シーダーを活用

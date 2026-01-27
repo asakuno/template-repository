@@ -106,3 +106,24 @@ services:
     image: mailhog/mailhog
     ports:
       - "8025:8025"
+
+  playwright:
+    build:
+      context: .
+      dockerfile: .docker/local/playwright/Dockerfile
+      args:
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+    working_dir: /app
+    volumes:
+      - ".:/app"
+    environment:
+      - PLAYWRIGHT_BASE_URL=http://nginx:80
+    depends_on:
+      - nginx
+      - app
+      - mysql
+    ipc: host
+    init: true
+    profiles:
+      - e2e
