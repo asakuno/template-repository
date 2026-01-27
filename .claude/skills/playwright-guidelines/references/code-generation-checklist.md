@@ -21,12 +21,14 @@ E2Eテストコード生成時の品質チェックリスト。コード生成�
 
 - [ ] `export abstract class BasePage` として定義している
 - [ ] `waitForSelector()` メソッドを提供していない（CSSセレクタを助長するため禁止）
-- [ ] `navigateTo()` が `protected` である
+- [ ] `waitForPageLoad()` メソッドを提供していない（`networkidle` は非推奨）
+- [ ] `navigateTo()` が `protected` で、`page.goto()` のみを呼び出している
 - [ ] `goto()` が `abstract` である
 
 ### アサーション
 
 - [ ] `page.waitForFunction()` を使用していない
+- [ ] `page.waitForLoadState('networkidle')` を使用していない（不安定の原因）
 - [ ] Web-first Assertion（`expect().toHaveTitle()` 等）を使用している
 
 ### 必須テンプレート
@@ -45,16 +47,12 @@ export abstract class BasePage {
 
   abstract goto(): Promise<void>;
 
+  // Auto-waiting に任せる - 手動待機は不要
   protected async navigateTo(path: string): Promise<void> {
     await this.page.goto(path);
-    await this.waitForPageLoad();
   }
 
-  async waitForPageLoad(): Promise<void> {
-    await this.page.waitForLoadState('domcontentloaded');
-    await this.page.waitForLoadState('networkidle');
-  }
-
+  // Web-first Assertion を使用
   async expectTitle(expectedTitle: string): Promise<void> {
     await expect(this.page).toHaveTitle(expectedTitle);
   }
@@ -65,7 +63,9 @@ export abstract class BasePage {
 }
 ```
 
-**重要**: `waitForSelector(selector: string)` メソッドは**提供しない**こと。
+**重要**:
+- `waitForSelector(selector: string)` メソッドは**提供しない**こと
+- `waitForPageLoad()` や `networkidle` は**使用しない**こと（Playwright公式で非推奨）
 
 ---
 
@@ -165,10 +165,11 @@ async clickConfirmOk() { ... }  // メソッド名を変更
 |---|-------------|-----------|
 | 1 | `export class BasePage` | `export abstract class BasePage` |
 | 2 | `waitForSelector(selector: string)` メソッド | 削除（CSSセレクタを助長するため） |
-| 3 | `page.waitForFunction()` でのアサーション | `expect(page).toHaveTitle()` 等のWeb-first Assertion |
-| 4 | `locator('[aria-label="..."]')` | `getByLabel('...')` または `getByRole('...', { name: '...' })` |
-| 5 | `locator('.class')` / `locator('#id')` | ロールベースセレクタに変更 |
-| 6 | プロパティとメソッドの同名定義 | メソッド名を変更（例: `confirmDialog` → `clickConfirmOk`） |
+| 3 | `waitForPageLoad()` / `networkidle` | 削除（Playwright公式で非推奨、フレーキーの原因） |
+| 4 | `page.waitForFunction()` でのアサーション | `expect(page).toHaveTitle()` 等のWeb-first Assertion |
+| 5 | `locator('[aria-label="..."]')` | `getByLabel('...')` または `getByRole('...', { name: '...' })` |
+| 6 | `locator('.class')` / `locator('#id')` | ロールベースセレクタに変更 |
+| 7 | プロパティとメソッドの同名定義 | メソッド名を変更（例: `confirmDialog` → `clickConfirmOk`） |
 
 ---
 

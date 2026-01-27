@@ -19,21 +19,12 @@ export abstract class BasePage {
   abstract goto(): Promise<void>;
 
   /**
-   * 指定したパスに遷移し、ページロード完了を待機
+   * 指定したパスに遷移
+   * Playwright の Auto-waiting に任せる（手動待機は不要）
    * @param path 遷移先のパス（例: '/jobs/create'）
    */
   protected async navigateTo(path: string): Promise<void> {
     await this.page.goto(path);
-    await this.waitForPageLoad();
-  }
-
-  /**
-   * ページロード完了を待機
-   * DOMContentLoadedとネットワークアイドルを待つ
-   */
-  async waitForPageLoad(): Promise<void> {
-    await this.page.waitForLoadState('domcontentloaded');
-    await this.page.waitForLoadState('networkidle');
   }
 
   /**
