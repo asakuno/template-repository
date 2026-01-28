@@ -68,7 +68,7 @@ export abstract class BasePage {
 
 ### ドメイン別ディレクトリ構造
 
-プロジェクト規模に応じてPage Objectとセレクタをドメイン別に整理する。
+プロジェクト規模に応じてPage Object、セレクタ、型定義をドメイン別に整理する。
 
 ```
 tests/e2e/
@@ -78,16 +78,22 @@ tests/e2e/
 │   ├── auth/                         # 認証ドメイン
 │   │   ├── LoginPage.ts
 │   │   ├── RegisterPage.ts
+│   │   ├── types/                    # ドメイン固有の型
+│   │   │   └── AuthTypes.ts
 │   │   └── selectors/
 │   │       ├── loginSelectors.ts
 │   │       └── registerSelectors.ts
 │   ├── dashboard/                    # ダッシュボードドメイン
 │   │   ├── DashboardPage.ts
+│   │   ├── types/
+│   │   │   └── DashboardTypes.ts
 │   │   └── selectors/
 │   │       └── dashboardSelectors.ts
 │   ├── users/                        # ユーザー管理ドメイン
 │   │   ├── UserListPage.ts
 │   │   ├── UserFormPage.ts
+│   │   ├── types/                    # ドメイン固有の型
+│   │   │   └── UserTypes.ts
 │   │   └── selectors/
 │   │       ├── userListSelectors.ts
 │   │       └── userFormSelectors.ts
@@ -97,6 +103,8 @@ tests/e2e/
 │       └── selectors/
 │           ├── navigationSelectors.ts
 │           └── headerSelectors.ts
+├── types/                            # 共通型（必要時のみ）
+│   └── CommonTypes.ts
 ├── fixtures/
 │   └── testSetup.ts
 ├── tests/
@@ -109,6 +117,11 @@ tests/e2e/
 └── utils/
 ```
 
+**型ファイル配置基準**:
+- ドメイン固有の型（`LoginCredentials`, `UserFormData`）→ `pages/{domain}/types/`
+- 複数ドメインで共有する型（`Pagination`, `DeepPartial`）→ `types/`
+- 詳細は [references/data-patterns.md](data-patterns.md) を参照
+
 ### 命名規則
 
 | 種類 | 命名規則 | 例 |
@@ -116,6 +129,7 @@ tests/e2e/
 | Page Object | `{Feature}Page.ts` | `LoginPage.ts`, `UserListPage.ts` |
 | Component | `{Name}Component.ts` | `NavigationComponent.ts` |
 | セレクタファイル | `{pageName}Selectors.ts` | `loginSelectors.ts` |
+| 型ファイル | `{Domain}Types.ts` | `AuthTypes.ts`, `UserTypes.ts` |
 | テストファイル | `{feature}.spec.ts` | `login.spec.ts` |
 | ドメインディレクトリ | ケバブケース禁止 | `auth/`, `dashboard/` |
 

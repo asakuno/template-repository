@@ -1,6 +1,6 @@
 ---
 name: playwright-guidelines
-description: E2Eテスト仕様書の作成とPlaywrightテストコード生成のガイドライン。画面仕様書（Excel/Markdown）から日本語テスト仕様書を作成し、Playwrightテストコードを生成する2ステップワークフロー。Laravel + Inertia.js + React環境に特化し、hyvor/laravel-playwright統合をサポート。/e2e-spec-design（仕様書作成）と/e2e-spec-impl（テスト実装）の2コマンドで実行。E2Eテスト、Playwright、テスト仕様書、POM、Page Object Model、ブラウザテスト自動化、画面テスト、結合テストに使用。
+description: E2Eテスト仕様書の作成とPlaywrightテストコード生成のガイドライン。画面仕様書（Excel/Markdown）から日本語テスト仕様書を作成し、Playwrightテストコードを生成する2ステップワークフロー。Laravel + Inertia.js + React環境に特化し、hyvor/laravel-playwright統合をサポート。型安全なテストデータ管理（Interface + Factory パターン）を含む。/e2e-spec-design（仕様書作成）と/e2e-spec-impl（テスト実装）の2コマンドで実行。E2Eテスト、Playwright、テスト仕様書、POM、Page Object Model、ブラウザテスト自動化、画面テスト、結合テスト、Dataクラスに使用。
 ---
 
 # Playwright E2E Testing Guidelines
@@ -67,6 +67,8 @@ tests/e2e/
 │   ├── auth/                 # 認証ドメイン
 │   │   ├── LoginPage.ts
 │   │   ├── RegisterPage.ts
+│   │   ├── types/            # ドメイン固有の型定義
+│   │   │   └── AuthTypes.ts
 │   │   └── selectors/        # セレクタ分離
 │   │       ├── loginSelectors.ts
 │   │       └── registerSelectors.ts
@@ -78,6 +80,8 @@ tests/e2e/
 │       ├── NavigationComponent.ts
 │       └── selectors/
 │           └── navigationSelectors.ts
+├── types/                    # 共通型定義（複数ドメインで共有）
+│   └── CommonTypes.ts
 ├── fixtures/                 # カスタムフィクスチャ
 │   └── testSetup.ts
 ├── utils/                    # ヘルパー関数
@@ -226,41 +230,37 @@ export const test = base.extend<{ loginPage: LoginPage }>({
 
 ## Phase 2: テストコード実装
 
+### テストデータパターン
+
+テストデータの型安全な管理には Interface + Factory パターンを使用する。詳細は [references/data-patterns.md](references/data-patterns.md) を参照。
+
 ### Page Object Model
 
 詳細は [references/pom-patterns.md](references/pom-patterns.md) を参照。
 
 ```typescript
-// pages/LoginPage.ts
-import { type Page, type Locator, expect } from '@playwright/test';
+// pages/auth/LoginPage.ts - 詳細は references/pom-patterns.md 参照
+import { type Page, type Locator } from '@playwright/test';
+import { BasePage } from '../base/BasePage';
 
-export class LoginPage {
-  readonly page: Page;
+export class LoginPage extends BasePage {
   readonly emailInput: Locator;
   readonly passwordInput: Locator;
   readonly signInButton: Locator;
-  readonly errorMessage: Locator;
 
   constructor(page: Page) {
-    this.page = page;
+    super(page);
     this.emailInput = page.getByLabel('メールアドレス');
     this.passwordInput = page.getByLabel('パスワード');
     this.signInButton = page.getByRole('button', { name: 'ログイン' });
-    this.errorMessage = page.getByRole('alert');
   }
 
-  async goto() {
-    await this.page.goto('/login');
-  }
+  async goto() { await this.navigateTo('/login'); }
 
   async login(email: string, password: string) {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
     await this.signInButton.click();
-  }
-
-  async expectError(message: string) {
-    await expect(this.errorMessage).toContainText(message);
   }
 }
 ```
@@ -430,6 +430,7 @@ export default defineConfig({
 - **[references/selector-separation.md](references/selector-separation.md)**: セレクタ分離管理パターン（`as const`型推論、ドメイン別構造）
 - **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細（優先順位、ロールベースセレクタ）
 - **[references/fixtures-guide.md](references/fixtures-guide.md)**: フィクスチャの詳細ガイド（カスタムフィクスチャ、スコープ、自動フィクスチャ）
+- **[references/data-patterns.md](references/data-patterns.md)**: テストデータパターン（Interface + Factory、型安全なデータ管理、Laravel Factoryとの使い分け）
 
 ### コード生成・品質
 
