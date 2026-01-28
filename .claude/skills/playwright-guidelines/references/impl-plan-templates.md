@@ -250,7 +250,6 @@ export class {Category}{Screen}Page extends BasePage {
 
   async goto() {
     await this.page.goto('/{endpoint}');
-    await this.waitForPageLoad();
   }
 
   // アクションメソッド

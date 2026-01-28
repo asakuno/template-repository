@@ -34,7 +34,7 @@ E2Eテストコード生成時の品質チェックリスト。コード生成�
 ### 必須テンプレート
 
 ```typescript
-// tests/e2e/pages/BasePage.ts
+// tests/e2e/pages/base/BasePage.ts
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 

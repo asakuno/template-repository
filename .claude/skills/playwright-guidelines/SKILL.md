@@ -47,6 +47,8 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 
 ## ディレクトリ構成
 
+### 推奨構造（ドメイン別 + セレクタ分離）
+
 ```
 tests/e2e/
 ├── specs/                    # テスト仕様書（Markdown）
@@ -60,9 +62,22 @@ tests/e2e/
 │   └── dashboard/
 │       └── widgets.spec.ts
 ├── pages/                    # Page Object Models
-│   ├── LoginPage.ts
-│   ├── DashboardPage.ts
-│   └── BasePage.ts
+│   ├── base/
+│   │   └── BasePage.ts       # 基底クラス
+│   ├── auth/                 # 認証ドメイン
+│   │   ├── LoginPage.ts
+│   │   ├── RegisterPage.ts
+│   │   └── selectors/        # セレクタ分離
+│   │       ├── loginSelectors.ts
+│   │       └── registerSelectors.ts
+│   ├── dashboard/            # ダッシュボードドメイン
+│   │   ├── DashboardPage.ts
+│   │   └── selectors/
+│   │       └── dashboardSelectors.ts
+│   └── components/           # 共通コンポーネント
+│       ├── NavigationComponent.ts
+│       └── selectors/
+│           └── navigationSelectors.ts
 ├── fixtures/                 # カスタムフィクスチャ
 │   └── testSetup.ts
 ├── utils/                    # ヘルパー関数
@@ -70,6 +85,14 @@ tests/e2e/
 │   └── testHelpers.ts
 └── auth.setup.ts             # 認証セットアップ
 ```
+
+### 規模別推奨構造
+
+| プロジェクト規模 | Page Object数 | 推奨構造 |
+|---------------|--------------|---------|
+| 小規模 | 1-3 | フラット構造（pages/直下） |
+| 中規模 | 4-10 | ドメイン別構造 |
+| 大規模 | 10+ | ドメイン別 + セレクタ分離必須 |
 
 ## Phase 1: テスト仕様書作成
 
@@ -401,16 +424,32 @@ export default defineConfig({
 
 詳細なガイドラインと実装パターン:
 
-- **[references/pom-patterns.md](references/pom-patterns.md)**: Page Object Modelの詳細パターン
+### 基本パターン
+
+- **[references/pom-patterns.md](references/pom-patterns.md)**: Page Object Modelの詳細パターン（ディレクトリ構造、セレクタ分離含む）
+- **[references/selector-separation.md](references/selector-separation.md)**: セレクタ分離管理パターン（`as const`型推論、ドメイン別構造）
+- **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細（優先順位、ロールベースセレクタ）
 - **[references/fixtures-guide.md](references/fixtures-guide.md)**: フィクスチャの詳細ガイド（カスタムフィクスチャ、スコープ、自動フィクスチャ）
-- **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細
+
+### コード生成・品質
+
 - **[references/code-generation-checklist.md](references/code-generation-checklist.md)**: コード生成時の品質チェックリスト（禁止パターン、BasePage要件）
+- **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/e2e-spec-impl用）
+
+### 統合・テスト
+
 - **[references/laravel-integration.md](references/laravel-integration.md)**: Laravel統合パターン
 - **[references/security-testing.md](references/security-testing.md)**: セキュリティテストパターン（XSS/CSRF検証）
+- **[references/test-stability.md](references/test-stability.md)**: テスト安定性のベストプラクティス
+- **[references/visual-regression.md](references/visual-regression.md)**: ビジュアルリグレッションテスト（Percy連携参考）
+
+### CI/CD
+
 - **[references/ci-config.md](references/ci-config.md)**: CI/CD設定詳細
 - **[references/ci-quickstart.md](references/ci-quickstart.md)**: E2E環境クイックスタート・初期化スクリプト
-- **[references/test-stability.md](references/test-stability.md)**: テスト安定性のベストプラクティス
-- **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/e2e-spec-impl用）
+
+### 実装例
+
 - **[references/examples/login-example.md](references/examples/login-example.md)**: ログイン画面の完全実装例
 
 ## Summary

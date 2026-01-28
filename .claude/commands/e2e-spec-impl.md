@@ -130,7 +130,8 @@ Skill('playwright-guidelines')
 
 参照セクション:
 - references/impl-plan-templates.md: 実装計画書テンプレート
-- references/pom-patterns.md: Page Objectパターン
+- references/pom-patterns.md: Page Objectパターン（ディレクトリ構造、セレクタ分離含む）
+- references/selector-separation.md: セレクタ分離管理パターン
 - references/fixtures-guide.md: フィクスチャ設計
 - references/laravel-integration.md: Laravel統合
 
@@ -171,6 +172,16 @@ mkdir -p .claude/e2e-impl-plans/{category}
 - [ ] すべてのロケーターに**具体的なセレクタ値**が記載されている
 - [ ] セレクタ優先順位を遵守している（getByRole > getByLabel > getByTestId）
 - [ ] 代替セレクタが検討されている（主セレクタが不安定な場合の備え）
+
+#### セレクタ分離オプション
+
+中規模以上のプロジェクト（Page Object 4件以上）では、セレクタ分離を推奨。
+
+- [ ] セレクタ分離が検討されている（`pages/{domain}/selectors/{page}Selectors.ts`）
+- [ ] `as const` による型安全性が確保されている
+- [ ] セレクタオブジェクト名が `{PageName}Selectors` 形式
+
+詳細は `references/selector-separation.md` を参照。
 
 #### セレクタ検証（自動チェック対応）
 
@@ -291,18 +302,26 @@ ${Readツールで計画書の内容を読み込み、ここに展開}
 
 ## ディレクトリ構造
 - 計画書: .claude/e2e-impl-plans/{category}/{screen}-impl-plan.md
+- BasePage: tests/e2e/pages/base/BasePage.ts
 - Page Object: tests/e2e/pages/{category}/{Category}{Screen}Page.ts
+- セレクタ（任意）: tests/e2e/pages/{category}/selectors/{screen}Selectors.ts
 - テストコード: tests/e2e/tests/{category}/{screen}.spec.ts
 
 ## 実装手順
-1. BasePage確認・作成（tests/e2e/pages/BasePage.ts）
-2. ディレクトリ作成（mkdir -p tests/e2e/pages/{category}）
-3. {Category}{Screen}Page生成
-   - インポート: import { BasePage } from '../BasePage'
-4. testSetup.ts更新（tests/e2e/fixtures/testSetup.ts）
-5. テストコード生成（正常系、異常系、境界値）
-6. テスト実行（npx playwright test tests/e2e/tests/{category}/{screen}.spec.ts）
-7. 完了レポート
+1. BasePage確認・作成（tests/e2e/pages/base/BasePage.ts）
+2. ディレクトリ作成
+   - Page Object: mkdir -p tests/e2e/pages/{category}
+   - セレクタ分離時: mkdir -p tests/e2e/pages/{category}/selectors
+3. セレクタファイル生成（中規模以上で推奨）
+   - ファイル: tests/e2e/pages/{category}/selectors/{screen}Selectors.ts
+   - 形式: export const {Screen}Selectors = { ... } as const;
+4. {Category}{Screen}Page生成
+   - インポート: import { BasePage } from '../base/BasePage'
+   - セレクタ分離時: import { {Screen}Selectors as S } from './selectors/{screen}Selectors'
+5. testSetup.ts更新（tests/e2e/fixtures/testSetup.ts）
+6. テストコード生成（正常系、異常系、境界値）
+7. テスト実行（npx playwright test tests/e2e/tests/{category}/{screen}.spec.ts）
+8. 完了レポート
 
 ## 重要事項
 - AAAパターン（Arrange-Act-Assert）を遵守
@@ -314,7 +333,8 @@ ${Readツールで計画書の内容を読み込み、ここに展開}
 
 **必須参照**: Skill('playwright-guidelines') の以下を確認
 - references/code-generation-checklist.md（禁止パターン、BasePage テンプレート、正例/禁止例）
-- references/pom-patterns.md（Page Object パターン）
+- references/pom-patterns.md（Page Object パターン、ディレクトリ構造）
+- references/selector-separation.md（セレクタ分離管理パターン）
 - references/selector-strategy.md（セレクタ戦略）
 
 コード生成後、チェックリストの全項目を検証し、違反があれば即座に修正すること。
