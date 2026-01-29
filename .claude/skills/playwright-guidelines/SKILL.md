@@ -1,6 +1,6 @@
 ---
 name: playwright-guidelines
-description: E2Eテスト仕様書の作成とPlaywrightテストコード生成のガイドライン。画面仕様書（Excel/Markdown）から日本語テスト仕様書を作成し、Playwrightテストコードを生成する2ステップワークフロー。Laravel + Inertia.js + React環境に特化し、hyvor/laravel-playwright統合をサポート。/e2e-spec-design（仕様書作成）と/e2e-spec-impl（テスト実装）の2コマンドで実行。E2Eテスト、Playwright、テスト仕様書、POM、Page Object Model、ブラウザテスト自動化、画面テスト、結合テストに使用。
+description: E2Eテスト仕様書の作成とPlaywrightテストコード生成のガイドライン。画面仕様書（Excel/Markdown）から日本語テスト仕様書を作成し、Playwrightテストコードを生成する2ステップワークフロー。Laravel + Inertia.js + React環境に特化し、hyvor/laravel-playwright統合をサポート。型安全なテストデータ管理（Interface + Factory パターン）を含む。/e2e-spec-design（仕様書作成）と/e2e-spec-impl（テスト実装）の2コマンドで実行。E2Eテスト、Playwright、テスト仕様書、POM、Page Object Model、ブラウザテスト自動化、画面テスト、結合テスト、Dataクラスに使用。
 ---
 
 # Playwright E2E Testing Guidelines
@@ -47,6 +47,8 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 
 ## ディレクトリ構成
 
+### 推奨構造（ドメイン別 + セレクタ分離）
+
 ```
 tests/e2e/
 ├── specs/                    # テスト仕様書（Markdown）
@@ -60,9 +62,26 @@ tests/e2e/
 │   └── dashboard/
 │       └── widgets.spec.ts
 ├── pages/                    # Page Object Models
-│   ├── LoginPage.ts
-│   ├── DashboardPage.ts
-│   └── BasePage.ts
+│   ├── base/
+│   │   └── BasePage.ts       # 基底クラス
+│   ├── auth/                 # 認証ドメイン
+│   │   ├── LoginPage.ts
+│   │   ├── RegisterPage.ts
+│   │   ├── types/            # ドメイン固有の型定義
+│   │   │   └── AuthTypes.ts
+│   │   └── selectors/        # セレクタ分離
+│   │       ├── loginSelectors.ts
+│   │       └── registerSelectors.ts
+│   ├── dashboard/            # ダッシュボードドメイン
+│   │   ├── DashboardPage.ts
+│   │   └── selectors/
+│   │       └── dashboardSelectors.ts
+│   └── components/           # 共通コンポーネント
+│       ├── NavigationComponent.ts
+│       └── selectors/
+│           └── navigationSelectors.ts
+├── types/                    # 共通型定義（複数ドメインで共有）
+│   └── CommonTypes.ts
 ├── fixtures/                 # カスタムフィクスチャ
 │   └── testSetup.ts
 ├── utils/                    # ヘルパー関数
@@ -70,6 +89,14 @@ tests/e2e/
 │   └── testHelpers.ts
 └── auth.setup.ts             # 認証セットアップ
 ```
+
+### 規模別推奨構造
+
+| プロジェクト規模 | Page Object数 | 推奨構造 |
+|---------------|--------------|---------|
+| 小規模 | 1-3 | フラット構造（pages/直下） |
+| 中規模 | 4-10 | ドメイン別構造 |
+| 大規模 | 10+ | ドメイン別 + セレクタ分離必須 |
 
 ## Phase 1: テスト仕様書作成
 
@@ -203,41 +230,37 @@ export const test = base.extend<{ loginPage: LoginPage }>({
 
 ## Phase 2: テストコード実装
 
+### テストデータパターン
+
+テストデータの型安全な管理には Interface + Factory パターンを使用する。詳細は [references/data-patterns.md](references/data-patterns.md) を参照。
+
 ### Page Object Model
 
 詳細は [references/pom-patterns.md](references/pom-patterns.md) を参照。
 
 ```typescript
-// pages/LoginPage.ts
-import { type Page, type Locator, expect } from '@playwright/test';
+// pages/auth/LoginPage.ts - 詳細は references/pom-patterns.md 参照
+import { type Page, type Locator } from '@playwright/test';
+import { BasePage } from '../base/BasePage';
 
-export class LoginPage {
-  readonly page: Page;
+export class LoginPage extends BasePage {
   readonly emailInput: Locator;
   readonly passwordInput: Locator;
   readonly signInButton: Locator;
-  readonly errorMessage: Locator;
 
   constructor(page: Page) {
-    this.page = page;
+    super(page);
     this.emailInput = page.getByLabel('メールアドレス');
     this.passwordInput = page.getByLabel('パスワード');
     this.signInButton = page.getByRole('button', { name: 'ログイン' });
-    this.errorMessage = page.getByRole('alert');
   }
 
-  async goto() {
-    await this.page.goto('/login');
-  }
+  async goto() { await this.navigateTo('/login'); }
 
   async login(email: string, password: string) {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
     await this.signInButton.click();
-  }
-
-  async expectError(message: string) {
-    await expect(this.errorMessage).toContainText(message);
   }
 }
 ```
@@ -401,16 +424,33 @@ export default defineConfig({
 
 詳細なガイドラインと実装パターン:
 
-- **[references/pom-patterns.md](references/pom-patterns.md)**: Page Object Modelの詳細パターン
+### 基本パターン
+
+- **[references/pom-patterns.md](references/pom-patterns.md)**: Page Object Modelの詳細パターン（ディレクトリ構造、セレクタ分離含む）
+- **[references/selector-separation.md](references/selector-separation.md)**: セレクタ分離管理パターン（`as const`型推論、ドメイン別構造）
+- **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細（優先順位、ロールベースセレクタ）
 - **[references/fixtures-guide.md](references/fixtures-guide.md)**: フィクスチャの詳細ガイド（カスタムフィクスチャ、スコープ、自動フィクスチャ）
-- **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細
+- **[references/data-patterns.md](references/data-patterns.md)**: テストデータパターン（Interface + Factory、型安全なデータ管理、Laravel Factoryとの使い分け）
+
+### コード生成・品質
+
 - **[references/code-generation-checklist.md](references/code-generation-checklist.md)**: コード生成時の品質チェックリスト（禁止パターン、BasePage要件）
+- **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/e2e-spec-impl用）
+
+### 統合・テスト
+
 - **[references/laravel-integration.md](references/laravel-integration.md)**: Laravel統合パターン
 - **[references/security-testing.md](references/security-testing.md)**: セキュリティテストパターン（XSS/CSRF検証）
+- **[references/test-stability.md](references/test-stability.md)**: テスト安定性のベストプラクティス
+- **[references/visual-regression.md](references/visual-regression.md)**: ビジュアルリグレッションテスト（Percy連携参考）
+
+### CI/CD
+
 - **[references/ci-config.md](references/ci-config.md)**: CI/CD設定詳細
 - **[references/ci-quickstart.md](references/ci-quickstart.md)**: E2E環境クイックスタート・初期化スクリプト
-- **[references/test-stability.md](references/test-stability.md)**: テスト安定性のベストプラクティス
-- **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/e2e-spec-impl用）
+
+### 実装例
+
 - **[references/examples/login-example.md](references/examples/login-example.md)**: ログイン画面の完全実装例
 
 ## Summary

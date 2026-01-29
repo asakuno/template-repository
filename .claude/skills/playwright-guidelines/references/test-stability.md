@@ -278,13 +278,13 @@ test('CI環境でスキップ', async ({ page }) => {
 // ❌ アニメーション中にクリック
 await page.getByRole('button').click();
 
-// ✅ アニメーション無効化
-await page.goto('/', { waitUntil: 'networkidle' });
-
-// または、CSSでアニメーション無効化
+// ✅ CSSでアニメーション無効化（推奨）
 await page.addStyleTag({
-  content: '*, *::before, *::after { animation-duration: 0s !important; }'
+  content: '*, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; }'
 });
+
+// ⚠️ networkidleは使用しない（フレーキーの原因）
+// await page.goto('/', { waitUntil: 'networkidle' }); // 非推奨
 ```
 
 ### 2. 非同期データ読み込み
