@@ -212,7 +212,6 @@ export class AuthLoginPage extends BasePage {
   // ページ遷移
   async goto() {
     await this.page.goto('/login');
-    await this.waitForPageLoad();
   }
 
   // アクションメソッド
