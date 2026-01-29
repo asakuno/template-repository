@@ -13,6 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // セキュリティヘッダをすべてのレスポンスに適用
         $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
+
+        // Inertia.js ミドルウェア
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
