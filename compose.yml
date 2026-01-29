@@ -7,9 +7,9 @@ services:
       - "./.docker/local/php/php.ini:/usr/local/etc/php/conf.d/php.ini"
       - "./.docker/local/php-fpm/www.conf:/usr/local/etc/php-fpm.d/www.conf"
     ports:
-      - "9000:9000"
-      - "5173:5173"
-      - "6006:6006"
+      - "${APP_PHP_PORT:-9000}:9000"
+      - "${APP_VITE_PORT:-5173}:5173"
+      - "${APP_STORYBOOK_PORT:-6006}:6006"
     environment:
       - USER_NAME
       - USER_ID
@@ -27,7 +27,7 @@ services:
     build: ".docker/local/nginx"
     platform: linux/arm64/v8
     ports:
-      - "80:80"
+      - "${NGINX_PORT:-80}:80"
     volumes:
       - ./public:/app/public
       - ./.docker/local/nginx/nginx.conf:/etc/nginx/nginx.conf
@@ -59,7 +59,7 @@ services:
     platform: linux/amd64
     build: ".docker/local/mysql"
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - ".docker/local/mysql/my.cnf:/etc/mysql/my.cnf"
       - "./storage/mysql:/var/lib/mysql"
@@ -72,13 +72,13 @@ services:
   redis:
     image: redis:6.2-buster
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
 
   minio:
     image: minio/minio
     ports:
-      - "9001:9001"
-      - "9002:9002"
+      - "${MINIO_API_PORT:-9001}:9001"
+      - "${MINIO_CONSOLE_PORT:-9002}:9002"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -105,7 +105,7 @@ services:
   mailhog:
     image: mailhog/mailhog
     ports:
-      - "8025:8025"
+      - "${MAILHOG_PORT:-8025}:8025"
 
   playwright:
     build:

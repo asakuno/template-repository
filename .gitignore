@@ -79,6 +79,9 @@ storybook-static
 # static analysis
 .deptrac.cache
 
+# Docker parallel dev
+compose.override.yml
+
 # Frontend
 /dist
 package-lock.json
