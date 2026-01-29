@@ -76,6 +76,9 @@ storybook-static
 
 /memos
 
+# static analysis
+.deptrac.cache
+
 # Frontend
 /dist
 package-lock.json

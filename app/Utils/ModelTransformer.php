@@ -20,6 +20,9 @@ final class ModelTransformer implements Transformer
     ) {
     }
 
+    /**
+     * @param ReflectionClass<Model> $class
+     */
     public function transform(ReflectionClass $class, string $name): ?TransformedType
     {
         if (! $class->isSubclassOf(Model::class)) {

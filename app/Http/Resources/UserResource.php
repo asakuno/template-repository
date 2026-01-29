@@ -9,6 +9,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * ユーザー情報JSONレスポンス
+ *
+ * @mixin \App\Models\User
  */
 final class UserResource extends JsonResource
 {

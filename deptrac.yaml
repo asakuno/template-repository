@@ -1,0 +1,77 @@
+deptrac:
+  paths:
+    - ./app
+
+  layers:
+    - name: Controller
+      collectors:
+        - type: directory
+          value: app/Http/Controllers/.*
+
+    - name: Request
+      collectors:
+        - type: directory
+          value: app/Http/Requests/.*
+
+    - name: Resource
+      collectors:
+        - type: directory
+          value: app/Http/Resources/.*
+
+    - name: UseCase
+      collectors:
+        - type: directory
+          value: app/UseCases/.*
+
+    - name: Service
+      collectors:
+        - type: directory
+          value: app/Services/.*
+
+    - name: Repository
+      collectors:
+        - type: directory
+          value: app/Repositories/.*
+
+    - name: Model
+      collectors:
+        - type: directory
+          value: app/Models/.*
+
+    - name: Data
+      collectors:
+        - type: directory
+          value: app/Data/.*
+
+    - name: Provider
+      collectors:
+        - type: directory
+          value: app/Providers/.*
+
+  ruleset:
+    Controller:
+      - Request
+      - UseCase
+      - Resource
+      - Data
+      - Model
+    Request:
+      - Data
+    UseCase:
+      - Repository
+      - Service
+      - Data
+      - Model
+    Service:
+      - Repository
+      - Data
+      - Model
+    Repository:
+      - Model
+      - Data
+    Resource:
+      - Model
+    Provider:
+      - Repository
+      - UseCase
+      - Service
