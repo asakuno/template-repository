@@ -7,10 +7,11 @@ namespace Tests\Unit\UseCases\Auth;
 use App\Models\User;
 use App\UseCases\Auth\GetAuthenticatedUserUseCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Tests\TestCase;
 
 /**
- * 認証ユーザー取得ユースケース ユニットテスト
+ * 認証済みユーザー取得ユースケース ユニットテスト
  */
 final class GetAuthenticatedUserUseCaseTest extends TestCase
 {
@@ -28,9 +29,12 @@ final class GetAuthenticatedUserUseCaseTest extends TestCase
     public function test_execute_returns_authenticated_user(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user);
 
-        $result = $this->useCase->execute(request());
+        // 認証済みユーザーをセットしたリクエストを作成
+        $request = Request::create('/api/user', 'GET');
+        $request->setUserResolver(fn () => $user);
+
+        $result = $this->useCase->execute($request);
 
         $this->assertInstanceOf(User::class, $result);
         $this->assertEquals($user->id, $result->id);

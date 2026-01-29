@@ -8,7 +8,6 @@ use App\Data\Auth\LoginData;
 use App\Models\User;
 use App\UseCases\Auth\LoginUseCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -41,7 +40,11 @@ final class LoginUseCaseTest extends TestCase
             'password' => 'Password123!',
         ]);
 
-        $result = $this->useCase->execute($data, request());
+        // セッション付きリクエストを作成
+        $request = $this->app->make('request');
+        $request->setLaravelSession($this->app->make('session.store'));
+
+        $result = $this->useCase->execute($data, $request);
 
         $this->assertInstanceOf(User::class, $result);
         $this->assertEquals($user->id, $result->id);
@@ -60,9 +63,12 @@ final class LoginUseCaseTest extends TestCase
             'password' => 'WrongPassword!',
         ]);
 
+        $request = $this->app->make('request');
+        $request->setLaravelSession($this->app->make('session.store'));
+
         $this->expectException(ValidationException::class);
 
-        $this->useCase->execute($data, request());
+        $this->useCase->execute($data, $request);
     }
 
     /** ログイン成功時にセッションが再生成される */
@@ -78,7 +84,8 @@ final class LoginUseCaseTest extends TestCase
             'password' => 'Password123!',
         ]);
 
-        $request = request();
+        $request = $this->app->make('request');
+        $request->setLaravelSession($this->app->make('session.store'));
         $oldSessionId = $request->session()->getId();
 
         $this->useCase->execute($data, $request);

@@ -30,7 +30,8 @@ final class LogoutUseCaseTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        $request = request();
+        $request = $this->app->make('request');
+        $request->setLaravelSession($this->app->make('session.store'));
         $oldSessionId = $request->session()->getId();
 
         $this->useCase->execute($request);
@@ -45,7 +46,8 @@ final class LogoutUseCaseTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        $request = request();
+        $request = $this->app->make('request');
+        $request->setLaravelSession($this->app->make('session.store'));
         $oldToken = $request->session()->token();
 
         $this->useCase->execute($request);
