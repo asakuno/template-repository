@@ -21,13 +21,13 @@ export default function Login() {
           </CardContent>
           <CardFooter className="flex flex-col gap-2 text-center text-sm">
             {/* TODO: パスワードリセットページ実装後にリンク先を設定 */}
-            <button type="button" className="text-primary hover:underline">
+            <a href="#" className="text-primary hover:underline">
               パスワードをお忘れですか？
-            </button>
+            </a>
             {/* TODO: 新規登録ページ実装後にリンク先を設定 */}
-            <button type="button" className="text-primary hover:underline">
+            <a href="#" className="text-primary hover:underline">
               新規登録はこちら
-            </button>
+            </a>
           </CardFooter>
         </Card>
       </div>

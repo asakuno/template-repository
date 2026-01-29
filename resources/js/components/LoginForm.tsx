@@ -41,7 +41,7 @@ export function LoginForm() {
           aria-describedby={form.errors.email ? 'email-error' : undefined}
         />
         {form.errors.email ? (
-          <p id="email-error" className="text-red-500 text-sm">
+          <p id="email-error" className="text-red-500 text-sm" role="alert">
             {form.errors.email}
           </p>
         ) : null}

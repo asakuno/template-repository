@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
@@ -8,7 +10,7 @@ use Inertia\Middleware;
 class HandleInertiaRequests extends Middleware
 {
     /**
-     * The root template that's loaded on the first page visit.
+     * 初回アクセス時に読み込まれるルートテンプレート
      *
      * @see https://inertiajs.com/server-side-setup#root-template
      *
@@ -17,7 +19,7 @@ class HandleInertiaRequests extends Middleware
     protected $rootView = 'app';
 
     /**
-     * Determines the current asset version.
+     * 現在のアセットバージョンを決定する
      *
      * @see https://inertiajs.com/asset-versioning
      */
@@ -27,7 +29,7 @@ class HandleInertiaRequests extends Middleware
     }
 
     /**
-     * Define the props that are shared by default.
+     * デフォルトで共有されるプロパティを定義する
      *
      * @see https://inertiajs.com/shared-data
      *

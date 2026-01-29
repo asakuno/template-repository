@@ -1,28 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { LoginForm } from './LoginForm';
 
-// laravel-precognition-react のモック（React stateベース）
+// laravel-precognition-react のモック
 const mockSubmit = vi.fn();
 const mockValidate = vi.fn();
+const mockSetData = vi.fn();
 
 vi.mock('laravel-precognition-react', () => ({
-  useForm: (_method: string, _url: string, initialData: Record<string, string>) => {
-    // React の useState を使ってモックの状態を管理
-    const [data, setDataState] = useState({ ...initialData });
-    return {
-      data,
-      errors: {} as Record<string, string>,
-      processing: false,
-      setData: (key: string, value: string) => {
-        setDataState((prev) => ({ ...prev, [key]: value }));
-      },
-      validate: mockValidate,
-      submit: mockSubmit,
-    };
-  },
+  useForm: (_method: string, _url: string, initialData: Record<string, string>) => ({
+    data: { ...initialData },
+    errors: {},
+    processing: false,
+    setData: mockSetData,
+    validate: mockValidate,
+    submit: mockSubmit,
+  }),
 }));
 
 describe('LoginForm', () => {
@@ -42,20 +36,20 @@ describe('LoginForm', () => {
     expect(screen.getByPlaceholderText('example@email.com')).toBeInTheDocument();
   });
 
-  it('メールアドレスに入力できる', async () => {
+  it('メールアドレスに入力するとsetDataが呼ばれる', async () => {
     const user = userEvent.setup();
     render(<LoginForm />);
     const emailInput = screen.getByLabelText('メールアドレス');
-    await user.type(emailInput, 'test@example.com');
-    expect(emailInput).toHaveValue('test@example.com');
+    await user.type(emailInput, 'a');
+    expect(mockSetData).toHaveBeenCalledWith('email', 'a');
   });
 
-  it('パスワードに入力できる', async () => {
+  it('パスワードに入力するとsetDataが呼ばれる', async () => {
     const user = userEvent.setup();
     render(<LoginForm />);
     const passwordInput = screen.getByLabelText('パスワード');
-    await user.type(passwordInput, 'password123');
-    expect(passwordInput).toHaveValue('password123');
+    await user.type(passwordInput, 'a');
+    expect(mockSetData).toHaveBeenCalledWith('password', 'a');
   });
 
   it('フォームを送信できる', async () => {

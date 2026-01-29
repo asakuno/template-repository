@@ -13,6 +13,8 @@ interface PasswordInputProps {
   onBlur?: (e: FocusEvent<HTMLInputElement>) => void;
   /** エラーメッセージ */
   error?: string | undefined;
+  /** ラベルテキスト */
+  label?: string;
 }
 
 /**
@@ -20,12 +22,12 @@ interface PasswordInputProps {
  *
  * パスワードの表示/非表示をトグルできるEyeアイコン付き入力フィールド。
  */
-export function PasswordInput({ id, value, onChange, onBlur, error }: PasswordInputProps) {
+export function PasswordInput({ id, value, onChange, onBlur, error, label = 'パスワード' }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>パスワード</Label>
+      <Label htmlFor={id}>{label}</Label>
       <div className="relative">
         <Input
           id={id}
@@ -48,7 +50,7 @@ export function PasswordInput({ id, value, onChange, onBlur, error }: PasswordIn
         </button>
       </div>
       {error ? (
-        <p id={`${id}-error`} className="text-red-500 text-sm">
+        <p id={`${id}-error`} className="text-red-500 text-sm" role="alert">
           {error}
         </p>
       ) : null}
