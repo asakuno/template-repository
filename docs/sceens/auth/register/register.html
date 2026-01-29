@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+
+<html lang="ja"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>新規会員登録 - Registration</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Noto Sans JP for Japanese text -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Custom Configuration for Font Family -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans JP"', '"Hiragino Kaku Gothic ProN"', '"Hiragino Sans"', 'Meiryo', 'sans-serif'],
+          },
+          colors: {
+            'error-red': '#dc2626', 
+            'error-dark': '#7f1d1d',
+            'brand-blue': '#1a73e8',
+            'bg-gray': '#f3f4f6'
+          }
+        }
+      }
+    }
+  </script>
+<!-- Custom Styles for specific fine-tuning -->
+<style data-purpose="typography">
+    body {
+      font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-bg-gray min-h-screen flex flex-col justify-between">
+<!-- BEGIN: MainContent -->
+<!-- Main container for the registration card -->
+<main class="flex-grow flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 py-12">
+<!-- BEGIN: RegistrationCard -->
+<div class="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden" data-purpose="card-container">
+<div class="px-8 py-10">
+<!-- Header Section -->
+<div class="text-center mb-8">
+<h1 class="font-bold text-gray-900 tracking-tight text-3xl">新規会員登録</h1>
+<p class="mt-2 text-sm text-gray-500">アカウントを作成してサービスを開始しましょう</p>
+</div>
+<!-- BEGIN: RegistrationForm -->
+<form action="#" class="space-y-6" data-purpose="signup-form" method="POST">
+<!-- Name Field -->
+<div data-purpose="form-field-name">
+<label class="block text-sm font-bold text-gray-700 mb-1" for="name">
+              お名前
+            </label>
+<div class="mt-1">
+<input class="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm" id="name" name="name" placeholder="田中 太郎" type="text"/>
+</div>
+</div>
+<!-- Email Field (Error State) -->
+<div data-purpose="form-field-email">
+<label class="block text-sm font-bold text-gray-700 mb-1" for="email">
+              メールアドレス
+            </label>
+<div class="mt-1">
+<!-- Error state: red border, red text -->
+<input class="appearance-none block w-full px-3 py-2.5 border border-error-red text-error-dark bg-white rounded-md shadow-sm placeholder-red-300 focus:outline-none focus:ring-error-red focus:border-error-red sm:text-sm" id="email" name="email" type="email" value="example@mail.com"/>
+</div>
+<!-- Error Message -->
+<p class="mt-1 text-xs text-error-red font-medium">有効なメールアドレスを入力してください</p>
+</div>
+<!-- Password Field (With Eye Icon) -->
+<div data-purpose="form-field-password">
+<label class="block text-sm font-bold text-gray-700 mb-1" for="password">
+              パスワード
+            </label>
+<div class="mt-1 relative">
+<input class="appearance-none block w-full px-3 py-2.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm pr-10" id="password" name="password" placeholder="8文字以上の英数字" type="password"/>
+<!-- Eye Icon -->
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-500 hover:text-gray-700">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+</div>
+<!-- Confirm Password Field (Error State + Eye Icon) -->
+<div data-purpose="form-field-password-confirm">
+<label class="block text-sm font-bold text-gray-700 mb-1" for="password_confirmation">
+              パスワード（確認用）
+            </label>
+<div class="mt-1 relative">
+<!-- Error state: red border -->
+<input class="appearance-none block w-full px-3 py-2.5 border border-error-red text-error-dark bg-white rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-error-red focus:border-error-red sm:text-sm pr-10" id="password_confirmation" name="password_confirmation" placeholder="パスワードを再入力" type="password"/>
+<!-- Eye Icon -->
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-500 hover:text-gray-700">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+<!-- Error Message -->
+<p class="mt-1 text-xs text-error-red font-medium">パスワードが一致しません</p>
+</div>
+<!-- Terms of Service Text -->
+<div class="text-xs text-gray-600 leading-relaxed" data-purpose="terms-text">
+            「アカウントを作成する」をクリックすることで、弊社の<a class="text-blue-600 hover:text-blue-500 underline decoration-blue-600/30" href="#">利用規約</a>および<a class="text-blue-600 hover:text-blue-500 underline decoration-blue-600/30" href="#">プライバシーポリシー</a>に同意したものとみなされます。
+          </div>
+<!-- Submit Button -->
+<div data-purpose="submit-button">
+<button class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-brand-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue transition-colors duration-200" type="submit">
+              アカウントを作成する
+            </button>
+</div>
+</form>
+<!-- END: RegistrationForm -->
+<!-- Divider and Login Link -->
+<div class="mt-8 border-t pt-6 border-gray-200">
+<div class="flex items-center justify-center">
+<a class="text-sm font-medium text-blue-700 hover:text-blue-600 flex items-center gap-1 group" href="#">
+              既にアカウントをお持ちの方はこちら
+              <!-- Arrow Icon -->
+<svg class="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- END: RegistrationCard -->
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: Footer -->
+<footer class="py-6 text-center" data-purpose="copyright">
+<p class="text-xs text-gray-400">
+      © 2024 SaaS Platform Inc. All rights reserved.
+    </p>
+</footer>
+<!-- END: Footer -->
+</body></html>
