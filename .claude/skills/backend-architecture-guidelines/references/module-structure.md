@@ -332,7 +332,7 @@ Each layer should have a single responsibility:
 Inject dependencies through constructor:
 
 ```php
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,

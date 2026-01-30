@@ -8,7 +8,7 @@
 
 ```php
 // In Controller
-final class PostController extends Controller
+class PostController extends Controller
 {
     public function store(Request $request)
     {
@@ -43,7 +43,7 @@ final class PostController extends Controller
 **❌ AI writes: UseCase uses Eloquent directly**
 
 ```php
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function execute(CreatePostData $data): Post
     {
@@ -119,7 +119,7 @@ use App\Http\Resources\PostResource;
 use App\UseCases\Post\CreatePostUseCase;
 use Illuminate\Http\JsonResponse;
 
-final class PostController extends Controller
+class PostController extends Controller
 {
     public function __construct(
         private CreatePostUseCase $createPostUseCase,
@@ -150,7 +150,7 @@ use App\Models\Post;
 use App\Repositories\Post\PostRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,

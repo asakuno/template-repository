@@ -91,7 +91,7 @@ class Post extends Model
 ### Business Logic in UseCase
 
 ```php
-final readonly class SubmitPostUseCase
+final class SubmitPostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,

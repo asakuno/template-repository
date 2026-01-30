@@ -111,7 +111,7 @@ class PostPolicy
 }
 
 // UseCase - Business logic
-final readonly class SubmitPostUseCase
+final class SubmitPostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $repository,
@@ -170,7 +170,7 @@ A God UseCase tries to do too many things in a single method, violating the Sing
 
 ```php
 // UseCase doing too much
-final readonly class ProcessOrderUseCase
+final class ProcessOrderUseCase
 {
     public function execute(OrderInput $input): void
     {
@@ -216,7 +216,7 @@ Break down into smaller, focused UseCases and use Services for shared logic:
 
 ```php
 // Focused UseCase - single responsibility
-final readonly class PlaceOrderUseCase
+final class PlaceOrderUseCase
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
@@ -374,7 +374,7 @@ class PostController extends Controller
 }
 
 // UseCase - Business logic
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $repository,
@@ -438,7 +438,7 @@ interface PostRepositoryInterface
 }
 
 // UseCase coupled to Laravel
-final readonly class GetPostsUseCase
+final class GetPostsUseCase
 {
     public function execute(): Collection  // ❌ Coupled to Laravel
     {
@@ -467,7 +467,7 @@ interface PostRepositoryInterface
 }
 
 // PaginatedResult is a simple DTO
-final readonly class PaginatedResult
+final class PaginatedResult
 {
     /**
      * @param array<Post> $items
@@ -486,7 +486,7 @@ final readonly class PaginatedResult
 }
 
 // Implementation converts Laravel types internally
-class PostRepository implements PostRepositoryInterface
+final class PostRepository implements PostRepositoryInterface
 {
     public function findAll(): array
     {
@@ -525,7 +525,7 @@ UseCases should return Eloquent Models, not API Resources. The transformation to
 
 ```php
 // ❌ UseCase returns Resource
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function execute(CreatePostData $data): PostResource
     {
@@ -554,7 +554,7 @@ class PostController extends Controller
 
 ```php
 // UseCase returns Model
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function execute(CreatePostData $data): Post
     {

@@ -422,7 +422,7 @@ public function create(
 
 ```php
 // ✅ Correct: UseCase manages transaction for multiple repositories
-final readonly class TransferOwnershipUseCase
+final class TransferOwnershipUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,

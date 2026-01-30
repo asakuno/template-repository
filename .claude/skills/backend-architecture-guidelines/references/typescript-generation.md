@@ -30,7 +30,7 @@ use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript()]
-class PostData extends Data
+final class PostData extends Data
 {
     public function __construct(
         public int $userId,

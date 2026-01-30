@@ -7,7 +7,7 @@
 **❌ AI writes: Logic in controller**
 
 ```php
-final class UserController extends Controller
+class UserController extends Controller
 {
     public function store(Request $request)
     {
@@ -33,7 +33,7 @@ final class UserController extends Controller
 **❌ AI writes: UseCase with HTTP response logic**
 
 ```php
-final readonly class CreateUserUseCase
+final class CreateUserUseCase
 {
     public function execute(CreateUserData $data): JsonResponse
     {
@@ -64,7 +64,7 @@ final readonly class CreateUserUseCase
 // app/Data/User/CreateUserData.php
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-final readonly class CreateUserData extends Data
+final class CreateUserData extends Data
 {
     public function __construct(
         #[Max(255)]
@@ -77,7 +77,7 @@ final readonly class CreateUserData extends Data
 }
 
 // app/UseCases/User/CreateUserUseCase.php
-final readonly class CreateUserUseCase
+final class CreateUserUseCase
 {
     public function __construct(
         private UserRepositoryInterface $repository,
@@ -103,7 +103,7 @@ final readonly class CreateUserUseCase
 }
 
 // app/Http/Controllers/Api/UserController.php
-final class UserController extends Controller
+class UserController extends Controller
 {
     public function __construct(
         private CreateUserUseCase $createUserUseCase,
@@ -131,7 +131,7 @@ final class UserController extends Controller
 // app/Data/Post/CreatePostData.php
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-final readonly class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(
         public int $userId,
@@ -148,7 +148,7 @@ final readonly class CreatePostData extends Data
 }
 
 // app/UseCases/Post/CreatePostUseCase.php
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,
@@ -193,7 +193,7 @@ final readonly class CreatePostUseCase
 // app/Data/Post/SearchPostsData.php
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-final readonly class SearchPostsData extends Data
+final class SearchPostsData extends Data
 {
     public function __construct(
         public ?int $userId,
@@ -206,7 +206,7 @@ final readonly class SearchPostsData extends Data
 }
 
 // app/UseCases/Post/GetPostsUseCase.php
-final readonly class GetPostsUseCase
+final class GetPostsUseCase
 {
     public function __construct(
         private PostRepositoryInterface $repository,
@@ -232,7 +232,7 @@ final readonly class GetPostsUseCase
 // app/Data/Post/UpdatePostData.php
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-final readonly class UpdatePostData extends Data
+final class UpdatePostData extends Data
 {
     public function __construct(
         public int $id,
@@ -249,7 +249,7 @@ final readonly class UpdatePostData extends Data
 }
 
 // app/UseCases/Post/UpdatePostUseCase.php
-final readonly class UpdatePostUseCase
+final class UpdatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $repository,
@@ -290,7 +290,7 @@ final readonly class UpdatePostUseCase
 
 ```php
 // app/UseCases/Post/DeletePostUseCase.php
-final readonly class DeletePostUseCase
+final class DeletePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $repository,
@@ -318,7 +318,7 @@ final readonly class DeletePostUseCase
 
 ```php
 // app/UseCases/Post/SubmitPostUseCase.php
-final readonly class SubmitPostUseCase
+final class SubmitPostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $repository,
@@ -353,7 +353,7 @@ final readonly class SubmitPostUseCase
 
 ```php
 // app/UseCases/Post/ExportPostUseCase.php
-final readonly class ExportPostUseCase
+final class ExportPostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $repository,
@@ -423,7 +423,7 @@ final readonly class ExportPostUseCase
 
 ```php
 // app/Http/Controllers/Api/PostController.php
-final class PostController extends Controller
+class PostController extends Controller
 {
     public function __construct(
         private GetPostsUseCase $getPostsUseCase,
@@ -487,7 +487,7 @@ final class PostController extends Controller
 
 ```php
 // app/Http/Controllers/Web/PostPageController.php
-final class PostPageController extends Controller
+class PostPageController extends Controller
 {
     public function index(Request $request): Response
     {
@@ -521,7 +521,7 @@ final class PostPageController extends Controller
 
 Before considering a UseCase implementation complete, verify:
 
-- [ ] Class is marked as `final readonly`
+- [ ] Class is marked as `final`
 - [ ] Named `{Action}{Resource}UseCase`
 - [ ] Uses Laravel Data DTO for input
 - [ ] Uses constructor injection for dependencies

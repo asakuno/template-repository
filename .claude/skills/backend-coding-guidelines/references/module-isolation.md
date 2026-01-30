@@ -8,7 +8,7 @@
 // In Post UseCase
 use App\Repositories\User\UserRepositoryInterface;
 
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,
@@ -63,7 +63,7 @@ interface UserServiceInterface
 
 namespace App\Services\User;
 
-final readonly class UserDto
+final class UserDto
 {
     public function __construct(
         public int $id,
@@ -93,7 +93,7 @@ namespace App\Services\User;
 
 use App\Models\User;
 
-final readonly class UserService implements UserServiceInterface
+final class UserService implements UserServiceInterface
 {
     public function findById(int $id): ?UserDto
     {
@@ -158,7 +158,7 @@ namespace App\UseCases\Post;
 use App\Services\User\UserServiceInterface;
 use App\Repositories\Post\PostRepositoryInterface;
 
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,
@@ -200,7 +200,7 @@ interface UserServiceInterface
 }
 
 // Implementation
-final readonly class UserService implements UserServiceInterface
+final class UserService implements UserServiceInterface
 {
     public function exists(int $id): bool
     {
@@ -220,7 +220,7 @@ if (!$this->userService->exists($data->userId)) {
 
 ```php
 // Service DTO
-final readonly class UserDto
+final class UserDto
 {
     public function __construct(
         public int $id,
@@ -245,7 +245,7 @@ interface UserServiceInterface
 }
 
 // Implementation
-final readonly class UserService implements UserServiceInterface
+final class UserService implements UserServiceInterface
 {
     public function findById(int $id): ?UserDto
     {
@@ -287,7 +287,7 @@ interface UserServiceInterface
 }
 
 // Implementation
-final readonly class UserService implements UserServiceInterface
+final class UserService implements UserServiceInterface
 {
     public function findByIds(array $ids): array
     {
@@ -315,7 +315,7 @@ if (!$this->userService->allExist($data->memberIds)) {
 
 ```php
 // Service DTO for criteria
-final readonly class UserSearchCriteria
+final class UserSearchCriteria
 {
     public function __construct(
         public ?string $nameKeyword = null,
@@ -335,7 +335,7 @@ interface UserServiceInterface
 }
 
 // Implementation
-final readonly class UserService implements UserServiceInterface
+final class UserService implements UserServiceInterface
 {
     public function search(UserSearchCriteria $criteria): array
     {
@@ -371,7 +371,7 @@ interface UserServiceInterface
 }
 
 // Implementation
-final readonly class UserService implements UserServiceInterface
+final class UserService implements UserServiceInterface
 {
     public function activate(int $id): void
     {

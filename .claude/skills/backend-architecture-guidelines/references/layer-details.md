@@ -37,7 +37,7 @@ This document provides detailed explanations and code examples for each layer in
 
 ```php
 // ✅ Controller - thin, delegates to UseCase
-final class PostController extends Controller
+class PostController extends Controller
 {
     public function __construct(
         private CreatePostUseCase $createPostUseCase,
@@ -59,7 +59,7 @@ final class PostController extends Controller
 
 ```php
 // ✅ Web Controller - provides static data for Inertia
-final class PostPageController extends Controller
+class PostPageController extends Controller
 {
     public function index(): Response
     {
@@ -163,7 +163,7 @@ final class StorePostRequest extends FormRequest
 
 ```php
 // ✅ UseCase - business logic orchestration
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,

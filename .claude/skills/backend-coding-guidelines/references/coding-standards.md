@@ -68,8 +68,8 @@ class PostStoreRequest extends FormRequest { }
 
 ```php
 // ✅ Good
-class CreatePostUseCase { }
-class GetPostsUseCase { }
+final class CreatePostUseCase { }
+final class GetPostsUseCase { }
 
 // ❌ Bad
 class PostCreateUseCase { }
@@ -85,8 +85,8 @@ class PostGetter { }
 
 ```php
 // ✅ Good
-class PostExportService { }
-class DashboardDataService { }
+final class PostExportService { }
+final class DashboardDataService { }
 
 // ❌ Bad
 class ExportService { }
@@ -105,7 +105,7 @@ class DataService { }
 interface PostRepositoryInterface { }
 
 // ✅ Good: Implementation
-class PostRepository implements PostRepositoryInterface { }
+final class PostRepository implements PostRepositoryInterface { }
 
 // ❌ Bad
 interface IPostRepository { }
@@ -123,8 +123,8 @@ class EloquentPostRepository { }
 
 ```php
 // ✅ Good
-class CreatePostData extends Data { }
-class TagValueData extends Data { }
+final class CreatePostData extends Data { }
+final class TagValueData extends Data { }
 
 // ❌ Bad
 class PostCreateDTO { }
@@ -284,12 +284,12 @@ class CreatePostUseCase { }  // 継承されるべきでない
 
 #### readonly の使用
 
-DTOには `readonly` を付与する。
+DTOには `readonly` を付与する。`Spatie\LaravelData\Data` は non-readonly クラスのため `readonly class` での継承は不可。代わりに `final class` + プロパティ個別 `readonly` を使用する。
 
 ```php
-// ✅ Good: readonly使用
+// ✅ Good: final class + readonly プロパティ
 #[TypeScript()]
-final readonly class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(
         public readonly int $userId,
@@ -304,6 +304,12 @@ class CreatePostData extends Data
         public int $userId,        // 可変
         public string $title,      // 可変
     ) {}
+}
+
+// ❌ Bad: readonly class（Data クラスが non-readonly のため継承不可）
+final class CreatePostData extends Data
+{
+    // PHP Fatal Error: non-readonly class を readonly class で継承できない
 }
 ```
 
@@ -330,7 +336,7 @@ final class PostExportService
 }
 
 // DTO は public コンストラクタ
-final readonly class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(  // public のまま
         public readonly int $userId,

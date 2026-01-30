@@ -271,7 +271,7 @@ class CreatePostUseCase
 }
 
 // ✅ CORRECT
-class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function execute(CreatePostData $data): PostData  // DTOを入出力に使用
     {
@@ -319,7 +319,7 @@ class GetUserUseCase
 }
 
 // ✅ CORRECT: UseCase は DTO を返す
-class GetUserUseCase
+final class GetUserUseCase
 {
     public function execute(): UserData  // DTO を返す
     {

@@ -210,19 +210,19 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-final readonly class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(
-        public int $userId,
-        public string $weekStartDate,
+        public readonly int $userId,
+        public readonly string $weekStartDate,
         #[Max(255)]
-        public string $title,
+        public readonly string $title,
         #[Max(1000)]
-        public ?string $memo,
-        public PostStatus $status,
+        public readonly ?string $memo,
+        public readonly PostStatus $status,
         /** @var array<TagValueData> */
         #[DataCollectionOf(TagValueData::class)]
-        public array $tagValues,
+        public readonly array $tagValues,
     ) {}
 }
 ```
@@ -243,7 +243,7 @@ final readonly class CreatePostData extends Data
 
 ```php
 // ✅ Correct: Controller uses UseCase only
-final class PostController extends Controller
+class PostController extends Controller
 {
     public function store(StorePostRequest $request): JsonResponse
     {
@@ -257,7 +257,7 @@ final class PostController extends Controller
 }
 
 // ✅ Correct: FormRequest converts to DTO
-final class StorePostRequest extends FormRequest
+class StorePostRequest extends FormRequest
 {
     public function rules(): array
     {
@@ -293,7 +293,7 @@ final class StorePostRequest extends FormRequest
 
 ```php
 // ✅ Correct: Web Controller (static data only)
-final class PostPageController extends Controller
+class PostPageController extends Controller
 {
     public function index(Request $request): Response
     {
@@ -306,7 +306,7 @@ final class PostPageController extends Controller
 }
 
 // ✅ Correct: API Controller (dynamic data)
-final class PostController extends Controller
+class PostController extends Controller
 {
     public function index(SearchPostsRequest $request): JsonResponse
     {
@@ -366,12 +366,13 @@ final class CreatePostUseCase
     ) {}
 }
 
-// DTO (Laravel Data): final readonly
+// DTO (Laravel Data): final class + readonly プロパティ
+// ※ Data クラスが non-readonly のため readonly class は使用不可
 #[TypeScript()]
-final readonly class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(
-        public int $userId,
+        public readonly int $userId,
         // ...
     ) {}
 }
@@ -404,6 +405,8 @@ class Post extends Model {}
 - ❌ Returning raw arrays (return Model or DTO)
 - ❌ Returning Eloquent Model to upper layers（Controller に Model を直接返す）
   - 正しいフロー: `UseCase → DTO → Controller → Resource(DTO) → JSON`
+- ❌ セッション操作（`session()->regenerate()`, `session()->invalidate()`, `session()->regenerateToken()`）
+  - セッション操作は HTTP 層の関心事であり、Controller 層で行う。UseCase は HTTP 層に依存しない
 
 ### In Repository
 - ❌ Business logic (only data access)
