@@ -6,6 +6,7 @@ namespace Tests\Feature\Http\Requests\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -17,6 +18,8 @@ final class RegisterRequestTest extends TestCase
     {
         parent::setUp();
         $this->withoutVite();
+        // uncompromised() の Have I Been Pwned API をfake（漏洩なしを返す）
+        Http::fake(['api.pwnedpasswords.com/*' => Http::response('', 200)]);
     }
 
     #[Test]

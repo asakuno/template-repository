@@ -8,6 +8,7 @@ use App\Data\Auth\AuthenticatedUserData;
 use App\Data\Auth\RegisterUserData;
 use App\Repositories\UserRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /**
  * ユーザー新規登録ユースケース
@@ -23,15 +24,17 @@ final class RegisterUserUseCase
      */
     public function execute(RegisterUserData $data): AuthenticatedUserData
     {
-        // ユーザー作成
-        $user = $this->userRepository->create($data);
+        return DB::transaction(function () use ($data) {
+            // ユーザー作成
+            $user = $this->userRepository->create($data);
 
-        // 自動ログイン
-        Auth::login($user);
+            // 自動ログイン
+            Auth::login($user);
 
-        // メール認証通知を送信
-        $user->sendEmailVerificationNotification();
+            // メール認証通知を送信
+            $user->sendEmailVerificationNotification();
 
-        return AuthenticatedUserData::from($user);
+            return AuthenticatedUserData::from($user);
+        });
     }
 }

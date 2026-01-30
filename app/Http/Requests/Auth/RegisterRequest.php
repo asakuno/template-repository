@@ -8,7 +8,7 @@ use App\Data\Auth\RegisterUserData;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
-class RegisterRequest extends FormRequest
+final class RegisterRequest extends FormRequest
 {
     /**
      * リクエストが認可されるか判定
@@ -27,8 +27,8 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'email' => ['required', 'string', 'email:rfc', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()->uncompromised()],
         ];
     }
 
@@ -39,15 +39,19 @@ class RegisterRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
-            'name.required' => '名前は必須です。',
-            'name.max' => '名前は255文字以内で入力してください。',
-            'email.required' => 'メールアドレスは必須です。',
-            'email.email' => 'メールアドレスの形式が正しくありません。',
-            'email.unique' => 'このメールアドレスは既に登録されています。',
-            'password.required' => 'パスワードは必須です。',
-            'password.confirmed' => 'パスワードが一致しません。',
-        ];
+        /** @var array<string, string> */
+        return __('register.messages');
+    }
+
+    /**
+     * カスタム属性名
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        /** @var array<string, string> */
+        return __('register.attributes');
     }
 
     /**

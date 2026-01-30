@@ -7,6 +7,7 @@ namespace Tests\Feature\Http\Controllers\Web;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
@@ -18,6 +19,8 @@ final class AuthPageControllerTest extends TestCase
     {
         parent::setUp();
         $this->withoutVite();
+        // uncompromised() の Have I Been Pwned API をfake（漏洩なしを返す）
+        Http::fake(['api.pwnedpasswords.com/*' => Http::response('', 200)]);
     }
 
     /**

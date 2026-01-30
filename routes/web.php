@@ -16,7 +16,7 @@ Route::middleware(['guest', 'precognitive'])->group(function () {
         ->middleware('throttle:5,1');
     Route::get('/register', [AuthPageController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthPageController::class, 'register'])
-        ->middleware('throttle:5,1');
+        ->middleware('throttle:register');
 });
 
 // 認証済み（メール未認証可）ユーザー用
