@@ -7,7 +7,7 @@ namespace Tests\Unit\Data\Auth;
 use App\Data\Auth\AuthenticatedUserData;
 use App\Models\User;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 final class AuthenticatedUserDataTest extends TestCase
 {
