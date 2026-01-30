@@ -144,10 +144,13 @@ final class LoginRequestTest extends TestCase
      */
     public function test_to_login_data_returns_login_data(): void
     {
-        $request = LoginRequest::create('/api/login', 'POST', [
+        $data = [
             'email' => 'test@example.com',
             'password' => 'password123',
-        ]);
+        ];
+
+        $request = LoginRequest::create('/api/login', 'POST', $data);
+        $request->setValidator(Validator::make($data, $request->rules()));
 
         $loginData = $request->toLoginData();
 
