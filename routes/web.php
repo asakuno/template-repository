@@ -9,13 +9,13 @@ Route::get('/', function () {
 });
 
 // 未認証ユーザー用（guestミドルウェア）
-Route::middleware('guest')->group(function () {
+Route::middleware(['guest', 'precognitive'])->group(function () {
     Route::get('/login', [AuthPageController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthPageController::class, 'login']);
 });
 
 // 認証済みユーザー用
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'precognitive'])->group(function () {
     Route::get('/dashboard', DashboardPageController::class)->name('dashboard');
     Route::post('/logout', [AuthPageController::class, 'logout'])->name('logout');
 });
