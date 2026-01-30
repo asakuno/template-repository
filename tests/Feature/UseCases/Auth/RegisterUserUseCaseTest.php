@@ -8,8 +8,11 @@ use App\Data\Auth\AuthenticatedUserData;
 use App\Data\Auth\RegisterUserData;
 use App\UseCases\Auth\RegisterUserUseCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -83,5 +86,24 @@ final class RegisterUserUseCaseTest extends TestCase
         // Assert
         $this->assertTrue(Auth::check());
         $this->assertSame('test@example.com', Auth::user()->email);
+    }
+
+    #[Test]
+    public function it_sends_email_verification_notification_after_registration(): void
+    {
+        // Arrange
+        Notification::fake();
+        $data = RegisterUserData::from([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'Password1!',
+        ]);
+
+        // Act
+        $this->useCase->execute($data);
+
+        // Assert
+        $user = User::where('email', 'test@example.com')->first();
+        Notification::assertSentTo($user, VerifyEmail::class);
     }
 }
