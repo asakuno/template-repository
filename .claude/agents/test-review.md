@@ -1,7 +1,7 @@
 ---
 name: test-review
 description: Testing & Stories作成とレビュー。Laravel + Inertia.js + Laravel Precognition + Hybrid APIアーキテクチャ対応。Serena MCPでテスト/ストーリー作成、Codex MCPでテストコードレビューを担当。
-tools: Read, Edit, Write, Grep, Glob, Bash, Skill
+tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion
 model: inherit
 ---
 

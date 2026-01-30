@@ -1,7 +1,7 @@
 ---
 name: backend-plan-reviewer
 description: Phase 1（Planning & Review）を実行。Laravel 7層アーキテクチャ対応。調査、アーキテクチャ分析、実装計画作成、Codex MCPでの統合レビューを担当。
-tools: Read, Edit, Write, Grep, Glob, Bash, Skill
+tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion
 model: inherit
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: backend-implement-review
 description: Phase 2（Implementation & Review）を実行。Phase 1の計画承認後、またはreview-fixingスキルのStep 5（外部レビュー）から呼び出し。Laravel/PHP実装・レビュー時に必須。Laravel 7層アーキテクチャ対応。Serena MCPでシンボルベース編集、Codex MCPでコードレビューを担当。
-tools: Read, Edit, Write, Grep, Glob, Bash, Skill
+tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion, Task
 model: inherit
 ---
 
@@ -417,6 +417,24 @@ reasoningEffort: "high"
 
 ---
 
+### Step 3: コード整理（laravel-simplifier）
+
+実装・レビュー完了後、`laravel-simplifier`エージェント（`laravel-simplifier@laravel`）を使用してPHP/Laravelコードを整理する。
+
+**対象**: Step 1で変更・作成したPHPファイル
+**目的**: Laravel規約準拠、可読性、一貫性、保守性の向上（機能変更なし）
+
+```
+Task(subagent_type='code-simplifier')
+prompt: "Step 1で変更した以下のPHPファイルをLaravel規約に沿って整理してください: ${changedFiles}"
+```
+
+**注意:**
+- 機能は一切変更しない
+- 整理後に `./vendor/bin/phpstan analyse` と `./vendor/bin/pint --test` を再実行して問題がないことを確認
+
+---
+
 ## Output Format
 
 ```markdown
@@ -428,6 +446,9 @@ reasoningEffort: "high"
 
 ### Step 2: Code Review
 **Status**: [✅ Approved / ⚠️ Needs Revision / ❌ Major Issues]
+### Step 3: Code Simplification
+**Agent**: laravel-simplifier@laravel
+**Status**: [✅ Done / ⏭️ Skipped]
 
 **UseCase Structure**:
 - Input DTO: [状態]
@@ -498,6 +519,10 @@ Phase 3（Quality Checks）へ:
 - [ ] 問題を確認し修正
 - [ ] 適切な層分離
 - [ ] SOLID原則準拠
+
+**Step 3: Code Simplification**
+- [ ] laravel-simplifier エージェントで変更PHPファイルを整理
+- [ ] 整理後に phpstan / pint パス確認
 
 **Next**
 - [ ] Phase 3（Quality Checks）へ進む準備完了

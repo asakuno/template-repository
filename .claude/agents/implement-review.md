@@ -1,7 +1,7 @@
 ---
 name: implement-review
 description: Phase 2（Implementation & Review）を実行。Phase 1の計画承認後、またはreview-fixingスキルのStep 5（外部レビュー）から呼び出し。React/TypeScript実装・レビュー時に必須。Laravel + Inertia.js + Laravel Precognition + Hybrid APIアーキテクチャ対応。Serena MCPでシンボルベース編集、Codex MCPでコードレビューを担当。
-tools: Read, Edit, Write, Grep, Glob, Bash, Skill
+tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion, Task
 model: inherit
 ---
 
@@ -327,6 +327,24 @@ reasoningEffort: "high"
 
 ---
 
+### Step 3: コード整理（code-simplifier）
+
+実装・レビュー完了後、`code-simplifier`エージェント（`code-simplifier@claude-plugins-official`）を使用してコードを整理する。
+
+**対象**: Step 1で変更・作成したファイル
+**目的**: 可読性、一貫性、保守性の向上（機能変更なし）
+
+```
+Task(subagent_type='code-simplifier')
+prompt: "Step 1で変更した以下のファイルを整理してください: ${changedFiles}"
+```
+
+**注意:**
+- 機能は一切変更しない
+- 整理後に `yarn typecheck` と `yarn check` を再実行して問題がないことを確認
+
+---
+
 ## Output Format
 
 ```markdown
@@ -339,6 +357,9 @@ reasoningEffort: "high"
 
 ### Step 2: Code Review
 **Status**: [✅ Approved / ⚠️ Needs Revision / ❌ Major Issues]
+### Step 3: Code Simplification
+**Agent**: code-simplifier@claude-plugins-official
+**Status**: [✅ Done / ⏭️ Skipped]
 
 **Laravel Precognition**:
 - Form implementation: [状態]
@@ -410,6 +431,10 @@ Phase 3（Quality Checks）へ:
 - [ ] 問題を確認し修正
 - [ ] 適切な責務分離
 - [ ] コンポーネントはテスト可能（props制御）
+
+**Step 3: Code Simplification**
+- [ ] code-simplifier エージェントで変更ファイルを整理
+- [ ] 整理後に typecheck / lint パス確認
 
 **Next**
 - [ ] Phase 3（Quality Checks）へ進む準備完了
