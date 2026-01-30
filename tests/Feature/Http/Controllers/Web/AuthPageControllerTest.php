@@ -7,6 +7,7 @@ namespace Tests\Feature\Http\Controllers\Web;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 final class AuthPageControllerTest extends TestCase
@@ -188,10 +189,13 @@ final class AuthPageControllerTest extends TestCase
     }
 
     /**
-     * 正常登録で /dashboard にリダイレクト + 認証済み
+     * 正常登録で /email/verify にリダイレクト + 認証済み
      */
-    public function test_register_with_valid_data_redirects_to_dashboard(): void
+    public function test_register_with_valid_data_redirects_to_verification_notice(): void
     {
+        // Arrange
+        Notification::fake();
+
         // Act
         $response = $this->post('/register', [
             'name' => 'Test User',
@@ -201,7 +205,7 @@ final class AuthPageControllerTest extends TestCase
         ]);
 
         // Assert
-        $response->assertRedirect('/dashboard');
+        $response->assertRedirect('/email/verify');
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', [
             'name' => 'Test User',

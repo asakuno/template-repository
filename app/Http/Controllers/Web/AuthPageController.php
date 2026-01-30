@@ -67,7 +67,7 @@ class AuthPageController extends Controller
         // セッション再生成（セッションフィクス化攻撃対策）
         $request->session()->regenerate();
 
-        return redirect()->intended('/dashboard');
+        return redirect()->route('verification.notice');
     }
 
     /**
