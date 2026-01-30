@@ -124,7 +124,7 @@ Phase 1: plan-reviewer で実装計画を作成
     git add . && git commit -m "feat(frontend): Phase 1完了 - UI/UX設計と実装計画を作成
 
 - UI/UXレビュー実施
-- ハイブリッドアーキテクチャ設計
+- Inertia中心アーキテクチャ設計
 - コンポーネント設計
 - 実装計画書（DESIGN.md）作成
 

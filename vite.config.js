@@ -24,7 +24,9 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         cors: {
-            origin: ['http://localhost', 'http://localhost:80'],
+            origin: process.env.VITE_DEV_SERVER_CORS_ORIGIN
+                ? process.env.VITE_DEV_SERVER_CORS_ORIGIN.split(',')
+                : ['http://localhost', 'http://localhost:80'],
             credentials: true,
         },
         hmr: {
