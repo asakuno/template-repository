@@ -29,6 +29,9 @@ final class RegisterUserUseCase
         // 自動ログイン
         Auth::login($user);
 
+        // メール認証通知を送信
+        $user->sendEmailVerificationNotification();
+
         return AuthenticatedUserData::from($user);
     }
 }

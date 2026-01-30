@@ -25,6 +25,7 @@ final class RegisterUserUseCaseTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Notification::fake();
         $this->useCase = app(RegisterUserUseCase::class);
     }
 
@@ -92,7 +93,6 @@ final class RegisterUserUseCaseTest extends TestCase
     public function it_sends_email_verification_notification_after_registration(): void
     {
         // Arrange
-        Notification::fake();
         $data = RegisterUserData::from([
             'name' => 'Test User',
             'email' => 'test@example.com',
