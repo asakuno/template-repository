@@ -47,8 +47,9 @@ jobs:
           echo "CACHE_DRIVER=array" >> .env
           echo "QUEUE_CONNECTION=sync" >> .env
           # Vite マニフェストのダミー作成（Frontend CIと並列実行のため）
-          mkdir -p public/build
+          mkdir -p public/build/assets
           echo '{"resources/css/app.css":{"file":"assets/app.css","src":"resources/css/app.css","isEntry":true},"resources/js/app.tsx":{"file":"assets/app.js","src":"resources/js/app.tsx","isEntry":true}}' > public/build/manifest.json
+          touch public/build/assets/app.css public/build/assets/app.js
 
       - name: PHPStan
         run: ./vendor/bin/phpstan analyse --error-format=github
