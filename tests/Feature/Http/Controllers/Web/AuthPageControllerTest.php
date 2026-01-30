@@ -159,4 +159,106 @@ final class AuthPageControllerTest extends TestCase
         // Assert
         $response->assertRedirect('/login');
     }
+
+    /**
+     * GET /register が Inertia レスポンスを返す
+     */
+    public function test_show_register_returns_inertia_response(): void
+    {
+        // Act
+        $response = $this->get('/register');
+
+        // Assert
+        $response->assertStatus(200);
+    }
+
+    /**
+     * 認証済みユーザーは /dashboard にリダイレクトされる
+     */
+    public function test_show_register_redirects_authenticated_user(): void
+    {
+        // Arrange
+        $user = User::factory()->create();
+
+        // Act
+        $response = $this->actingAs($user)->get('/register');
+
+        // Assert
+        $response->assertRedirect('/dashboard');
+    }
+
+    /**
+     * 正常登録で /dashboard にリダイレクト + 認証済み
+     */
+    public function test_register_with_valid_data_redirects_to_dashboard(): void
+    {
+        // Act
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'Password1!',
+            'password_confirmation' => 'Password1!',
+        ]);
+
+        // Assert
+        $response->assertRedirect('/dashboard');
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+    }
+
+    /**
+     * 名前未入力でバリデーションエラー
+     */
+    public function test_register_with_missing_name_returns_validation_error(): void
+    {
+        // Act
+        $response = $this->post('/register', [
+            'email' => 'test@example.com',
+            'password' => 'Password1!',
+            'password_confirmation' => 'Password1!',
+        ]);
+
+        // Assert
+        $response->assertSessionHasErrors('name');
+    }
+
+    /**
+     * メール重複でバリデーションエラー
+     */
+    public function test_register_with_duplicate_email_returns_validation_error(): void
+    {
+        // Arrange
+        User::factory()->create(['email' => 'test@example.com']);
+
+        // Act
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'Password1!',
+            'password_confirmation' => 'Password1!',
+        ]);
+
+        // Assert
+        $response->assertSessionHasErrors('email');
+    }
+
+    /**
+     * パスワード不一致でバリデーションエラー
+     */
+    public function test_register_with_mismatched_password_returns_validation_error(): void
+    {
+        // Act
+        $response = $this->post('/register', [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+            'password' => 'Password1!',
+            'password_confirmation' => 'DifferentPass1!',
+        ]);
+
+        // Assert
+        $response->assertSessionHasErrors('password');
+    }
 }
