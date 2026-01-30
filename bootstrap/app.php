@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // セキュリティヘッダをすべてのレスポンスに適用
         $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
+
+        // API レート制限（60リクエスト/分）
+        $middleware->throttleApi('60,1');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
