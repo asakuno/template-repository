@@ -30,6 +30,7 @@
       "Bash(mkdir:*)",
       "Bash(mkdir -p:*)",
       "Bash(touch:*)",
+      "Bash(ls*)",
       "Bash(cat:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)"
