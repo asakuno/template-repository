@@ -47,6 +47,8 @@ db-fresh:
 	docker compose exec app php artisan migrate:fresh
 clear:
 	docker compose exec app php artisan optimize:clear
+format:
+	docker compose exec app ./vendor/bin/pint
 test:
 	git branch --contains=HEAD
 	docker compose exec app php artisan test
