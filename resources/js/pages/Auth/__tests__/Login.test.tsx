@@ -1,7 +1,7 @@
 /**
  * ログインページテスト
  */
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -57,10 +57,11 @@ describe('Login', () => {
     expect(screen.getByText('新規登録はこちら')).toBeInTheDocument();
   });
 
-  it('フォーム送信で post が呼ばれること', async () => {
-    const user = userEvent.setup();
+  it('フォーム送信で post が呼ばれること', () => {
     render(<Login />);
-    await user.click(screen.getByRole('button', { name: 'ログインする' }));
+    const form = screen.getByRole('button', { name: 'ログインする' }).closest('form');
+    expect(form).not.toBeNull();
+    fireEvent.submit(form!);
     expect(mockPost).toHaveBeenCalledWith('/login');
   });
 
