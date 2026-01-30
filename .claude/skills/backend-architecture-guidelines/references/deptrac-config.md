@@ -233,7 +233,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Post;
 
-final class PostController extends Controller
+class PostController extends Controller
 {
     public function index()
     {
@@ -250,7 +250,7 @@ namespace App\Http\Controllers\Api;
 
 use App\UseCases\Post\GetPostsUseCase;
 
-final class PostController extends Controller
+class PostController extends Controller
 {
     public function __construct(
         private GetPostsUseCase $getPostsUseCase,

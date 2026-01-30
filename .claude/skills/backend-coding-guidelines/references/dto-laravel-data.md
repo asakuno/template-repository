@@ -40,7 +40,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(
         #[Exists(User::class, 'id')]
@@ -62,7 +62,7 @@ class CreatePostData extends Data
 
 ```php
 #[TypeScript()]
-class TagValueData extends Data
+final class TagValueData extends Data
 {
     public function __construct(
         #[Exists(Tag::class, 'id')]
@@ -140,7 +140,7 @@ use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 
 #[TypeScript()]
-class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(
         #[Required, Exists(User::class, 'id')]
@@ -225,7 +225,7 @@ declare namespace App.Data {
 
 ```php
 #[MapName(SnakeCaseMapper::class)]
-class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(
         public readonly int $userId,      // PHP: camelCase
@@ -305,7 +305,7 @@ $json = $data->toJson();
 use Spatie\LaravelData\Attributes\Validation\*;
 
 #[TypeScript()]
-class ExampleData extends Data
+final class ExampleData extends Data
 {
     public function __construct(
         #[Required]
@@ -369,7 +369,7 @@ class CarbonCast implements Cast
 use Spatie\LaravelData\Attributes\WithCast;
 
 #[TypeScript()]
-class PostData extends Data
+final class PostData extends Data
 {
     public function __construct(
         #[WithCast(CarbonCast::class)]
@@ -446,7 +446,7 @@ public function __construct(
 
 ```php
 #[TypeScript()]
-class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     // ...
 }

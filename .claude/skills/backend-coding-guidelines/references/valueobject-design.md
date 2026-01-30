@@ -7,7 +7,7 @@
 **❌ AI writes: Using arrays for data transfer**
 
 ```php
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function execute(array $data): Post
     {
@@ -52,7 +52,7 @@ use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-final readonly class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(
         public int $userId,
@@ -70,7 +70,7 @@ final readonly class CreatePostData extends Data
 ### Usage in UseCase
 
 ```php
-final readonly class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,
@@ -104,7 +104,7 @@ Every DTO must have these attributes:
 ```php
 #[TypeScript()]                    // For TypeScript generation
 #[MapName(SnakeCaseMapper::class)] // For snake_case/camelCase conversion
-final readonly class ExampleData extends Data
+final class ExampleData extends Data
 {
     // ...
 }
@@ -112,11 +112,11 @@ final readonly class ExampleData extends Data
 
 ### 2. Readonly and Final
 
-All DTOs must be `final readonly` for immutability:
+All DTOs must be `final class` with `readonly` properties for immutability (`readonly class` is not compatible with `Spatie\LaravelData\Data` inheritance):
 
 ```php
 // ✅ Correct
-final readonly class CreatePostData extends Data
+final class CreatePostData extends Data
 
 // ❌ Wrong - mutable
 class CreatePostData extends Data
@@ -154,7 +154,7 @@ public array $tagValues,
 ```php
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-final readonly class CreatePostData extends Data
+final class CreatePostData extends Data
 {
     public function __construct(
         public int $userId,
@@ -173,7 +173,7 @@ final readonly class CreatePostData extends Data
 
 ```php
 #[TypeScript()]
-final readonly class TagValueData extends Data
+final class TagValueData extends Data
 {
     public function __construct(
         public int $tagId,
@@ -187,7 +187,7 @@ final readonly class TagValueData extends Data
 ```php
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-final readonly class SearchPostsData extends Data
+final class SearchPostsData extends Data
 {
     public function __construct(
         public ?int $userId,
@@ -205,7 +205,7 @@ final readonly class SearchPostsData extends Data
 ```php
 #[TypeScript()]
 #[MapName(SnakeCaseMapper::class)]
-final readonly class UpdatePostData extends Data
+final class UpdatePostData extends Data
 {
     public function __construct(
         public int $id,
@@ -350,7 +350,7 @@ Before considering a DTO implementation complete, verify:
 
 - [ ] Has `#[TypeScript()]` attribute
 - [ ] Has `#[MapName(SnakeCaseMapper::class)]` attribute
-- [ ] Class is `final readonly`
+- [ ] Class is `final` with `readonly` properties
 - [ ] Extends `Spatie\LaravelData\Data`
 - [ ] All properties have explicit types
 - [ ] Nullable properties use `?` prefix

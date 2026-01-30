@@ -220,7 +220,7 @@ class StorePostRequest extends FormRequest
 ### 実装例
 
 ```php
-class CreatePostUseCase
+final class CreatePostUseCase
 {
     public function __construct(
         private PostRepositoryInterface $postRepository,
@@ -301,7 +301,7 @@ class CreatePostUseCase
 ### 実装例
 
 ```php
-class PostExportService
+final class PostExportService
 {
     /**
      * Export post to CSV (UTF-8 BOM)
@@ -385,7 +385,7 @@ class PostExportService
 
 ```php
 // ✅ Implementation が必要な例: トランザクション制御
-class PostRepository implements PostRepositoryInterface
+final class PostRepository implements PostRepositoryInterface
 {
     public function create(...): Post {
         return DB::transaction(function () use (...) {
@@ -407,7 +407,7 @@ class PostRepository implements PostRepositoryInterface
 
 ```php
 // ✅ Interface のみ（実装なし）の例: 単純なクエリ
-class GetPostsUseCase
+final class GetPostsUseCase
 {
     public function execute(SearchPostsData $data): Collection
     {
@@ -458,7 +458,7 @@ interface PostRepositoryInterface
 **Implementation**（必要に応じて）:
 
 ```php
-class PostRepository implements PostRepositoryInterface
+final class PostRepository implements PostRepositoryInterface
 {
     public function findById(int $id): ?Post
     {
@@ -552,7 +552,7 @@ public function __construct(
 
 ```php
 // 複雑なクエリの例
-class PostRepository implements PostRepositoryInterface
+final class PostRepository implements PostRepositoryInterface
 {
     public function findPopularPosts(int $limit = 10): Collection
     {

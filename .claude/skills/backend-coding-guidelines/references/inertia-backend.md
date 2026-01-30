@@ -129,9 +129,13 @@ class HandleInertiaRequests extends Middleware
                 'name' => config('app.name'),
             ],
 
-            // 認証情報
+            // 認証情報（DTO または配列で必要な属性のみ返す）
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                ] : null,
             ],
 
             // フラッシュメッセージ（遅延実行）

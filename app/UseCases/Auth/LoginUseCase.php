@@ -6,7 +6,6 @@ namespace App\UseCases\Auth;
 
 use App\Data\Auth\AuthenticatedUserData;
 use App\Data\Auth\LoginData;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
@@ -17,7 +16,7 @@ final class LoginUseCase
      *
      * @throws ValidationException 認証失敗時
      */
-    public function execute(LoginData $data, ?Request $request = null): AuthenticatedUserData
+    public function execute(LoginData $data): AuthenticatedUserData
     {
         $authenticated = Auth::attempt([
             'email' => $data->email,
@@ -28,12 +27,6 @@ final class LoginUseCase
             throw ValidationException::withMessages([
                 'email' => [__('auth.failed')],
             ]);
-        }
-
-        // セッションフィクス化攻撃対策
-        $req = $request ?? request();
-        if ($req->hasSession()) {
-            $req->session()->regenerate();
         }
 
         return AuthenticatedUserData::from(Auth::user());
