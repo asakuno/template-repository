@@ -164,256 +164,223 @@ $ARGUMENTS
 
 ## フェーズ4: 実装セッションの準備
 
-仕様書の保存が完了したら、ユーザーに以下を提示してください：
+仕様書の保存が完了したら、**AskUserQuestionTool** を使用して以下の3択を提示してください：
+
+- **question**: "実装方法を選択してください"
+- **header**: "実装方法"
+- **options**:
+  1. **サブエージェントで自動実行（推奨）** - Phase 1（計画）→ ユーザーレビュー → Phase 2以降（実装）をサブエージェントが自動実行。レビューポイントあり
+  2. **コンテキストをリセットして手動実行** - `/clear` でコンテキストをリセット後、プロンプトをコピー&ペーストして実行
+  3. **現在のセッションで続行** - このセッションのまま手動で実装を進める
 
 ---
 
-### 仕様書が完成しました
+### オプション1: サブエージェントで自動実行（推奨）
 
-**保存先:** `.claude/specs/[ファイル名]`
+ユーザーがオプション1を選択した場合、以下のフローを自動実行する。
 
-### 厳格なTDD実装を開始するには
+#### ステップ1: 実装タイプの判定
 
-#### オプション1: 新しいセッションで実行（推奨）
+仕様書の内容から実装タイプを判定する：
+- **Frontend**: React/TypeScript コンポーネント、ページ実装
+- **Backend**: Laravel PHP 実装（Model, Repository, UseCase, Controller）
+- **Fullstack**: Backend → Frontend の順で両方実装
 
-以下のコマンドをコピーして新しいセッションで実行してください：
+#### ステップ2: Phase 1 - 計画サブエージェント実行
 
+**Taskツール** で計画エージェントを起動する。仕様書の全内容をReadツールで読み込み、プロンプトに含めること。
+
+**Frontend の場合:**
 ```
-/clear
-```
+Taskツール（subagent_type: plan-reviewer）
+プロンプト:
+  以下の仕様書に基づいて実装計画を作成してください。
 
-その後、実装タイプに応じて以下のプロンプトで実装を開始：
+  ## 仕様書
+  [Readツールで .claude/specs/designs/DESIGN.md を読み込んだ全内容をここに貼り付ける]
 
-**Frontend実装の場合（厳格TDD）**:
-```
-@.claude/specs/[ファイル名]
+  ## TDDコミット戦略
+  @.claude/docs/tdd-phase-based-commit-strategy.md を参照し、Phase単位のTDDサイクル（RED → GREEN → REFACTOR）で計画を作成すること。
 
-この仕様書に基づいて厳格なTDD（Phase単位）で実装を開始してください。
-
-**Phase 1: Planning & Review**
-  plan-reviewer で実装計画を作成
-  → 完了後、計画ドキュメントをコミット:
-    git commit -m "feat: Phase 1完了 - 実装計画作成"
-
-**Phase 2以降: 各PhaseごとにTDDサイクルを実行**
-
-各Phaseで以下を実行：
-
-  **RED（テスト作成）**:
-    test-review でPhase内の全テストを作成
-    → コミット:
-      git commit -m "test: [Phase名] テスト作成 (RED)"
-
-  **GREEN（実装）**:
-    implement-review でPhase内の全実装を完了
-    → コミット:
-      git commit -m "feat: [Phase名] 実装完了 (GREEN)"
-
-  **REFACTOR（リファクタリング）**:
-    implement-review でコード品質改善
-    → コミット:
-      git commit -m "refactor: [Phase名] リファクタリング (REFACTOR)"
-
-例: Backend Phase 1（Model層）の場合
-
-**作業順序**:
-1. 全Modelのテストファイルを作成（RED）
-   - UserTest.php を作成 → テスト失敗を確認
-   - ProductTest.php を作成 → テスト失敗を確認
-   - 一括コミット: `test(auth): Model層テスト作成 (RED)`
-
-2. 全Modelを実装（GREEN）
-   - User.php を実装（Eloquent Model、Casts、Scopes）→ UserTest.php がパス
-   - Product.php を実装 → ProductTest.php がパス
-   - 全テストがパスすることを確認
-   - 一括コミット: `feat(auth): Model層実装完了 (GREEN)`
-
-3. リファクタリング（REFACTOR）
-   - Laravel Pint 適用
-   - コーディング規約統一
-   - 全テストが引き続きパスすることを確認
-   - コミット: `refactor(auth): Model層リファクタリング (REFACTOR)`
-
-Phase 3: Quality Checks を実行
-  以下のコマンドをすべて実行し、すべてのチェックがパスすることを確認：
-  ```bash
-  bun run typecheck && bun run check && bun run test && bun run build
-  ```
-
-  **重要**: すべてのチェックがパスするまで次に進まない。
-
-  **エラーが発生した場合**:
-  1. エラーメッセージを確認
-  2. 該当箇所を修正
-  3. 再度 Quality Checks を実行
-  4. すべてパスしたら修正をコミット
-
-  **よくあるエラーと対処法**:
-  - `typecheck` 失敗: 型定義の不足 → 適切な型を追加
-  - `check` 失敗: Biome lint エラー → `bun run check --apply` で自動修正
-  - `test` 失敗: テストケースの不足または実装のバグ → 修正して再実行
-  - `build` 失敗: import エラーやビルド設定の問題 → エラーログを確認
-
-コミットメッセージ例:
-- RED: test(frontend): Button コンポーネント - テスト作成（RED）
-- GREEN: feat(frontend): Button コンポーネント - 実装（GREEN）
-- REFACTOR: refactor(frontend): Button コンポーネント - リファクタリング（REFACTOR）
+  ## 要件
+  - 各PhaseでRED（テスト作成）→ GREEN（最小実装）→ REFACTOR（品質改善）を明記
+  - 計画書は .claude/specs/plans/frontend/PLAN-[feature].md に出力
+  - テストで使用するテストパターンは Skill('test-guidelines') を参照
 ```
 
-**Backend実装の場合（厳格TDD）**:
+**Backend の場合:**
 ```
-@.claude/specs/[ファイル名]
+Taskツール（subagent_type: backend-plan-reviewer）
+プロンプト:
+  以下の仕様書に基づいて実装計画を作成してください。
 
-この仕様書に基づいて厳格なTDD（Phase単位）で実装を開始してください。
+  ## 仕様書
+  [Readツールで .claude/specs/designs/DESIGN.md を読み込んだ全内容をここに貼り付ける]
 
-**Phase 1: Planning & Review**
-  backend-plan-reviewer で実装計画を作成
-  → 完了後、計画ドキュメントをコミット:
-    git commit -m "feat(backend): Phase 1完了 - 実装計画作成"
+  ## TDDコミット戦略
+  @.claude/docs/tdd-phase-based-commit-strategy.md を参照し、Phase単位のTDDサイクル（RED → GREEN → REFACTOR）で計画を作成すること。
 
-**Phase 2以降: 各PhaseごとにTDDサイクルを実行**
-
-各Phaseで以下を実行：
-
-  **RED（テスト作成）**:
-    backend-test-review でPhase内の全テストを作成
-    → コミット:
-      git commit -m "test(backend): [Phase名] テスト作成 (RED)"
-
-  **GREEN（実装）**:
-    backend-implement-review でPhase内の全実装を完了
-    → コミット:
-      git commit -m "feat(backend): [Phase名] 実装完了 (GREEN)"
-
-  **REFACTOR（リファクタリング）**:
-    backend-implement-review でコード品質改善
-    → コミット:
-      git commit -m "refactor(backend): [Phase名] リファクタリング (REFACTOR)"
-
-**Phase 4: Presentation層（セキュリティ重要）**
-
-実装前に以下のセキュリティガイドラインを確認:
-- @.claude/rules/security/01-injection.md（SQLインジェクション対策）
-- @.claude/rules/security/02-xss.md（XSS対策）
-- @.claude/rules/security/03-csrf-session.md（CSRF対策）
-- @.claude/rules/security/05-access-control.md（認可制御）
-
-実装時の必須事項:
-- FormRequestでバリデーション実装
-- Eloquent ORMまたはQuery Builderを使用（Raw SQL禁止）
-- Laravel Policyで認可チェック実装
-- レート制限の設定（例: throttle:5,1）
-
-例: Phase 1（Model層）の場合
-
-**作業順序**:
-1. 全Modelのテストファイルを作成（RED）
-   - ProductTest.php を作成 → テスト失敗を確認
-   - CategoryTest.php を作成 → テスト失敗を確認
-   - 一括コミット: `test(product): Model層テスト作成 (RED)`
-
-2. 全Modelを実装（GREEN）
-   - Product.php を実装（Eloquent Model）→ ProductTest.php がパス
-   - Category.php を実装 → CategoryTest.php がパス
-   - 全テストがパスすることを確認
-   - 一括コミット: `feat(product): Model層実装完了 (GREEN)`
-
-3. リファクタリング（REFACTOR）
-   - Laravel Pint 適用
-   - コーディング規約統一
-   - 全テストが引き続きパスすることを確認
-   - コミット: `refactor(product): Model層リファクタリング (REFACTOR)`
-
-Phase 3: Quality Checks を実行
-  以下のコマンドをすべて実行し、すべてのチェックがパスすることを確認：
-  ```bash
-  ./vendor/bin/phpstan analyse && ./vendor/bin/pint --test && ./vendor/bin/phpunit && ./vendor/bin/deptrac
-  ```
-
-  **重要**: すべてのチェックがパスするまで次に進まない。
-
-  **エラーが発生した場合**:
-  1. エラーメッセージを確認
-  2. 該当箇所を修正
-  3. 再度 Quality Checks を実行
-  4. すべてパスしたら修正をコミット
-
-  **よくあるエラーと対処法**:
-  - `phpstan` 失敗: 型定義の不足、潜在的バグ → 適切な型を追加、コードを修正
-  - `pint` 失敗: コーディング規約違反 → `./vendor/bin/pint` で自動修正
-  - `phpunit` 失敗: テストケースの不足または実装のバグ → 修正して再実行
-  - `deptrac` 失敗: 依存関係の違反 → 7層アーキテクチャに従って修正
-
-コミットメッセージ例:
-- Phase 1完了: feat(backend): Phase 1完了 - 実装計画作成
-- RED: test(backend): Model層 テスト作成 (RED)
-- GREEN: feat(backend): Model層 実装完了 (GREEN)
-- REFACTOR: refactor(backend): Model層 リファクタリング (REFACTOR)
-- Quality Checks: chore(backend): Quality Checks通過
+  ## 要件
+  - 7層アーキテクチャに従い、Model → Repository → UseCase → Controller の順でPhaseを構成
+  - 各PhaseでRED（テスト作成）→ GREEN（最小実装）→ REFACTOR（品質改善）を明記
+  - 計画書は .claude/specs/plans/backend/PLAN-[feature].md に出力
+  - テストパターンは Skill('backend-test-guidelines') を参照
 ```
 
-**Fullstack実装の場合（厳格TDD）**:
+**Fullstack の場合:**
+Backend → Frontend の順で計画エージェントを**逐次**起動する。
+まず `backend-plan-reviewer` を実行し、完了後に `plan-reviewer` を実行する。
+
+計画書（PLAN.md）が作成されたらコミット:
 ```
-@.claude/specs/[ファイル名]
+git commit -m "feat: Phase 1完了 - 実装計画作成"
+```
 
-この仕様書に基づいて厳格なTDD（Phase単位）で実装を開始してください。
+#### ステップ3: ユーザーレビュー
 
-実行順序:
+Phase 1 の結果をユーザーに報告し、**AskUserQuestionTool** で承認を確認する：
 
-【Backend（厳格TDD - Phase単位）】
-1. Backend Phase 1: backend-plan-reviewer
-   → コミット: feat(backend): Phase 1完了 - 実装計画作成
+- **question**: "Phase 1（計画）が完了しました。計画書を確認して次のアクションを選択してください"
+- **header**: "計画承認"
+- **options**:
+  1. **承認して実装開始** - Phase 2以降のTDD実装をサブエージェントで自動実行
+  2. **修正を依頼** - 計画書の修正点を指示（修正後に再度このステップに戻る）
+  3. **中止** - 実装を中止してセッションを終了
 
-2. Backend Phase 2以降: 各PhaseごとにTDDサイクル
-   例: Phase 2（Model層）
-     - RED → コミット: test(backend): Model層 テスト作成 (RED)
-     - GREEN → コミット: feat(backend): Model層 実装完了 (GREEN)
-     - REFACTOR → コミット: refactor(backend): Model層 リファクタリング (REFACTOR)
+**「修正を依頼」の場合**: ユーザーの指示に従い計画を修正し、再度ステップ3に戻る。
+**「中止」の場合**: セッションを終了する。
 
-   例: Phase 3（Repository層）
-     - RED → コミット: test(backend): Repository層 テスト作成 (RED)
-     - GREEN → コミット: feat(backend): Repository層 実装完了 (GREEN)
-     - REFACTOR → コミット: refactor(backend): Repository層 リファクタリング (REFACTOR)
+#### ステップ4: Phase 2以降 - 実装サブエージェント実行（承認後）
 
-3. Backend Quality Checks
-   → コミット: chore(backend): Quality Checks通過
+承認を受けたら、**Taskツール** で実装エージェントを起動する。仕様書・計画書の全内容をReadツールで読み込み、プロンプトに含めること。
 
-**Backend Phase 3完了後（Frontend Phase 1開始前）**
+**Frontend の場合:**
+```
+Taskツール（subagent_type: implement-review）
+プロンプト:
+  以下の仕様書と計画書に基づいて厳格なTDD（Phase単位）で実装してください。
 
-API動作確認:
+  ## 仕様書
+  [Readツールで .claude/specs/designs/DESIGN.md を読み込んだ全内容]
+
+  ## 計画書
+  [Readツールで .claude/specs/plans/frontend/PLAN-[feature].md を読み込んだ全内容]
+
+  ## TDDサイクル（各Phaseで実行）
+  1. RED: test-review でテスト作成 → テストが失敗することを確認 → コミット: test: [Phase名] テスト作成 (RED)
+  2. GREEN: implement-review でテストが通る最小限の実装 → コミット: feat: [Phase名] 実装完了 (GREEN)
+  3. REFACTOR: コード品質改善（テストは引き続きパス） → コミット: refactor: [Phase名] リファクタリング (REFACTOR)
+
+  ## 検証コマンド
+  各Phase完了時: docker compose exec app yarn typecheck && docker compose exec app yarn test
+```
+
+**Backend の場合:**
+```
+Taskツール（subagent_type: backend-implement-review）
+プロンプト:
+  以下の仕様書と計画書に基づいて厳格なTDD（Phase単位）で実装してください。
+
+  ## 仕様書
+  [Readツールで .claude/specs/designs/DESIGN.md を読み込んだ全内容]
+
+  ## 計画書
+  [Readツールで .claude/specs/plans/backend/PLAN-[feature].md を読み込んだ全内容]
+
+  ## TDDサイクル（各Phaseで実行）
+  1. RED: backend-test-review でテスト作成 → テストが失敗することを確認 → コミット: test(backend): [Phase名] テスト作成 (RED)
+  2. GREEN: backend-implement-review でテストが通る最小限の実装 → コミット: feat(backend): [Phase名] 実装完了 (GREEN)
+  3. REFACTOR: コード品質改善（テストは引き続きパス） → コミット: refactor(backend): [Phase名] リファクタリング (REFACTOR)
+
+  ## セキュリティ要件（Presentation層実装時）
+  - FormRequestでバリデーション実装
+  - Eloquent ORMまたはQuery Builderを使用（Raw SQL禁止）
+  - Laravel Policyで認可チェック実装
+
+  ## 検証コマンド
+  各Phase完了時: docker compose exec app ./vendor/bin/phpunit --filter=[対象テストクラス]
+```
+
+**Fullstack の場合:**
+以下の順序で**逐次**実行する：
+
+1. **Backend実装エージェント** を起動（上記Backendプロンプト）
+2. Backend完了後、**API動作確認**を実施:
+   - `docker compose exec app ./vendor/bin/phpunit` で全Backendテストがパスすることを確認
+   - 必要に応じて `docker compose exec app php artisan route:list` でAPIエンドポイントを確認
+3. API確認後、**Frontend実装エージェント** を起動（上記Frontendプロンプト）
+
+#### ステップ5: Phase 3 - Quality Checks
+
+実装完了後、Quality Checks を実行する。
+
+**Frontend:**
 ```bash
-# Postmanまたはcurlでエンドポイントをテスト
-curl -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password"}'
+docker compose exec app yarn typecheck && docker compose exec app yarn check && docker compose exec app yarn test && docker compose exec app yarn build:all
 ```
 
-確認事項:
-- [ ] APIレスポンスが期待通り
-- [ ] CSRFトークンが正しく発行されている
-- [ ] セッションが適切に管理されている
+**Backend:**
+```bash
+docker compose exec app ./vendor/bin/phpstan analyse && docker compose exec app ./vendor/bin/pint --test && docker compose exec app ./vendor/bin/phpunit && docker compose exec app ./vendor/bin/deptrac
+```
 
-確認完了後、Frontend Phase 1に進む。
+すべてのチェックがパスするまで修正を繰り返す。
+パス後にコミット: `chore: Quality Checks通過`
 
-【Frontend（厳格TDD - Phase単位）】
-4. Frontend Phase 1: plan-reviewer
-   → コミット: feat(frontend): Phase 1完了 - 実装計画作成
+#### ステップ6: 完了報告
 
-5. Frontend Phase 2以降: 各PhaseごとにTDDサイクル
-   例: Phase 2（基本UIコンポーネント）
-     - RED → コミット: test(frontend): 基本UIコンポーネント テスト作成 (RED)
-     - GREEN → コミット: feat(frontend): 基本UIコンポーネント 実装完了 (GREEN)
-     - REFACTOR → コミット: refactor(frontend): 基本UIコンポーネント リファクタリング (REFACTOR)
+すべての Phase が完了したら、ユーザーに以下を報告：
+- 実装した Phase の一覧とコミット履歴
+- Quality Checks の結果
+- 次のアクション（PR作成、ブラウザ確認など）の提案
 
-6. Frontend Quality Checks
-   → コミット: chore(frontend): Quality Checks通過
+---
 
-重要: Backend完了後にFrontend開始。各PhaseはRED → GREEN → REFACTORを厳守。
+### オプション2: コンテキストをリセットして手動実行
+
+`/clear` でコンテキストをリセットした後、実装タイプに応じて以下のプロンプトで実装を開始してください。
+
+TDDサイクルの詳細は @.claude/docs/tdd-phase-based-commit-strategy.md を参照。
+
+**Frontend実装の場合:**
+```
+@.claude/specs/designs/DESIGN.md
+@.claude/docs/tdd-phase-based-commit-strategy.md
+
+この仕様書に基づいて厳格なTDD（Phase単位: RED → GREEN → REFACTOR）で実装してください。
+
+1. plan-reviewer で実装計画を作成 → コミット
+2. 各PhaseでTDDサイクル実行（RED → GREEN → REFACTOR、各ステップでコミット）
+3. Quality Checks: docker compose exec app yarn typecheck && docker compose exec app yarn check && docker compose exec app yarn test && docker compose exec app yarn build:all
+```
+
+**Backend実装の場合:**
+```
+@.claude/specs/designs/DESIGN.md
+@.claude/docs/tdd-phase-based-commit-strategy.md
+
+この仕様書に基づいて厳格なTDD（Phase単位: RED → GREEN → REFACTOR）で実装してください。
+
+1. backend-plan-reviewer で実装計画を作成 → コミット
+2. 各PhaseでTDDサイクル実行（RED → GREEN → REFACTOR、各ステップでコミット）
+3. Quality Checks: docker compose exec app ./vendor/bin/phpstan analyse && docker compose exec app ./vendor/bin/pint --test && docker compose exec app ./vendor/bin/phpunit && docker compose exec app ./vendor/bin/deptrac
+```
+
+**Fullstack実装の場合:**
+```
+@.claude/specs/designs/DESIGN.md
+@.claude/docs/tdd-phase-based-commit-strategy.md
+
+この仕様書に基づいて厳格なTDD（Phase単位）で実装してください。
+
+実行順序: Backend → API動作確認 → Frontend
+各PhaseはRED → GREEN → REFACTORを厳守し、各ステップでコミット。
+Backend完了後、全テストパスとAPIエンドポイント確認を経てFrontend開始。
 ```
 
 ---
 
-#### オプション2: 現在のセッションで続行
+### オプション3: 現在のセッションで続行
 
 現在のセッションでそのまま実装を続けることもできます。
 実装タイプに応じて適切なガイドラインを参照してください：
@@ -421,8 +388,6 @@ curl -X POST http://localhost:8000/api/auth/login \
 - **Frontend**: ui-design-guidelines、coding-guidelines
 - **Backend**: backend-architecture-guidelines、backend-coding-guidelines
 
+TDDサイクルの詳細は @.claude/docs/tdd-phase-based-commit-strategy.md を参照。
+
 **重要**: 各PhaseごとにRED → GREEN → REFACTORサイクルを実行し、それぞれコミットしてください。
-
----
-
-**どちらを希望しますか？**
