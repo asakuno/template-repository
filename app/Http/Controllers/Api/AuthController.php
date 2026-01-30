@@ -31,7 +31,11 @@ final class AuthController extends Controller
         $user = $this->loginUseCase->execute($data);
 
         return response()->json([
-            'data' => AuthenticatedUserData::fromModel($user),
+            'data' => AuthenticatedUserData::from([
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ]),
         ], 200);
     }
 

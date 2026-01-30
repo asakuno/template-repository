@@ -19,6 +19,7 @@ final class ModelTransformer implements Transformer
         protected TypeScriptTransformerConfig $config
     ) {}
 
+    /** @param ReflectionClass<object> $class */
     public function transform(ReflectionClass $class, string $name): ?TransformedType
     {
         if (! $class->isSubclassOf(Model::class)) {
