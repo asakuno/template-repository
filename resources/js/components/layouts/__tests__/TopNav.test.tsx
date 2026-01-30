@@ -4,11 +4,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-const mockRouterPost = vi.fn();
-
 vi.mock('@inertiajs/react', () => ({
   router: {
-    post: mockRouterPost,
+    post: vi.fn(),
   },
   usePage: vi.fn(() => ({
     props: {
