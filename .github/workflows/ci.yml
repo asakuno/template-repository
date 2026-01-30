@@ -1,10 +1,10 @@
-name: CI
+name: Backend & Frontend Quality Checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   backend:
@@ -22,8 +22,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vendor
-          key: composer-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-
+          key: ${{ runner.os }}-php-8.4-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-8.4-composer-
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -57,8 +58,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: node_modules
-          key: yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: yarn-
+          key: ${{ runner.os }}-node-22-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-22-yarn-
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -70,7 +72,7 @@ jobs:
         run: yarn check
 
       - name: Vitest
-        run: yarn test --run
+        run: yarn test
 
       - name: Build
         run: yarn build:all

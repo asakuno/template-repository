@@ -45,7 +45,7 @@ Presentation (Controllers) → Request (FormRequest) → UseCase → Service/Rep
 
 ### Quality Checks コマンド
 
-> **注意**: `php`、`artisan`、`composer`、`yarn` コマンドはすべて Docker コンテナ内で実行する（`docker compose exec app` を先頭に付ける）。
+> **注意**: ローカル開発では `php`、`artisan`、`composer`、`yarn` コマンドはすべて Docker コンテナ内で実行する（`docker compose exec app` を先頭に付ける）。CI環境（GitHub Actions）ではホスト上で直接実行する。
 
 **フロントエンド**:
 ```bash
