@@ -298,6 +298,55 @@ describe("fetchUser", () => {
 
 ## Testing Forms
 
+### Inertia useForm + withPrecognition モック
+
+プロジェクトでは `useForm().withPrecognition()` を標準パターンとして使用する。
+テスト時は `withPrecognition` が返すオブジェクト（`submit`, `validate` 等）を正しくモックすること。
+
+```typescript
+// ❌ 不正: withPrecognition を考慮していない
+vi.mock('@inertiajs/react', () => ({
+  useForm: vi.fn(() => ({
+    data: { email: '', password: '' },
+    setData: vi.fn(),
+    post: vi.fn(),
+    processing: false,
+    errors: {},
+  })),
+}));
+
+// ✅ 正: withPrecognition のチェーンを含むモック
+const mockSubmit = vi.fn();
+const mockSetData = vi.fn();
+const mockValidate = vi.fn();
+
+vi.mock('@inertiajs/react', () => ({
+  useForm: vi.fn(() => ({
+    data: { email: '', password: '' },
+    setData: mockSetData,
+    processing: false,
+    errors: {},
+    withPrecognition: vi.fn().mockReturnValue({
+      data: { email: '', password: '' },
+      setData: mockSetData,
+      submit: mockSubmit,
+      processing: false,
+      errors: {},
+      validate: mockValidate,
+    }),
+  })),
+  Head: ({ title }: { title: string }) => <title>{title}</title>,
+  Link: ({ href, children, ...props }: Record<string, unknown>) => (
+    <a href={href as string} {...props}>{children as React.ReactNode}</a>
+  ),
+}));
+```
+
+**注意点:**
+- `withPrecognition()` は `useForm()` の返値に対してチェーンされるため、`mockReturnValue` で返すオブジェクトに `submit`, `validate` 等を含める
+- 実装側で `submit()` を使っている場合、`post()` ではなく `submit()` をアサートする
+- `validate` はフィールドのリアルタイムバリデーション（`onBlur` 等）で使用される
+
 ### Form Input Test
 
 ```typescript

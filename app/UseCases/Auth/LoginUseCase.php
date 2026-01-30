@@ -26,7 +26,7 @@ final class LoginUseCase
 
         if (! $authenticated) {
             throw ValidationException::withMessages([
-                'email' => ['認証情報が正しくありません。'],
+                'email' => [__('auth.failed')],
             ]);
         }
 

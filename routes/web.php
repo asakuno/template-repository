@@ -11,7 +11,8 @@ Route::get('/', function () {
 // 未認証ユーザー用（guestミドルウェア）
 Route::middleware(['guest', 'precognitive'])->group(function () {
     Route::get('/login', [AuthPageController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthPageController::class, 'login']);
+    Route::post('/login', [AuthPageController::class, 'login'])
+        ->middleware('throttle:5,1');
 });
 
 // 認証済みユーザー用

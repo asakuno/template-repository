@@ -33,10 +33,16 @@ final class SecurityHeadersMiddleware
 
         // HSTS: 本番環境のみ
         if (app()->environment('production')) {
-            $response->headers->set(
-                'Strict-Transport-Security',
-                'max-age=31536000; includeSubDomains; preload'
-            );
+            /** @var array{max_age: int, include_subdomains: bool, preload: bool} $hsts */
+            $hsts = config('security.hsts');
+            $value = sprintf('max-age=%d', $hsts['max_age']);
+            if ($hsts['include_subdomains']) {
+                $value .= '; includeSubDomains';
+            }
+            if ($hsts['preload']) {
+                $value .= '; preload';
+            }
+            $response->headers->set('Strict-Transport-Security', $value);
         }
 
         $response->headers->remove('X-Powered-By');

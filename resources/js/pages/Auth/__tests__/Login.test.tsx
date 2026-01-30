@@ -8,6 +8,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockPost = vi.fn();
 const mockSetData = vi.fn();
 
+const mockSubmit = vi.fn();
+const mockValidate = vi.fn();
+
 vi.mock('@inertiajs/react', () => ({
   useForm: vi.fn(() => ({
     data: { email: '', password: '' },
@@ -15,6 +18,14 @@ vi.mock('@inertiajs/react', () => ({
     post: mockPost,
     processing: false,
     errors: {},
+    withPrecognition: vi.fn().mockReturnValue({
+      data: { email: '', password: '' },
+      setData: mockSetData,
+      submit: mockSubmit,
+      processing: false,
+      errors: {},
+      validate: mockValidate,
+    }),
   })),
   Head: ({ title }: { title: string }) => <title>{title}</title>,
   Link: ({ href, children, ...props }: Record<string, unknown>) => (
@@ -63,7 +74,7 @@ describe('Login', () => {
     if (form) {
       fireEvent.submit(form);
     }
-    expect(mockPost).toHaveBeenCalledWith('/login');
+    expect(mockSubmit).toHaveBeenCalled();
   });
 
   it('ページタイトルが設定されること', () => {
