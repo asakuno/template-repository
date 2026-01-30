@@ -5,6 +5,15 @@ description: Comprehensive Storybook story creation guidelines. Covers story str
 
 # Storybook Guidelines
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/story-patterns.md` - ストーリーの実装パターン（基本構造、条件分岐、ローディング、認証状態、アンチパターン）
+
+---
+
 このスキルは、Storybook ストーリー作成における標準とベストプラクティスを定義します。
 
 ## How to Use This Skill

@@ -1,11 +1,33 @@
 ---
 name: ui-design-guidelines
-description: UI/UX design guidelines focusing on what AI commonly overlooks or fails to verify. **CRITICAL**: Emphasizes concrete checklists, measurement criteria, and verification steps that AI tends to skip during design reviews. Reference during Phase 1 (UI/UX Design Review).
+description: Comprehensive UI/UX design guidelines covering visual design (typography, color, motion), user experience (cognitive psychology, interaction patterns, mental models), Sociomedia's Human Interface Guidelines (100 principles), and concrete checklists for what AI commonly overlooks. Reference during Phase 1 (UI/UX Design Review) and Phase 4 (Browser Verification).
 ---
 
-# UI/UX Design Guidelines - What AI Overlooks
+# UI/UX Design Guidelines
 
-このスキルは、AIが一貫して見落とす具体的な検証ステップに焦点を当てています。一般的なデザイン原則についてはAIを信頼し、AIが確実にチェックに失敗する重要な領域を精査してください。
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**条件付き - Phase 1（UI/UXデザインレビュー）**:
+- `references/ui-design.md` - ビジュアルデザイン原則（タイポグラフィ、カラー、モーション、4pxグリッド）
+- `references/ux-design.md` - UX原則（メンタルモデル、認知心理学、43の心理原則）
+- `references/hi-design.md` - Sociomedia HI ガイドライン（100項目: フォーム設計、OOUI、アクセシビリティ等）
+
+**条件付き - Phase 4（ブラウザ検証）**:
+- `references/verification-guide.md` - 検証ツール手順（WebAIM, Lighthouse, NVDA）
+
+**条件付き - その他**:
+- `references/ai-oversights-detailed.md` - AI Aesthetics の具体例・コード例が必要な場合
+
+---
+
+このスキルは、3つの視点からUIデザインを総合的にガイドします：
+
+1. **AIが見落とすポイント**（本ファイル）: 具体的な検証ステップ、計測基準、チェックリスト
+2. **ビジュアルデザイン原則** (`references/ui-design.md`): タイポグラフィ、カラー、モーション、空間構成
+3. **UXデザイン原則** (`references/ux-design.md`): 認知心理学、インタラクションパターン、メンタルモデル
+4. **ヒューマンインターフェースガイドライン** (`references/hi-design.md`): Sociomedia 100原則
 
 ---
 
@@ -16,6 +38,9 @@ description: UI/UX design guidelines focusing on what AI commonly overlooks or f
 **Phase 1（実装前）:**
 - [ ] Critical Checklistで要件を特定
 - [ ] AIが見落とす検証項目を把握（コントラスト比、ARIA属性、パフォーマンス）
+- [ ] [UI Design](references/ui-design.md) でビジュアルデザイン方針を確認
+- [ ] [UX Design](references/ux-design.md) でインタラクションパターンと心理原則を確認
+- [ ] [HI Design](references/hi-design.md) でヒューマンインターフェース原則を確認
 
 **Phase 4（実装後）:**
 - [ ] [Verification Guide](references/verification-guide.md) で実測検証
@@ -23,9 +48,9 @@ description: UI/UX design guidelines focusing on what AI commonly overlooks or f
 
 ---
 
-## Quick Reference: Critical Checklist
+## 検証チェックリスト
 
-### ⚠️ Accessibility（最重要）
+### ⚠️ アクセシビリティ（最重要）
 - [ ] **Contrast tested**: 4.5:1（text）、3:1（UI components）
 - [ ] **Touch targets**: 44x44px minimum
 - [ ] **Keyboard tested**: Tab/Shift+Tabで完全ナビゲーション
@@ -33,44 +58,44 @@ description: UI/UX design guidelines focusing on what AI commonly overlooks or f
 - [ ] **ARIA attributes**: フォームに`aria-invalid`、`aria-describedby`
 - [ ] **Semantic HTML**: `<header>`, `<nav>`, `<main>`, `<footer>`使用
 
-### ⚠️ Performance
-- [ ] **Images**: Next.js Imageで`width`/`height`指定
-- [ ] **Priority**: Above-the-fold画像に`priority`属性
+### ⚠️ パフォーマンス
+- [ ] **Images**: `width`/`height`指定、遅延読み込み設定
+- [ ] **Priority**: Above-the-fold画像の優先読み込み
 - [ ] **Lighthouse**: すべてのスコア90+
 - [ ] **LCP**: < 2.5s verified
 - [ ] **CLS**: < 0.1 verified（レイアウトシフトなし）
 
-### ⚠️ Responsive
+### ⚠️ レスポンシブ
 - [ ] **375px tested**: 最小モバイル幅
 - [ ] **640px, 768px, 1024px, 1920px tested**: 各ブレークポイント
 - [ ] **No overflow**: すべてのコンテンツが表示される
 - [ ] **Touch targets**: すべてのブレークポイントで44x44px+
 
-### Animation
+### アニメーション
 - [ ] **Properties**: `transform`と`opacity`のみ
 - [ ] **Timing**: 200-500ms maximum
 - [ ] **Reduced motion**: `prefers-reduced-motion`を尊重
 
-### Forms
+### フォーム
 - [ ] **Labels**: すべてのinputに`htmlFor`/`id`
 - [ ] **Errors**: `aria-describedby`がエラーメッセージを参照
 - [ ] **Validation**: `aria-invalid`がステータスを反映
 
-### Feedback
+### フィードバック
 - [ ] **Loading states**: すべての非同期操作にインジケーター表示
 - [ ] **Button states**: disabled, loading, hover, active, focus
 - [ ] **Timing**: 0.4秒以内にフィードバック
 
 ---
 
-## Critical Numbers
+## 計測基準値
 
-### Contrast Ratios
+### コントラスト比
 - **Normal text**: 4.5:1
 - **Large text** (≥18pt/≥14pt bold): 3:1
 - **UI components**: 3:1
 
-### Touch Targets
+### タッチターゲット
 - **Minimum size**: 44x44px
 - **Spacing**: 8px minimum
 
@@ -153,9 +178,9 @@ AIは以下の領域で一貫して検証を省略します。詳細とコード
 
 ---
 
-## When to Use
+## Phase別適用ガイド
 
-### Phase 1: UI/UX Design Review
+### Phase 1: UI/UXデザインレビュー
 **Objective**: 実装前に要件を特定し、計画する
 
 **Actions**:
@@ -170,7 +195,7 @@ AIは以下の領域で一貫して検証を省略します。詳細とコード
 - レスポンシブブレークポイント戦略
 - パフォーマンスバジェット
 
-### Phase 4: Browser Verification
+### Phase 4: ブラウザ検証
 **Objective**: 実装後に実測検証
 
 **Actions**:
@@ -192,45 +217,40 @@ AIは以下の領域で一貫して検証を省略します。詳細とコード
 
 ---
 
-## Summary: What to Watch For
+## まとめ: AIの信頼と検証の使い分け
 
-### Trust AI for:
-- Visual hierarchy concepts
-- Color theory basics
-- Typography principles
-- General UX guidelines
+### AIに任せてよい領域:
+- ビジュアル階層の概念
+- 色彩理論の基礎
+- タイポグラフィ原則
+- 一般的なUXガイドライン
 
-### Scrutinize AI for:
-- **Actual measurements**（contrast, size, timing）
-- **Testing at breakpoints**（375px - 1920px）
-- **ARIA attribute implementation**
-- **GPU-accelerated animation properties**
-- **Performance metric verification**
+### AIの出力を実測検証すべき領域:
+- **実測値**（コントラスト比、サイズ、タイミング）
+- **ブレークポイント別テスト**（375px - 1920px）
+- **ARIA属性の実装**
+- **GPU最適化アニメーションプロパティ**
+- **パフォーマンス指標の検証**
 
-### The Golden Rule
-**"Did I actually test this with tools, or am I assuming?"**
+### 黄金ルール
+**「ツールで実際にテストしたか、それとも仮定しているだけか？」**
 
-If you didn't:
-- Run Lighthouse
-- Test keyboard navigation
-- Verify at multiple breakpoints
-- Measure contrast ratios
-
-...then the implementation is **incomplete**.
+以下を実行していなければ、実装は**未完了**:
+- Lighthouse実行
+- キーボードナビゲーションテスト
+- 複数ブレークポイントでの検証
+- コントラスト比の測定
 
 ---
 
-## References
+## 参照ドキュメント
 
-詳細なパターン、コード例、検証手順は以下を参照：
+| ファイル | 内容 |
+|---------|------|
+| `references/ai-oversights-detailed.md` | AI Aesthetics詳細、8領域のコード例（❌/✅パターン） |
+| `references/verification-guide.md` | 検証ツール手順（WebAIM, Lighthouse, NVDA） |
+| `references/ui-design.md` | ビジュアルデザイン原則（タイポグラフィ、カラー、モーション、4pxグリッド） |
+| `references/ux-design.md` | UX原則（メンタルモデル、認知心理学、43の心理原則） |
+| `references/hi-design.md` | Sociomedia HI ガイドライン（100項目: フォーム設計、OOUI、アクセシビリティ等） |
 
-### `references/ai-oversights-detailed.md`
-- Generic AI Aestheticsの詳細（フォント・色・レイアウト）
-- 8つの領域すべての具体的なコード例（❌/✅パターン）
-- アンチパターンと推奨パターン
-
-### `references/verification-guide.md`
-- 検証ツールの使用方法（WebAIM, Lighthouse, NVDA）
-- ステップバイステップの検証手順
-- 各領域のPass Criteria
-- トラブルシューティング
+**重要**: ビジュアル・UX・HIの3ドキュメントを併用すること。

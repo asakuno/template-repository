@@ -5,6 +5,15 @@ description: .claude/rules/ディレクトリにベストプラクティスに�
 
 # Creating Rules
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/best-practices.md` - ルール作成のベストプラクティス（構造、命名、paths パターン）
+
+---
+
 `.claude/rules/`ディレクトリにベストプラクティスに沿ったルールファイルを作成する。
 
 ## ワークフロー

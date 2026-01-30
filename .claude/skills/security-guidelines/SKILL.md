@@ -5,6 +5,23 @@ description: "IPA guideline-compliant security diagnostic and review skill for L
 
 # Security Guidelines
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/vulnerability-catalog.md` - 11種類の脆弱性の概要カタログ
+- `references/checklist.md` - 包括的な実装チェックリスト
+
+**条件付き**（該当時のみ）:
+- `references/injection.md` - SQLインジェクション、OSコマンド、ディレクトリトラバーサルの診断時
+- `references/xss.md` - XSS（クロスサイトスクリプティング）の診断時
+- `references/csrf-session.md` - CSRF、セッション管理の診断時
+- `references/http-headers.md` - HTTPヘッダインジェクション、メールヘッダインジェクション、クリックジャッキングの診断時
+- `references/access-control.md` - アクセス制御（IDOR）、認証、パスワード管理の診断時
+
+---
+
 IPA準拠のセキュリティ診断・レビュースキル。Laravel + Reactアプリケーションの実装時・レビュー時に11種類の脆弱性を診断し、安全なコード例を提供する。
 
 ## Overview

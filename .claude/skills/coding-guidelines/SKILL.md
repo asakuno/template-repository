@@ -5,6 +5,26 @@ description: Comprehensive React component coding guidelines for Laravel + Inert
 
 # Coding Guidelines - What AI Gets Wrong (Inertia v2.3+ Precognition + Inertia-Centric Edition)
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/testability-patterns.md` - Custom hooks + presentational components パターン
+- `references/form-precognition.md` - Laravel Precognition フォーム実装パターン
+- `references/inertia-centric-architecture.md` - Inertia 中心データ取得戦略
+
+**条件付き**（該当時のみ）:
+- `references/props-control.md` - コンポーネントの Props 制御パターンを実装する場合
+- `references/conditional-branches.md` - 条件分岐の抽出パターンを実装する場合
+- `references/component-structure.md` - ディレクトリ構造・コンポーネント設計を検討する場合
+- `references/component-rules.md` - コンポーネントルールの詳細が必要な場合
+- `references/typescript-styling.md` - TypeScript スタイリング規約を確認する場合
+- `references/inertia-frontend.md` - Inertia フロントエンド実装の詳細が必要な場合
+- `references/testing-vitest.md` - Vitest テストパターンを確認する場合
+
+---
+
 This skill focuses on patterns AI commonly fails to implement correctly in Laravel + Inertia.js applications using Inertia v2.3+ built-in Precognition for form validation and an Inertia-centric architecture (Inertia for all web UI data, API for external integrations only).
 
 ## How to Use This Skill

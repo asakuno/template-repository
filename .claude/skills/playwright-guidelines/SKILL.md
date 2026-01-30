@@ -5,6 +5,30 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 
 # Playwright E2E Testing Guidelines
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/pom-patterns.md` - Page Object Model の詳細パターン（ディレクトリ構造、セレクタ分離含む）
+- `references/selector-strategy.md` - セレクタ戦略の詳細（優先順位、ロールベースセレクタ）
+- `references/code-generation-checklist.md` - コード生成時の品質チェックリスト
+
+**条件付き**（該当時のみ）:
+- `references/selector-separation.md` - セレクタ分離管理パターンの詳細が必要な場合
+- `references/fixtures-guide.md` - カスタムフィクスチャ、スコープ、自動フィクスチャの詳細が必要な場合
+- `references/data-patterns.md` - テストデータパターン（Interface + Factory）の詳細が必要な場合
+- `references/laravel-integration.md` - hyvor/laravel-playwright 統合の詳細が必要な場合
+- `references/impl-plan-templates.md` - 実装計画書テンプレート（/e2e-spec-impl 用）が必要な場合
+- `references/test-stability.md` - テスト安定性のベストプラクティスが必要な場合
+- `references/security-testing.md` - セキュリティテストパターン（XSS/CSRF検証）が必要な場合
+- `references/visual-regression.md` - ビジュアルリグレッションテストが必要な場合
+- `references/ci-config.md` - CI/CD 設定の詳細が必要な場合
+- `references/ci-quickstart.md` - E2E 環境クイックスタート・初期化が必要な場合
+- `references/examples/login-example.md` - ログイン画面の完全実装例を参照する場合
+
+---
+
 画面仕様書からE2Eテスト仕様書を作成し、Playwrightテストコードを生成するためのガイドライン。
 
 ## Overview

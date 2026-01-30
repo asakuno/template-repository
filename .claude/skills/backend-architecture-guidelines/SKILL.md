@@ -5,6 +5,21 @@ description: 7-layer architecture design guidelines for Laravel applications. Co
 
 # Backend Architecture Guidelines - 7-Layer Laravel-Native
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/layer-details.md` - 各レイヤーの詳細責務とコード例
+- `references/anti-patterns.md` - アンチパターンの詳細と回避方法
+
+**条件付き**（該当時のみ）:
+- `references/module-structure.md` - モジュール構造の設計を検討する場合
+- `references/deptrac-config.md` - Deptrac 設定の詳細が必要な場合
+- `references/typescript-generation.md` - TypeScript 型自動生成の設定が必要な場合
+
+---
+
 This skill provides architectural guidelines for Laravel applications following a 7-layer Laravel-native architecture.
 
 ## Table of Contents

@@ -5,6 +5,16 @@ description: Comprehensive testing guidelines for Vitest and React Testing Libra
 
 # Test Guidelines - Vitest / React Testing Library
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/test-patterns.md` - 全テストシナリオのコード例（基本構造、コンポーネント、フォーム等）
+- `references/aaa-pattern-guide.md` - AAA パターンの詳細（actual/expected 変数、アンチパターン）
+
+---
+
 This skill defines quality standards, structure, and naming conventions for test code using Vitest and React Testing Library.
 
 ## How to Use This Skill
