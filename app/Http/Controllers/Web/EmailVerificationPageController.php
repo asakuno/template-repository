@@ -44,7 +44,7 @@ class EmailVerificationPageController extends Controller
     {
         $this->verifyEmailUseCase->execute($request->user());
 
-        return redirect()->intended('/dashboard'.'?verified=1');
+        return redirect()->intended('/dashboard?verified=1');
     }
 
     /**

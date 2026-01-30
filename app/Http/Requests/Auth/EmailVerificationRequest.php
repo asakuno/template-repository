@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * メール認証リクエスト（署名検証 + ユーザーID一致チェック）
  */
-class EmailVerificationRequest extends FormRequest
+final class EmailVerificationRequest extends FormRequest
 {
     /**
      * 署名が有効かつリクエストのidパラメータが認証ユーザーのIDと一致する場合に認可

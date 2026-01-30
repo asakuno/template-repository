@@ -7,7 +7,7 @@ namespace App\Http\Requests\Auth;
 use App\Data\Auth\LoginData;
 use Illuminate\Foundation\Http\FormRequest;
 
-class LoginRequest extends FormRequest
+final class LoginRequest extends FormRequest
 {
     /**
      * リクエストが認可されるか判定
