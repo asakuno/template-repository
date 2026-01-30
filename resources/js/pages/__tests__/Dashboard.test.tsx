@@ -3,7 +3,6 @@
  */
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { DashboardPageProps } from '@/types/dashboard';
 
 vi.mock('@inertiajs/react', () => ({
   Head: ({ title }: { title: string }) => <title>{title}</title>,
@@ -21,31 +20,59 @@ vi.mock('@inertiajs/react', () => ({
   })),
 }));
 
+import type { ActivityItemData, StatCardData, TrendData } from '@/types/dashboard';
 import Dashboard from '../Dashboard';
 
-const defaultProps: DashboardPageProps = {
+const stats: StatCardData[] = [
+  {
+    label: '総ユーザー数',
+    value: '1,234',
+    change: '+12%',
+    changeDirection: 'up',
+    icon: 'group',
+    iconColorClass: 'text-blue-500',
+  },
+  {
+    label: 'アクティブ',
+    value: '567',
+    change: '+5%',
+    changeDirection: 'up',
+    icon: 'trending_up',
+    iconColorClass: 'text-green-500',
+  },
+  {
+    label: '新規登録',
+    value: '89',
+    change: '-2%',
+    changeDirection: 'down',
+    icon: 'person_add',
+    iconColorClass: 'text-purple-500',
+  },
+];
+
+const recentTrend: TrendData = {
+  total: 1500,
+  changePercent: '+8.2%',
+  changeDirection: 'up',
+  description: '先月比',
+  points: [
+    { label: '1月', value: 100 },
+    { label: '2月', value: 150 },
+  ],
+};
+
+const recentActivities: ActivityItemData[] = [
+  { id: 1, title: 'タスク完了', description: 'タスクAを完了', timeAgo: '1分前', dotColor: 'green' },
+];
+
+const defaultProps = {
   app: { name: 'Web App', env: 'testing', locale: 'ja' },
-  auth: { user: { id: 1, name: 'テストユーザー', email: 'test@example.com' } as App.Models.User },
+  auth: { user: { id: 1, name: 'テストユーザー', email: 'test@example.com' } },
   flash: {},
   errors: {},
-  stats: [
-    { label: '総ユーザー数', value: '1,234', change: '+12%', changeDirection: 'up', icon: 'group', iconColorClass: 'text-blue-500' },
-    { label: 'アクティブ', value: '567', change: '+5%', changeDirection: 'up', icon: 'trending_up', iconColorClass: 'text-green-500' },
-    { label: '新規登録', value: '89', change: '-2%', changeDirection: 'down', icon: 'person_add', iconColorClass: 'text-purple-500' },
-  ],
-  recentTrend: {
-    total: 1500,
-    changePercent: '+8.2%',
-    changeDirection: 'up',
-    description: '先月比',
-    points: [
-      { label: '1月', value: 100 },
-      { label: '2月', value: 150 },
-    ],
-  },
-  recentActivities: [
-    { id: 1, title: 'タスク完了', description: 'タスクAを完了', timeAgo: '1分前', dotColor: 'green' },
-  ],
+  stats,
+  recentTrend,
+  recentActivities,
 };
 
 describe('Dashboard', () => {
