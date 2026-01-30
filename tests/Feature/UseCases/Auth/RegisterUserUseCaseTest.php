@@ -6,10 +6,10 @@ namespace Tests\Feature\UseCases\Auth;
 
 use App\Data\Auth\AuthenticatedUserData;
 use App\Data\Auth\RegisterUserData;
-use App\UseCases\Auth\RegisterUserUseCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\User;
+use App\UseCases\Auth\RegisterUserUseCase;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
