@@ -31,7 +31,7 @@ final class AuthenticatedUserDataTest extends TestCase
     public function it_creates_dto_from_model(): void
     {
         // Arrange
-        $user = new User();
+        $user = new User;
         $user->id = 1;
         $user->name = 'Test User';
         $user->email = 'test@example.com';

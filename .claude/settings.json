@@ -10,6 +10,7 @@
       "Write",
       "TodoRead",
       "TodoWrite",
+      "Skills",
       "Task",
       "Bash(docker:*)",
       "Bash(docker compose:*)",
