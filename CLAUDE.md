@@ -8,7 +8,7 @@
 |------|------|
 | バックエンド | Laravel 12.x (PHP 8.4+), Inertia.js |
 | フロントエンド | React/TypeScript, Tailwind CSS, shadcn/ui |
-| フォーム | Laravel Precognition（リアルタイムバリデーション） |
+| フォーム | Inertia v2.3+ 組み込み Precognition（`@inertiajs/react` の `useForm` + `withPrecognition()`） |
 | テスト | PHPUnit (Backend), Vitest + RTL (Frontend), Playwright (E2E), Storybook |
 | ビルド | Composer (Backend), Vite (Frontend) |
 | Lint/Format | Laravel Pint (Backend), Biome (Frontend) |
@@ -22,10 +22,11 @@ Presentation (Controllers) → Request (FormRequest) → UseCase → Service/Rep
 ```
 詳細: `.claude/rules/backend/` または `.claude/docs/architecture.md`
 
-### フロントエンド: ハイブリッドアーキテクチャ
-- **静的データ**: Inertia Props（認証情報、メニュー、権限、SEO コンテンツ）
-- **動的データ**: API + カスタムフック（通知、統計、検索結果）
-- **フォーム**: Laravel Precognition（`@inertiajs/react` の `useForm` は**使用禁止**）
+### フロントエンド: Inertia 中心アーキテクチャ
+- **ページデータ**: Inertia Props（認証情報、メニュー、権限、SEO コンテンツ）
+- **動的データ**: Inertia Partial Reloads / Deferred Props / Polling
+- **フォーム**: `@inertiajs/react` の `useForm` + `withPrecognition()`（リアルタイムバリデーション）
+- **外部API**: axios（外部サービス連携、モバイルアプリ用のみ）
 
 詳細: `Skill('coding-guidelines')`
 
@@ -44,6 +45,8 @@ Presentation (Controllers) → Request (FormRequest) → UseCase → Service/Rep
 
 ### Quality Checks コマンド
 
+> **注意**: `php`、`artisan`、`composer`、`yarn` コマンドはすべて Docker コンテナ内で実行する（`docker compose exec app` を先頭に付ける）。
+
 **フロントエンド**:
 ```bash
 yarn typecheck && yarn check && yarn test && yarn build
@@ -51,7 +54,7 @@ yarn typecheck && yarn check && yarn test && yarn build
 
 **バックエンド**:
 ```bash
-./vendor/bin/phpstan analyse && ./vendor/bin/pint --test && ./vendor/bin/phpunit && ./vendor/bin/deptrac
+docker compose exec app ./vendor/bin/phpstan analyse && docker compose exec app ./vendor/bin/pint --test && docker compose exec app ./vendor/bin/phpunit && docker compose exec app ./vendor/bin/deptrac
 ```
 
 ### テストカバレッジ基準
@@ -217,8 +220,8 @@ project/
 2. **Quality Checks は必須** - すべてのチェックをパスするまで次に進まない
 3. **エラーは完全修正** - 放置して次に進まない
 4. **Agent を活用** - 計画と実装は Agent に任せる
-5. **フォームは Precognition** - `@inertiajs/react` の `useForm` 使用禁止
-6. **ハイブリッドアーキテクチャ遵守** - 静的は Inertia、動的は API
+5. **フォームは Inertia useForm + Precognition** - `@inertiajs/react` の `useForm().withPrecognition()` を使用
+6. **Inertia 中心アーキテクチャ** - データ取得は Inertia 機能優先、外部連携のみ API
 
 ===
 

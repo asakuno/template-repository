@@ -69,6 +69,7 @@
 - [ ] ログイン前に `/sanctum/csrf-cookie` にアクセスしている
 - [ ] 外部Webhook以外でCSRF検証を除外していない
 - [ ] API認証にLaravel Sanctum を使用している（SPA認証）
+- [ ] フォーム送信は Inertia `useForm` + `withPrecognition()` を使用している（CSRF自動処理）
 
 ---
 

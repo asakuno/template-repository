@@ -93,7 +93,7 @@ React のセキュリティ機能を適切に使用する。
 - `exec()`, `shell_exec()` 等のOS コマンド実行関数の使用（やむを得ない場合はエスケープ必須）
 - Blade での `{!! !!}` によるエスケープなし出力（HTML許可が必要な場合はHTMLPurifier使用）
 - React での `dangerouslySetInnerHTML` の生値使用（DOMPurify必須）
-- `@inertiajs/react` の `useForm`（Laravel Precognition を使用）
+- `laravel-precognition-react` の単独使用（Inertia v2.3+ 組み込み Precognition を使用）
 - URLパラメータからのユーザーID取得（セッションから取得）
 - 本番環境での `APP_DEBUG=true`
 

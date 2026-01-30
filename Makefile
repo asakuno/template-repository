@@ -50,6 +50,14 @@ clear:
 test:
 	git branch --contains=HEAD
 	docker compose exec app php artisan test
+ssr-start:
+	docker compose exec app php artisan inertia:start-ssr
+ssr-daemon:
+	docker compose exec -d app php artisan inertia:start-ssr
+ssr-stop:
+	docker compose exec app php artisan inertia:stop-ssr
+ssr-build:
+	docker compose exec app yarn build:ssr
 yarn-install:
 	docker compose run --rm app yarn install
 vite:
@@ -72,6 +80,10 @@ e2e-build:
 	docker compose --profile e2e build playwright
 e2e-headed:
 	docker compose --profile e2e run --rm playwright npx playwright test --headed
+
+server:
+    @make vite
+    @make ssr-start
 
 init:
 	cp .env.example .env

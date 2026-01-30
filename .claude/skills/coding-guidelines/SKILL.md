@@ -1,11 +1,11 @@
 ---
 name: coding-guidelines
-description: Comprehensive React component coding guidelines for Laravel + Inertia.js applications with Laravel Precognition and hybrid API architecture. **CRITICAL**: Focuses on patterns AI commonly fails to implement correctly, especially testability, props control, and component responsibility separation. Reference this skill when implementing or refactoring React components during Phase 2.
+description: Comprehensive React component coding guidelines for Laravel + Inertia.js applications with Inertia v2.3+ built-in Precognition and Inertia-centric architecture. **CRITICAL**: Focuses on patterns AI commonly fails to implement correctly, especially testability, props control, and component responsibility separation. Reference this skill when implementing or refactoring React components during Phase 2.
 ---
 
-# Coding Guidelines - What AI Gets Wrong (Laravel Precognition + Hybrid API Edition)
+# Coding Guidelines - What AI Gets Wrong (Inertia v2.3+ Precognition + Inertia-Centric Edition)
 
-This skill focuses on patterns AI commonly fails to implement correctly in Laravel + Inertia.js applications using Laravel Precognition for form validation and a hybrid architecture (Inertia for static content, API for dynamic data).
+This skill focuses on patterns AI commonly fails to implement correctly in Laravel + Inertia.js applications using Inertia v2.3+ built-in Precognition for form validation and an Inertia-centric architecture (Inertia for all web UI data, API for external integrations only).
 
 ## How to Use This Skill
 
@@ -21,10 +21,11 @@ This skill focuses on patterns AI commonly fails to implement correctly in Larav
 
 ## Architecture Overview
 
-**Hybrid Approach:**
-- **Static Content**: Inertia.js (server-rendered, SEO-friendly)
-- **Dynamic Data**: API endpoints (real-time updates, interactive features)
-- **Form Validation**: Laravel Precognition (real-time validation without full submission)
+**Inertia-Centric Approach:**
+- **Page Data**: Inertia Props（認証情報、メニュー、権限、SEO コンテンツ）
+- **Dynamic Data**: Inertia Partial Reloads / Deferred Props / Polling
+- **Form Validation**: Inertia v2.3+ `useForm` + `withPrecognition()`（リアルタイムバリデーション）
+- **External API**: axios（外部サービス連携、モバイルアプリ用のみ）
 
 ---
 
@@ -59,21 +60,22 @@ function UserProfile({ user, isLoading }) {
 
 ### 2. Form Handling ⚠️
 
-**AI's pattern**: Using Inertia's `useForm` or manual fetch → no real-time validation
+**AI's pattern**: Using `laravel-precognition-react` or manual fetch → outdated
 
-**Correct pattern**: Use Laravel Precognition
+**Correct pattern**: Use Inertia v2.3+ `useForm` + `withPrecognition()`
 
 ```typescript
-// ❌ AIが書くパターン: import { useForm } from '@inertiajs/react'
-// ✅ 正しいパターン: import { useForm } from 'laravel-precognition-react'
+// ❌ AIが書くパターン: import { useForm } from 'laravel-precognition-react'
+// ✅ 正しいパターン:
+import { useForm } from '@inertiajs/react';
+import { store } from 'App/Http/Controllers/MemberController';
 
-const form = useForm('post', route('members.store'), { name: '', email: '' })
+const form = useForm({ name: '', email: '' }).withPrecognition(store());
 
-// Real-time validation on blur
+// Real-time validation on change
 <Input
   value={form.data.name}
-  onChange={(e) => form.setData('name', e.target.value)}
-  onBlur={() => form.validate('name')}
+  onChange={(e) => { form.setData('name', e.target.value); form.validate('name'); }}
   error={form.errors.name}
 />
 ```
@@ -82,34 +84,35 @@ const form = useForm('post', route('members.store'), { name: '', email: '' })
 
 ---
 
-### 3. Hybrid Architecture ⚠️
+### 3. Inertia-Centric Architecture ⚠️
 
-**AI's pattern**: All data from Inertia OR all data from API → wrong data source
+**AI's pattern**: 不要な API エンドポイントを作成 → Inertia 機能で実現可能
 
-**Correct pattern**: Inertia for static, API for dynamic
+**Correct pattern**: Inertia Props / Partial Reloads / Deferred Props / Polling を優先
 
 ```typescript
-// ✅ Hybrid architecture
+// ✅ Inertia 中心アーキテクチャ
+import { usePoll } from '@inertiajs/react';
+
 interface Props {
-  user: User              // Static: from Inertia
-  permissions: string[]   // Static: from Inertia
+  user: User                    // Inertia props
+  stats?: DashboardStats        // Deferred Props（遅延ロード）
+  notifications: Notification[] // Inertia props + Polling
 }
 
-export default function Dashboard({ user, permissions }: Props) {
-  // Dynamic: from API
-  const { stats } = useStats()
-  const { notifications } = useNotifications()
+export default function Dashboard({ user, stats, notifications }: Props) {
+  usePoll(30000, { only: ['notifications'] });
 
   return (
     <AuthenticatedLayout user={user}>
-      <StatsCard stats={stats} />
+      {stats ? <StatsCard stats={stats} /> : <StatsCardSkeleton />}
       <NotificationList notifications={notifications} />
     </AuthenticatedLayout>
   )
 }
 ```
 
-**📖 Detailed Patterns**: [hybrid-architecture.md](references/hybrid-architecture.md)
+**📖 Detailed Patterns**: [inertia-centric-architecture.md](references/inertia-centric-architecture.md)
 
 ---
 
@@ -168,7 +171,7 @@ function ContentSection() {
 3. **Conditional UI Extraction** - Extract conditional branches to components (CRITICAL)
 4. **Naming and Structure** - Use kebab-case directories, PascalCase files
 5. **Props Control** - All rendering controllable via props (CRITICAL)
-6. **Hybrid Data Strategy** - Inertia for static, API for dynamic
+6. **Inertia-Centric Data Strategy** - Inertia features first, API for external only
 7. **Laravel Precognition** - Real-time validation for all forms
 8. **Avoid Over-Abstraction** - Don't create unnecessary wrappers
 
@@ -204,17 +207,17 @@ Before considering implementation complete, verify AI didn't fall into these tra
 - [ ] All display variations controllable via props
 - [ ] Custom hooks return all necessary states
 
-### Laravel Precognition ⚠️
-- [ ] useForm from 'laravel-precognition-react' for all forms
-- [ ] onBlur validation for real-time feedback
-- [ ] FormRequest with proper validation rules
-- [ ] Proper error display with touched state
+### Inertia Precognition ⚠️
+- [ ] useForm from '@inertiajs/react' + withPrecognition() for all forms
+- [ ] validate() for real-time feedback
+- [ ] FormRequest with proper validation rules on server
+- [ ] Proper error display
 
-### Hybrid Architecture ⚠️
-- [ ] Static data from Inertia props
-- [ ] Dynamic data from API via custom hooks
-- [ ] Clear separation of concerns
-- [ ] Appropriate data source for each use case
+### Inertia-Centric Architecture ⚠️
+- [ ] Page data from Inertia props
+- [ ] Dynamic updates via Partial Reloads / Deferred Props / Polling
+- [ ] No unnecessary API endpoints for web UI data
+- [ ] API only for external integrations
 
 ### Component Responsibility
 - [ ] Custom hooks for data fetching
@@ -235,9 +238,9 @@ Before considering implementation complete, verify AI didn't fall into these tra
 ## Summary: What to Watch For
 
 AI will confidently write code that:
-1. **Uses Inertia's useForm** instead of Laravel Precognition
-2. **Fetches all data from API** (should use Inertia for static)
-3. **Fetches all data from Inertia** (should use API for dynamic)
+1. **Uses `laravel-precognition-react`** instead of Inertia built-in Precognition
+2. **Creates unnecessary API endpoints** (should use Inertia Partial Reloads / Deferred Props / Polling)
+3. **Passes all data as Inertia props without Deferred Props** (heavy data should be deferred)
 4. **Mixes data fetching with presentation** (should separate)
 5. **Cannot be tested** (internal state dependencies)
 
@@ -247,8 +250,8 @@ AI will confidently write code that:
 - Basic component structure
 
 **Scrutinize AI for**:
-- Form handling (must use Laravel Precognition)
-- Data source selection (Inertia vs API)
+- Form handling (must use Inertia `useForm` + `withPrecognition()`)
+- Data source selection (Inertia features first, API only for external)
 - Testability (custom hooks + presentational components)
 - Props control (can parent control all states?)
 
@@ -264,7 +267,7 @@ If the answer is no, extract data fetching to a custom hook and make the compone
 |----------|---------|-------|
 | [testability-patterns.md](references/testability-patterns.md) | Custom hooks + presentational components pattern | ~280 |
 | [form-precognition.md](references/form-precognition.md) | Laravel Precognition form implementation | ~330 |
-| [hybrid-architecture.md](references/hybrid-architecture.md) | Inertia props vs API data strategy | ~330 |
+| [inertia-centric-architecture.md](references/inertia-centric-architecture.md) | Inertia-centric data fetching strategy | ~330 |
 | [props-control.md](references/props-control.md) | Making components controllable via props | ~330 |
 | [conditional-branches.md](references/conditional-branches.md) | Extracting conditional branches | ~280 |
 | [component-structure.md](references/component-structure.md) | Directory structure, navigation, quality | ~300 |

@@ -6,14 +6,15 @@ paths:
 
 # フロントエンド アーキテクチャ概要
 
-## ハイブリッドアーキテクチャ
+## Inertia 中心アーキテクチャ
 
-本プロジェクトは Inertia.js + React によるハイブリッドアーキテクチャを採用する。
+本プロジェクトは Inertia.js + React による Inertia 中心アーキテクチャを採用する。
 
 | データ種別 | 取得方法 | 例 |
 |-----------|---------|-----|
-| **静的データ** | Inertia Props | 認証情報、メニュー、権限、Enumオプション |
-| **動的データ** | API + カスタムフック | 通知、統計、検索結果、リアルタイムデータ |
+| **ページデータ** | Inertia Props | 認証情報、メニュー、権限、Enumオプション |
+| **動的データ** | Inertia Partial Reloads / Deferred Props / Polling | 通知、統計、検索結果、リアルタイムデータ |
+| **外部API** | axios | 外部サービス連携、モバイルアプリ用のみ |
 
 ## ディレクトリ構成
 
@@ -34,13 +35,13 @@ resources/js/
 
 - **Page コンポーネント**: `export default` を使用（Inertia の慣例）
 - **Components 配下**: 名前付きエクスポートを使用
-- **フォーム**: Laravel Precognition 必須（`@inertiajs/react` の `useForm` **使用禁止**）
+- **フォーム**: `@inertiajs/react` の `useForm` + `withPrecognition()`（Inertia v2.3+ 組み込み Precognition）
 - **ルーティング**: Wayfinder で型安全なURL生成
 - **型定義**: すべての props に明示的な型定義
 
 ## 禁止事項
 
-- `@inertiajs/react` の `useForm` 使用
+- `laravel-precognition-react` の単独使用（Inertia v2.3+ 組み込みを使用）
 - ハードコードされたURL（Wayfinder を使用）
 - 型定義の省略
 - `any` 型の使用

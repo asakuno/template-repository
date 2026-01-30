@@ -8,6 +8,7 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            ssr: 'resources/js/ssr.tsx',
             refresh: true,
         }),
         tailwindcss(),
@@ -23,7 +24,9 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         cors: {
-            origin: ['http://localhost', 'http://localhost:80'],
+            origin: process.env.VITE_DEV_SERVER_CORS_ORIGIN
+                ? process.env.VITE_DEV_SERVER_CORS_ORIGIN.split(',')
+                : ['http://localhost', 'http://localhost:80'],
             credentials: true,
         },
         hmr: {
