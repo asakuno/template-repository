@@ -140,12 +140,12 @@ Skill('playwright-guidelines')
 仕様書パス `tests/e2e/specs/{category}/{screen}.spec.md` から `{category}` を抽出：
 
 ```bash
-mkdir -p .claude/e2e-impl-plans/{category}
+mkdir -p .claude/specs/e2e/{category}
 ```
 
 ### 実装計画書の生成
 
-**出力先**: `.claude/e2e-impl-plans/{category}/{screen}-impl-plan.md`
+**出力先**: `.claude/specs/e2e/{category}/{screen}-impl-plan.md`
 
 **references/impl-plan-templates.md** のフォーマットに従い、以下を含む計画書を生成：
 
@@ -276,7 +276,7 @@ AskUserQuestion({
 ```javascript
 AskUserQuestion({
   questions: [{
-    question: "品質ゲートを通過しました。実装方法を選択してください。\n\n計画書: .claude/e2e-impl-plans/{category}/{screen}-impl-plan.md",
+    question: "品質ゲートを通過しました。実装方法を選択してください。\n\n計画書: .claude/specs/e2e/{category}/{screen}-impl-plan.md",
     header: "実装方法",
     options: [
       { label: "Yes（自動実装）(Recommended)", description: "サブエージェントで自動実装（大規模テスト向け）" },
@@ -301,7 +301,7 @@ Task({
 ${Readツールで計画書の内容を読み込み、ここに展開}
 
 ## ディレクトリ構造
-- 計画書: .claude/e2e-impl-plans/{category}/{screen}-impl-plan.md
+- 計画書: .claude/specs/e2e/{category}/{screen}-impl-plan.md
 - BasePage: tests/e2e/pages/base/BasePage.ts
 - Page Object: tests/e2e/pages/{category}/{Category}{Screen}Page.ts
 - セレクタ（任意）: tests/e2e/pages/{category}/selectors/{screen}Selectors.ts
@@ -359,18 +359,18 @@ ${Readツールで計画書の内容を読み込み、ここに展開}
 
 ```
 ---
-実装計画書を保存しました: .claude/e2e-impl-plans/{category}/{screen}-impl-plan.md
+実装計画書を保存しました: .claude/specs/e2e/{category}/{screen}-impl-plan.md
 
 手動で実装を開始するには：
 
 オプション1: 新しいセッションで実装
 1. `/clear` を入力してセッションをクリア
 2. 以下を入力：
-   @.claude/e2e-impl-plans/{category}/{screen}-impl-plan.md
+   @.claude/specs/e2e/{category}/{screen}-impl-plan.md
    この計画書に基づいてE2Eテストを実装してください。
 
 オプション2: CLIで自動実装
-claude --yes -p "この計画書に基づいてE2Eテストを実装" .claude/e2e-impl-plans/{category}/{screen}-impl-plan.md
+claude --yes -p "この計画書に基づいてE2Eテストを実装" .claude/specs/e2e/{category}/{screen}-impl-plan.md
 ---
 ```
 

@@ -10,6 +10,7 @@
       "Write",
       "TodoRead",
       "TodoWrite",
+      "Skills",
       "Task",
       "Bash(docker:*)",
       "Bash(docker compose:*)",
@@ -29,6 +30,7 @@
       "Bash(mkdir:*)",
       "Bash(mkdir -p:*)",
       "Bash(touch:*)",
+      "Bash(ls*)",
       "Bash(cat:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)"
@@ -55,7 +57,9 @@
     "php-lsp@claude-plugins-official": true,
     "claude-mem@thedotmack": true,
     "context7@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true
+    "code-simplifier@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "laravel-simplifier@laravel": true
   },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
@@ -74,6 +78,12 @@
       "source": {
         "source": "github",
         "repo": "thedotmack/claude-mem"
+      }
+    },
+    "laravel": {
+      "source": {
+        "source": "github",
+        "repo": "laravel/claude-code"
       }
     }
   },

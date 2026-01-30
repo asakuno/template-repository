@@ -1,7 +1,7 @@
 ---
 name: plan-reviewer
 description: Phase 1（Planning & Review）を実行。Laravel + Inertia.js + Inertia v2.3+ 組み込みPrecognition + Inertia中心アーキテクチャ対応。調査、UI/UXデザインレビュー、実装計画作成、Codex MCPでの統合レビューを担当。
-tools: Read, Edit, Write, Grep, Glob, Bash, Skill
+tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion
 model: inherit
 ---
 

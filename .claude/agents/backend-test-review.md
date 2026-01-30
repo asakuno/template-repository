@@ -1,7 +1,7 @@
 ---
 name: backend-test-review
 description: Testing & Review実行。Laravel 7層アーキテクチャ対応。Serena MCPでテスト作成、Codex MCPでテストコードレビューを担当。
-tools: Read, Edit, Write, Grep, Glob, Bash, Skill
+tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion
 model: inherit
 ---
 

@@ -17,47 +17,34 @@ final class SecurityHeadersMiddleware
     {
         $response = $next($request);
 
-        // クリックジャッキング対策
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-XSS-Protection', '1; mode=block');
+        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 
-        // CSP（クリックジャッキング + XSS対策）
+        // CSP: 開発環境ではReport-Onlyモードに緩和
         $csp = $this->buildContentSecurityPolicy();
-
-        // 開発環境では一部ヘッダを緩和
         if (app()->environment('local', 'development')) {
-            // CSPをReport-Onlyモードに
             $response->headers->set('Content-Security-Policy-Report-Only', $csp);
         } else {
             $response->headers->set('Content-Security-Policy', $csp);
         }
 
-        // MIMEスニッフィング防止
-        $response->headers->set('X-Content-Type-Options', 'nosniff');
-
-        // XSSフィルター（レガシーブラウザ向け）
-        $response->headers->set('X-XSS-Protection', '1; mode=block');
-
-        // HTTPS強制（本番環境のみ）
+        // HSTS: 本番環境のみ
         if (app()->environment('production')) {
-            $response->headers->set(
-                'Strict-Transport-Security',
-                'max-age=31536000; includeSubDomains; preload'
-            );
+            /** @var array{max_age: int, include_subdomains: bool, preload: bool} $hsts */
+            $hsts = config('security.hsts');
+            $value = sprintf('max-age=%d', $hsts['max_age']);
+            if ($hsts['include_subdomains']) {
+                $value .= '; includeSubDomains';
+            }
+            if ($hsts['preload']) {
+                $value .= '; preload';
+            }
+            $response->headers->set('Strict-Transport-Security', $value);
         }
 
-        // リファラーポリシー
-        $response->headers->set(
-            'Referrer-Policy',
-            'strict-origin-when-cross-origin'
-        );
-
-        // Permissions-Policy（機能制限）
-        $response->headers->set(
-            'Permissions-Policy',
-            'geolocation=(), microphone=(), camera=()'
-        );
-
-        // サーバー情報の隠蔽
         $response->headers->remove('X-Powered-By');
         $response->headers->remove('Server');
 
@@ -69,19 +56,32 @@ final class SecurityHeadersMiddleware
      */
     private function buildContentSecurityPolicy(): string
     {
-        $policies = [
-            "default-src 'self'",
-            "script-src 'self'",
-            // ✅ 推奨: Vite/Webpackビルド時（本プロジェクト）
-            "style-src 'self'",
-            // ⚠️ CDN使用時のみ: "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data: https:",
-            "font-src 'self' data:",
-            "frame-ancestors 'self'",
-            "form-action 'self'",
-            "base-uri 'self'",
-            "object-src 'none'",
-        ];
+        if (app()->environment('local', 'development')) {
+            $policies = [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline' http://localhost:5173",
+                "style-src 'self' 'unsafe-inline' http://localhost:5173 https://fonts.bunny.net",
+                "img-src 'self' data: https:",
+                "font-src 'self' data: https://fonts.bunny.net",
+                "connect-src 'self' ws://localhost:5173 http://localhost:5173",
+                "frame-ancestors 'self'",
+                "form-action 'self'",
+                "base-uri 'self'",
+                "object-src 'none'",
+            ];
+        } else {
+            $policies = [
+                "default-src 'self'",
+                "script-src 'self'",
+                "style-src 'self'",
+                "img-src 'self' data: https:",
+                "font-src 'self' data:",
+                "frame-ancestors 'self'",
+                "form-action 'self'",
+                "base-uri 'self'",
+                "object-src 'none'",
+            ];
+        }
 
         return implode('; ', $policies);
     }

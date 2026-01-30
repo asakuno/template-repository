@@ -14,7 +14,7 @@ trait HasSelectArray
     public static function toSelectArray(): array
     {
         return array_map(
-            fn(self $case) => [
+            fn (self $case) => [
                 'value' => $case->value,
                 'label' => $case->label(),
             ],

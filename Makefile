@@ -47,6 +47,8 @@ db-fresh:
 	docker compose exec app php artisan migrate:fresh
 clear:
 	docker compose exec app php artisan optimize:clear
+format:
+	docker compose exec app ./vendor/bin/pint
 test:
 	git branch --contains=HEAD
 	docker compose exec app php artisan test
@@ -82,9 +84,8 @@ e2e-headed:
 	docker compose --profile e2e run --rm playwright npx playwright test --headed
 
 server:
-    @make vite
-    @make ssr-start
-
+	@echo "Starting development server..."
+	@make -j2 vite ssr-start
 init:
 	cp .env.example .env
 	@make up-build

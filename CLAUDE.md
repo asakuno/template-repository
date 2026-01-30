@@ -49,7 +49,7 @@ Presentation (Controllers) → Request (FormRequest) → UseCase → Service/Rep
 
 **フロントエンド**:
 ```bash
-yarn typecheck && yarn check && yarn test && yarn build
+docker compose exec app yarn typecheck && docker compose exec app yarn check && docker compose exec app yarn test && docker compose exec app yarn build:all
 ```
 
 **バックエンド**:

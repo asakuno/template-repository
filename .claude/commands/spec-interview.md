@@ -42,7 +42,7 @@ $ARGUMENTS
 ### 手順
 
 1. **DESIGN.md の分析**
-   - `.claude/specs/DESIGN.md` を読み込む
+   - `.claude/specs/designs/DESIGN.md` を読み込む
    - 不明確な点、曖昧な記述、決定が必要な項目を特定
    - 技術仕様、UI/UX、アーキテクチャの観点で確認
 

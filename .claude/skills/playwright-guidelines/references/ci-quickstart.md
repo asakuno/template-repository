@@ -60,7 +60,7 @@ mkdir -p tests/e2e/{pages,tests,fixtures,specs}
 mkdir -p tests/e2e/pages/{auth,dashboard,common}
 mkdir -p tests/e2e/tests/{auth,dashboard}
 mkdir -p tests/e2e/specs/{auth,dashboard}
-mkdir -p .claude/e2e-impl-plans/{auth,dashboard}
+mkdir -p .claude/specs/e2e/{auth,dashboard}
 echo -e "${GREEN}✓ ディレクトリ構造を作成しました${NC}"
 
 # ステップ2: Playwright設定ファイルの確認
