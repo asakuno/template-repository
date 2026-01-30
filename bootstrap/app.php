@@ -17,6 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // API レート制限（60リクエスト/分）
         $middleware->throttleApi('60,1');
+
+        // 認証済みユーザーのリダイレクト先
+        $middleware->redirectGuestsTo('/login');
+        $middleware->redirectUsersTo('/dashboard');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
