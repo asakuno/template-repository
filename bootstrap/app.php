@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // セキュリティヘッダをすべてのレスポンスに適用
         $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
 
+        // Inertia.js ミドルウェアを web グループに追加
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+        ]);
+
         // API レート制限（60リクエスト/分）
         $middleware->throttleApi('60,1');
 

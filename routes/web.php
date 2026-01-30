@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\AuthPageController;
+use App\Http\Controllers\Web\DashboardPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -15,5 +16,6 @@ Route::middleware('guest')->group(function () {
 
 // 認証済みユーザー用
 Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', DashboardPageController::class)->name('dashboard');
     Route::post('/logout', [AuthPageController::class, 'logout'])->name('logout');
 });
