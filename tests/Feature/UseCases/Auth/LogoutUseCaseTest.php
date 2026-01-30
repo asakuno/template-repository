@@ -19,7 +19,7 @@ final class LogoutUseCaseTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->useCase = new LogoutUseCase();
+        $this->useCase = new LogoutUseCase;
     }
 
     /**

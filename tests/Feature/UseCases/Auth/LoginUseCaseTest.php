@@ -22,7 +22,7 @@ final class LoginUseCaseTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->useCase = new LoginUseCase();
+        $this->useCase = new LoginUseCase;
     }
 
     /**

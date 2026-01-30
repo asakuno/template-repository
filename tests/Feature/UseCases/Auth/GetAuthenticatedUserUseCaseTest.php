@@ -21,7 +21,7 @@ final class GetAuthenticatedUserUseCaseTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->useCase = new GetAuthenticatedUserUseCase();
+        $this->useCase = new GetAuthenticatedUserUseCase;
     }
 
     /**
