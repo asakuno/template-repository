@@ -40,6 +40,36 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 ---
 
+## Phase 1.5: 画面仕様書生成（任意）
+
+**Phase 1承認後、Phase 2開始前に実行**
+
+E2Eテスト用の画面仕様書を生成する。既存の画面仕様書があればそれを入力として使用し、なければPhase 1の計画結果から生成する。
+
+**実行判断**: メインエージェントがユーザーに画面仕様書生成の要否を確認（AskUserQuestion）し、承認された場合のみ実行する。
+
+**Taskツール** を使用：
+- subagent_type: "e2e-spec-designer"
+- description: "画面仕様書生成"
+- prompt: |
+  以下の情報に基づいて、E2Eテスト用の画面仕様書を生成してください。
+
+  【入力ソース】
+  - 既存画面仕様書: {既存仕様書パス or "なし"}
+  - Phase 1計画書: {DESIGN-*.md / PLAN-*.md のパス}
+
+  【対象画面】
+  - 画面名: {画面名}
+  - カテゴリ: {カテゴリ}
+
+  出力先: .claude/specs/e2e/{category}/{screen}-spec.md
+
+  品質ゲートをすべて満たすこと。完了したら生成ファイルパスと品質チェック結果を報告してください。
+
+**出力**: `.claude/specs/e2e/{category}/{screen}-spec.md`
+
+---
+
 ## Phase 2a: テスト作成（RED）
 
 **Phase 1完了後に実行**
