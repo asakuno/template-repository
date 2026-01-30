@@ -30,7 +30,7 @@ $ARGUMENTS
 
 1. `.claude/specs/` ディレクトリを作成（存在しない場合）:
    ```bash
-   mkdir -p .claude/specs
+   mkdir -p .claude/specs/designs
    ```
 
 2. 以下の形式で仕様書を作成：
@@ -39,7 +39,7 @@ $ARGUMENTS
 
 3. ファイル名を生成：
    - タイムスタンプ: !`date +%Y%m%d-%H%M%S`
-   - パス: `.claude/specs/spec-{タイムスタンプ}.md`
+   - パス: `.claude/specs/designs/spec-{タイムスタンプ}.md`
 
 ## フェーズ3: 計画明確化インタビュー（任意）
 

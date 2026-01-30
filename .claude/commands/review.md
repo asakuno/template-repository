@@ -154,7 +154,7 @@ Grepツールで以下を検索:
    - 禁止パターン
    - 推奨アプローチ
 
-2. **docs/DESIGN.md**
+2. **.claude/specs/designs/DESIGN.md**
    - 設計方針
    - アーキテクチャ原則
 

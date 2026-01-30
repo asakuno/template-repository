@@ -52,7 +52,7 @@ $1が空の場合、以下の質問をしてください：
 
 ### 既存ドキュメントの確認
 
-Readツールでdocs/DESIGN.mdとdocs/TODO.mdの存在を確認してください。
+Readツールで.claude/specs/designs/DESIGN.mdと.claude/specs/designs/TODO.mdの存在を確認してください。
 
 既存ファイルが存在する場合、AskUserQuestionツールで確認してください：
 
@@ -60,7 +60,7 @@ Readツールでdocs/DESIGN.mdとdocs/TODO.mdの存在を確認してくださ�
 AskUserQuestion({
   questions: [
     {
-      question: "既存の計画ドキュメントが見つかりました：\n- docs/DESIGN.md\n- docs/TODO.md\n\nどのように進めますか？",
+      question: "既存の計画ドキュメントが見つかりました：\n- .claude/specs/designs/DESIGN.md\n- .claude/specs/designs/TODO.md\n\nどのように進めますか？",
       header: "既存ドキュメント",
       options: [
         {
@@ -83,7 +83,7 @@ AskUserQuestion({
 ```
 
 **「更新」を選択された場合**：
-- 既存のdocs/DESIGN.mdとdocs/TODO.mdをReadツールで読み取る
+- 既存の.claude/specs/designs/DESIGN.mdと.claude/specs/designs/TODO.mdをReadツールで読み取る
 - 内容をanalyzing-requirementsとplanning-tasksスキルに渡す
 
 **「キャンセル」を選択された場合**：
@@ -126,7 +126,7 @@ AskUserQuestion({
 
 ### 生成確認
 
-Writeツールで docs/DESIGN.md を作成後、内容を確認してください。
+Writeツールで .claude/specs/designs/DESIGN.md を作成後、内容を確認してください。
 
 生成されたDESIGN.mdの主要セクションを表示してください：
 - システム概要
@@ -141,7 +141,7 @@ AskUserQuestionツールを使用してユーザー承認を取得してくだ�
 AskUserQuestion({
   questions: [
     {
-      question: "DESIGN.mdが生成されました。内容を確認してください。\n\n生成場所: docs/DESIGN.md\n\nこのまま次のフェーズ（TODO.md生成）に進めてよろしいですか？",
+      question: "DESIGN.mdが生成されました。内容を確認してください。\n\n生成場所: .claude/specs/designs/DESIGN.md\n\nこのまま次のフェーズ（TODO.md生成）に進めてよろしいですか？",
       header: "DESIGN.md承認",
       options: [
         {
@@ -181,7 +181,7 @@ DESIGN.mdに基づいて、TDD方法論に従ったTODO.mdを生成します。
 
 ### TODO.md作成
 
-docs/DESIGN.md の内容を読み取り、以下の形式でTODO.mdを作成してください：
+.claude/specs/designs/DESIGN.md の内容を読み取り、以下の形式でTODO.mdを作成してください：
 
 ```markdown
 # タスクリスト
@@ -211,7 +211,7 @@ docs/DESIGN.md の内容を読み取り、以下の形式でTODO.mdを作成し�
 
 ### 生成確認
 
-Writeツールで docs/TODO.md を作成後、内容を確認してください。
+Writeツールで .claude/specs/designs/TODO.md を作成後、内容を確認してください。
 
 生成されたTODO.mdの主要セクションを表示してください：
 - タスク概要
@@ -225,7 +225,7 @@ AskUserQuestionツールを使用してユーザー承認を取得してくだ�
 AskUserQuestion({
   questions: [
     {
-      question: "TODO.mdが生成されました。内容を確認してください。\n\n生成場所: docs/TODO.md\n\nこのタスクリストで問題ありませんか？",
+      question: "TODO.mdが生成されました。内容を確認してください。\n\n生成場所: .claude/specs/designs/TODO.md\n\nこのタスクリストで問題ありませんか？",
       header: "TODO.md承認",
       options: [
         {
@@ -256,7 +256,7 @@ AskUserQuestion({
 1. 入力された修正内容を反映してTODO.mdを更新
 2. 再度ユーザー承認を取得（このセクションに戻る）
 3. 承認されるまで繰り返す（最大3回）
-4. 3回目でも承認されない場合、「直接 docs/TODO.md を編集することをお勧めします」と提案
+4. 3回目でも承認されない場合、「直接 .claude/specs/designs/TODO.md を編集することをお勧めします」と提案
 
 ---
 
@@ -270,8 +270,8 @@ AskUserQuestion({
 ✓ 計画が完成しました
 
 生成されたファイル:
-- docs/DESIGN.md  (設計ドキュメント)
-- docs/TODO.md    (タスクリスト)
+- .claude/specs/designs/DESIGN.md  (設計ドキュメント)
+- .claude/specs/designs/TODO.md    (タスクリスト)
 ```
 
 ### 変更履歴の記録（更新モードの場合）

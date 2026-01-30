@@ -50,9 +50,9 @@ $1が空の場合、以下の質問をしてください：
 
 ### 既存ドキュメントの確認
 
-Readツールでdocs/DESIGN.mdとdocs/TODO.mdの存在を確認してください。
+Readツールで.claude/specs/designs/DESIGN.mdと.claude/specs/designs/TODO.mdの存在を確認してください。
 
-**docs/TODO.mdが存在する場合**：
+**.claude/specs/designs/TODO.mdが存在する場合**：
 - 内容を読み取り、フェーズ構成を把握
 - 各フェーズ内のRED/GREEN/REFACTORタスクを確認
 
@@ -74,7 +74,7 @@ TODO.mdの構造例：
 - [ ] [REFACTOR] fetch_versions のリファクタリング
 ```
 
-**docs/DESIGN.mdが存在する場合**：
+**.claude/specs/designs/DESIGN.mdが存在する場合**：
 - 内容を読み取り、設計方針を把握
 - 実装時の参考として使用
 
@@ -109,7 +109,7 @@ TodoWrite({
 1. TodoWriteで該当タスクを`in_progress`に更新
 2. テストを作成（プロジェクトのテスト規約に従う）
 3. **サブエージェントでテスト実行**（後述）して**失敗を確認**
-4. docs/TODO.mdの該当行を`[x]`に更新
+4. .claude/specs/designs/TODO.mdの該当行を`[x]`に更新
 5. TodoWriteで該当タスクを`completed`に更新
 
 #### GREENタスク（実装）
@@ -117,7 +117,7 @@ TodoWrite({
 1. TodoWriteで該当タスクを`in_progress`に更新
 2. テストを通過する**最小限の実装**を行う
 3. **サブエージェントでテスト実行**して**成功を確認**
-4. docs/TODO.mdの該当行を`[x]`に更新
+4. .claude/specs/designs/TODO.mdの該当行を`[x]`に更新
 5. TodoWriteで該当タスクを`completed`に更新
 
 #### REFACTORタスク（リファクタリング）
@@ -125,7 +125,7 @@ TodoWrite({
 1. TodoWriteで該当タスクを`in_progress`に更新
 2. **設計原則チェックリスト**に従ってコード品質を改善
 3. **サブエージェントでテスト実行**して**成功を確認**
-4. docs/TODO.mdの該当行を`[x]`に更新
+4. .claude/specs/designs/TODO.mdの該当行を`[x]`に更新
 5. TodoWriteで該当タスクを`completed`に更新
 
 **設計原則チェックリスト**:
