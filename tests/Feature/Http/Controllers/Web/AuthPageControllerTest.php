@@ -13,10 +13,16 @@ final class AuthPageControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutVite();
+    }
+
     /**
      * GET /login が Inertia レスポンスを返す
      */
-    public function test_showLogin_returns_inertia_response(): void
+    public function test_show_login_returns_inertia_response(): void
     {
         // Act
         $response = $this->get('/login');
@@ -28,7 +34,7 @@ final class AuthPageControllerTest extends TestCase
     /**
      * 認証済みユーザーは /dashboard にリダイレクトされる
      */
-    public function test_showLogin_redirects_authenticated_user(): void
+    public function test_show_login_redirects_authenticated_user(): void
     {
         // Arrange
         $user = User::factory()->create();
