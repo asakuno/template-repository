@@ -96,7 +96,7 @@ Presentation → Request → UseCase → Service/Repository → Model → Resour
 
 **Correct pattern**:
 - Input DTO (Laravel Data) for parameters
-- Output via Eloquent Model or dedicated DTO
+- Output via DTO（Laravel Data）。Model を上位層に直接返さない
 - Uses Repository interface (not Model directly in complex cases)
 - Class marked as `final`
 
@@ -108,7 +108,7 @@ final class CreatePostUseCase
         private PostRepositoryInterface $postRepository,
     ) {}
 
-    public function execute(CreatePostData $data): Post
+    public function execute(CreatePostData $data): PostData
     {
         // ドメインバリデーション
         $existingPost = $this->postRepository->findByUserAndWeek(
@@ -123,7 +123,7 @@ final class CreatePostUseCase
         }
 
         // データ作成
-        return $this->postRepository->create(
+        $post = $this->postRepository->create(
             $data->userId,
             $data->weekStartDate,
             $data->title,
@@ -131,6 +131,9 @@ final class CreatePostUseCase
             $data->status,
             $data->tagValues
         );
+
+        // DTO に変換して返す（Model を上位層に返さない）
+        return PostData::from($post);
     }
 }
 ```
@@ -399,6 +402,8 @@ class Post extends Model {}
 - ❌ HTTP-specific logic (`Request`, `Response`)
 - ❌ Direct `DB::` queries (use Repository)
 - ❌ Returning raw arrays (return Model or DTO)
+- ❌ Returning Eloquent Model to upper layers（Controller に Model を直接返す）
+  - 正しいフロー: `UseCase → DTO → Controller → Resource(DTO) → JSON`
 
 ### In Repository
 - ❌ Business logic (only data access)
@@ -420,6 +425,7 @@ Before considering implementation complete, verify AI didn't fall into these tra
 - [ ] UseCase は Input DTO (Laravel Data) を受け取る
 - [ ] UseCase は Repository Interface を使用
 - [ ] UseCase は `final` class
+- [ ] UseCase の戻り値は DTO（Model を上位層に返していない）
 - [ ] ドメインバリデーションは UseCase 内
 
 ### Repository ⚠️

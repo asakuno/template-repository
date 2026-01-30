@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Data\Auth\AuthenticatedUserData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Resources\Auth\AuthenticatedUserResource;
 use App\UseCases\Auth\GetAuthenticatedUserUseCase;
 use App\UseCases\Auth\LoginUseCase;
 use App\UseCases\Auth\LogoutUseCase;
@@ -25,14 +25,12 @@ final class AuthController extends Controller
      *
      * POST /api/login
      */
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request): AuthenticatedUserResource
     {
         $data = $request->toLoginData();
         $user = $this->loginUseCase->execute($data);
 
-        return response()->json([
-            'data' => AuthenticatedUserData::from($user),
-        ]);
+        return new AuthenticatedUserResource($user);
     }
 
     /**
@@ -54,12 +52,10 @@ final class AuthController extends Controller
      *
      * GET /api/user
      */
-    public function user(): JsonResponse
+    public function user(): AuthenticatedUserResource
     {
         $user = $this->getAuthenticatedUserUseCase->execute();
 
-        return response()->json([
-            'data' => $user,
-        ]);
+        return new AuthenticatedUserResource($user);
     }
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\UseCases\Auth;
 
+use App\Data\Auth\AuthenticatedUserData;
 use App\Data\Auth\LoginData;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -17,7 +17,7 @@ final class LoginUseCase
      *
      * @throws ValidationException 認証失敗時
      */
-    public function execute(LoginData $data, ?Request $request = null): User
+    public function execute(LoginData $data, ?Request $request = null): AuthenticatedUserData
     {
         $authenticated = Auth::attempt([
             'email' => $data->email,
@@ -36,6 +36,6 @@ final class LoginUseCase
             $req->session()->regenerate();
         }
 
-        return Auth::user();
+        return AuthenticatedUserData::from(Auth::user());
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\UseCases\Auth;
 
 use App\Data\Auth\LoginData;
+use App\Data\Auth\AuthenticatedUserData;
 use App\Models\User;
 use App\UseCases\Auth\LoginUseCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,9 +50,9 @@ final class LoginUseCaseTest extends TestCase
         $result = $this->useCase->execute($data, $request);
 
         // Assert
-        $this->assertInstanceOf(User::class, $result);
-        $this->assertEquals($user->id, $result->id);
-        $this->assertEquals($user->email, $result->email);
+        $this->assertInstanceOf(AuthenticatedUserData::class, $result);
+        $this->assertSame($user->id, $result->id);
+        $this->assertSame($user->email, $result->email);
         $this->assertTrue(Auth::check());
     }
 

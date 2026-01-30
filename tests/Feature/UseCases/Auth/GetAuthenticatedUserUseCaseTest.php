@@ -25,7 +25,7 @@ final class GetAuthenticatedUserUseCaseTest extends TestCase
     }
 
     /**
-     * 認証済みユーザーの情報が取得できること
+     * 認証済みユーザーの情報がDTOとして取得できること
      */
     public function test_get_authenticated_user_successfully(): void
     {
@@ -41,9 +41,9 @@ final class GetAuthenticatedUserUseCaseTest extends TestCase
 
         // Assert
         $this->assertInstanceOf(AuthenticatedUserData::class, $result);
-        $this->assertEquals($user->id, $result->id);
-        $this->assertEquals($user->name, $result->name);
-        $this->assertEquals($user->email, $result->email);
+        $this->assertSame($user->id, $result->id);
+        $this->assertSame('Test User', $result->name);
+        $this->assertSame('test@example.com', $result->email);
     }
 
     /**

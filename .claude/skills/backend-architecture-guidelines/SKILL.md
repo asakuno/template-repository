@@ -253,8 +253,8 @@ class PostController extends Controller
     public function store(StorePostRequest $request, CreatePostUseCase $useCase)
     {
         $data = $request->getCreatePostData();
-        $post = $useCase->execute($data);
-        return response()->json(new PostResource($post), 201);
+        $postData = $useCase->execute($data);  // DTO が返る
+        return response()->json(new PostResource($postData), 201);
     }
 }
 ```
@@ -273,9 +273,10 @@ class CreatePostUseCase
 // ✅ CORRECT
 class CreatePostUseCase
 {
-    public function execute(CreatePostData $data): Post  // DTOを使用
+    public function execute(CreatePostData $data): PostData  // DTOを入出力に使用
     {
-        return $this->repository->create(...);
+        $post = $this->repository->create(...);
+        return PostData::from($post);  // Model → DTO に変換して返す
     }
 }
 ```
@@ -302,6 +303,28 @@ class PostPageController extends Controller
             'statusOptions' => PostStatus::toSelectArray(),  // 静的データのみ
         ]);
         // 動的データはReact側からAPI経由で取得
+    }
+}
+```
+
+### 4. UseCase が Model を Controller に返す
+```php
+// ❌ WRONG: UseCase が Eloquent Model を上位層に返している
+class GetUserUseCase
+{
+    public function execute(): User  // Model を返している
+    {
+        return Auth::user();
+    }
+}
+
+// ✅ CORRECT: UseCase は DTO を返す
+class GetUserUseCase
+{
+    public function execute(): UserData  // DTO を返す
+    {
+        $user = Auth::user();
+        return UserData::from($user);
     }
 }
 ```
@@ -351,8 +374,12 @@ class PostPageController extends Controller
 
 ### UseCase 設計
 - [ ] Input DTO (Laravel Data) を使用しているか？
+- [ ] UseCase の戻り値は DTO か？（Model を上位層に返していないか）
 - [ ] Repository Interface 経由でアクセスしているか？
 - [ ] HTTP 依存がないか？
+
+### Resource 設計
+- [ ] Resource は Model または DTO を受け取っているか？（フローが一貫しているか）
 
 ### Repository 設計
 - [ ] Interface と Implementation が分離されているか？
