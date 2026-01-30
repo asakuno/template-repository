@@ -1,0 +1,71 @@
+/**
+ * ログインページテスト
+ */
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+
+// Inertia.js モック
+const mockPost = vi.fn();
+const mockSetData = vi.fn();
+
+vi.mock('@inertiajs/react', () => ({
+  useForm: vi.fn(() => ({
+    data: { email: '', password: '' },
+    setData: mockSetData,
+    post: mockPost,
+    processing: false,
+    errors: {},
+  })),
+  Head: ({ title }: { title: string }) => <title>{title}</title>,
+  Link: ({ href, children, ...props }: Record<string, unknown>) => (
+    <a href={href as string} {...props}>
+      {children as React.ReactNode}
+    </a>
+  ),
+}));
+
+import Login from '../Login';
+
+describe('Login', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('メールアドレス入力欄が表示されること', () => {
+    render(<Login />);
+    expect(screen.getByLabelText('メールアドレス')).toBeInTheDocument();
+  });
+
+  it('パスワード入力欄が表示されること', () => {
+    render(<Login />);
+    expect(screen.getByLabelText('パスワード')).toBeInTheDocument();
+  });
+
+  it('ログインボタンが表示されること', () => {
+    render(<Login />);
+    expect(screen.getByRole('button', { name: 'ログインする' })).toBeInTheDocument();
+  });
+
+  it('「パスワードをお忘れですか？」リンクが表示されること', () => {
+    render(<Login />);
+    expect(screen.getByText('パスワードをお忘れですか？')).toBeInTheDocument();
+  });
+
+  it('「新規登録はこちら」リンクが表示されること', () => {
+    render(<Login />);
+    expect(screen.getByText('新規登録はこちら')).toBeInTheDocument();
+  });
+
+  it('フォーム送信で post が呼ばれること', async () => {
+    const user = userEvent.setup();
+    render(<Login />);
+    await user.click(screen.getByRole('button', { name: 'ログインする' }));
+    expect(mockPost).toHaveBeenCalledWith('/login');
+  });
+
+  it('ページタイトルが設定されること', () => {
+    render(<Login />);
+    expect(document.querySelector('title')).toHaveTextContent('ログイン');
+  });
+});
