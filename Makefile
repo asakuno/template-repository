@@ -82,9 +82,8 @@ e2e-headed:
 	docker compose --profile e2e run --rm playwright npx playwright test --headed
 
 server:
-    @make vite
-    @make ssr-start
-
+	@echo "Starting development server..."
+	@make -j2 vite ssr-start
 init:
 	cp .env.example .env
 	@make up-build

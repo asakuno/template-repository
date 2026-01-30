@@ -13,7 +13,9 @@ const CHART_PADDING = 10;
 
 /** ポイント配列からSVGパス文字列を生成 */
 function buildPath(points: TrendData['points']): string {
-  if (points.length === 0) return '';
+  if (points.length === 0) {
+    return '';
+  }
 
   const maxVal = Math.max(...points.map((p) => p.value));
   const minVal = Math.min(...points.map((p) => p.value));
@@ -46,7 +48,7 @@ export function TrendChart({
         <span className="font-bold text-2xl text-gray-900 dark:text-white">{total}</span>
         <span
           className={cn(
-            'text-sm font-medium',
+            'font-medium text-sm',
             changeDirection === 'up' && 'text-green-600 dark:text-green-400',
             changeDirection === 'down' && 'text-red-600 dark:text-red-400',
             changeDirection === 'neutral' && 'text-gray-500 dark:text-gray-400',
@@ -54,7 +56,7 @@ export function TrendChart({
         >
           {changePercent}
         </span>
-        <span className="text-sm text-gray-500 dark:text-gray-400">{description}</span>
+        <span className="text-gray-500 text-sm dark:text-gray-400">{description}</span>
       </div>
 
       {/* SVG折れ線グラフ */}
@@ -65,7 +67,13 @@ export function TrendChart({
           role="img"
           aria-label="トレンドグラフ"
         >
-          <path d={pathD} fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-500" />
+          <path
+            d={pathD}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="text-blue-500"
+          />
         </svg>
       )}
     </div>

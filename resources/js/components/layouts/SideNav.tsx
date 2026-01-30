@@ -20,11 +20,11 @@ export function SideNav() {
   return (
     <nav
       aria-label="メインナビゲーション"
-      className="flex h-full w-60 flex-col border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
+      className="flex h-full w-60 flex-col border-gray-200 border-r bg-white dark:border-gray-700 dark:bg-gray-900"
     >
       {/* ロゴ */}
       <div className="flex h-16 items-center px-6">
-        <span className="font-bold text-lg text-gray-900 dark:text-white">Web App</span>
+        <span className="font-bold text-gray-900 text-lg dark:text-white">Web App</span>
       </div>
 
       {/* ナビゲーション項目 */}
@@ -41,7 +41,7 @@ export function SideNav() {
       </div>
 
       {/* ヘルプリンク */}
-      <div className="border-t border-gray-200 px-3 py-3 dark:border-gray-700">
+      <div className="border-gray-200 border-t px-3 py-3 dark:border-gray-700">
         <NavItem href="/help" icon="help" label="ヘルプ＆サポート" />
       </div>
     </nav>

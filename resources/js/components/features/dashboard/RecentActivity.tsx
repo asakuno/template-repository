@@ -3,8 +3,9 @@
  *
  * アクティビティ一覧をカード形式で表示する。
  */
-import type { ActivityItemData } from '@/types/dashboard';
+
 import { ActivityItem } from '@/components/features/dashboard/ActivityItem';
+import type { ActivityItemData } from '@/types/dashboard';
 
 interface RecentActivityProps {
   activities: ActivityItemData[];
