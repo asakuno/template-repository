@@ -2,7 +2,7 @@
 
 ## 概要
 
-Inertia.jsを使用することで、SPAのようなユーザー体験を提供しながら、サーバーサイドルーティングを維持できる。React コンポーネントは Laravel Controller から渡される props を受け取り、動的データは API 経由で取得する。
+Inertia.jsを使用することで、SPAのようなユーザー体験を提供しながら、サーバーサイドルーティングを維持できる。React コンポーネントは Laravel Controller から渡される props を受け取る。動的データは Inertia の Partial Reloads / Deferred Props / Polling で取得する。
 
 ---
 
@@ -188,43 +188,33 @@ console.log(index({ query: { baz: ['aaa', 'bbb', 'ccc'] } }));
 
 ## フォーム送信（POST/PUT/DELETE）
 
-### Laravel Precognition の使用（推奨）
+### Inertia v2.3+ 組み込み Precognition の使用（推奨）
 
-**重要**: `@inertiajs/react` の `useForm` は**使用禁止**。Laravel Precognition を使用する。
+**重要**: `@inertiajs/react` の `useForm` + `withPrecognition()` を使用する。`laravel-precognition-react` パッケージは不要。
 
 ```tsx
 // resources/js/pages/Post/Create.tsx
 import { FC } from 'react';
-import { useForm } from 'laravel-precognition-react';
-import { router } from '@inertiajs/react';
-import { store, index } from '@/routes/posts';
+import { useForm } from '@inertiajs/react';
+import { store } from 'App/Http/Controllers/PostController';
 
 interface Props {
   statusOptions: Array<{ value: string; label: string }>;
 }
 
 const PostCreate: FC<Props> = ({ statusOptions }) => {
-  const form = useForm<App.Data.CreatePostData>(
-    'post',
-    store().url,
-    {
-      userId: 0,
-      weekStartDate: '',
-      title: '',
-      memo: undefined,
-      status: 'draft',
-      tagValues: [],
-    }
-  );
+  const form = useForm({
+    userId: 0,
+    weekStartDate: '',
+    title: '',
+    memo: '',
+    status: 'draft',
+    tagValues: [] as string[],
+  }).withPrecognition(store());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    form.submit({
-      onSuccess: () => {
-        // 成功時の処理
-        router.visit(index().url);
-      },
-    });
+    form.submit(store());
   };
 
   return (
@@ -234,8 +224,10 @@ const PostCreate: FC<Props> = ({ statusOptions }) => {
         <input
           type="text"
           value={form.data.title}
-          onChange={(e) => form.setData('title', e.target.value)}
-          onBlur={() => form.validate('title')}  // リアルタイムバリデーション
+          onChange={(e) => {
+            form.setData('title', e.target.value);
+            form.validate('title');  // リアルタイムバリデーション
+          }}
         />
         {form.errors.title && <p className="text-red-500">{form.errors.title}</p>}
       </div>
@@ -244,7 +236,7 @@ const PostCreate: FC<Props> = ({ statusOptions }) => {
         <label>Status</label>
         <select
           value={form.data.status}
-          onChange={(e) => form.setData('status', e.target.value as App.Enums.PostStatus)}
+          onChange={(e) => form.setData('status', e.target.value)}
         >
           {statusOptions.map((status) => (
             <option key={status.value} value={status.value}>
@@ -262,6 +254,45 @@ const PostCreate: FC<Props> = ({ statusOptions }) => {
 };
 
 export default PostCreate;
+```
+
+### Form コンポーネントパターン
+
+Inertia v2.3+ では `<Form>` コンポーネントも使用可能。
+
+```tsx
+import { Form, useFormContext } from '@inertiajs/react';
+import { store } from 'App/Http/Controllers/PostController';
+
+const PostCreate: FC<Props> = ({ statusOptions }) => {
+  return (
+    <Form action={store()} precognitive>
+      <PostFormFields statusOptions={statusOptions} />
+    </Form>
+  );
+};
+
+// フォームフィールドは useFormContext で状態にアクセス
+const PostFormFields: FC<{ statusOptions: Array<{ value: string; label: string }> }> = ({ statusOptions }) => {
+  const { data, setData, errors, validate, processing } = useFormContext();
+
+  return (
+    <>
+      <div>
+        <label>Title</label>
+        <input
+          type="text"
+          value={data.title}
+          onChange={(e) => { setData('title', e.target.value); validate('title'); }}
+        />
+        {errors.title && <p className="text-red-500">{errors.title}</p>}
+      </div>
+      <button type="submit" disabled={processing}>
+        {processing ? '処理中...' : '作成'}
+      </button>
+    </>
+  );
+};
 ```
 
 ---
@@ -351,18 +382,19 @@ router.visit(index().url, {
 
 ## ベストプラクティス
 
-### 1. Precognition でリアルタイムバリデーション
+### 1. Inertia useForm + Precognition でリアルタイムバリデーション
 
-`@inertiajs/react` の `useForm` は使用禁止。
+`@inertiajs/react` の `useForm` + `withPrecognition()` を使用する。
 
 ```tsx
-// ✅ Good: Laravel Precognition
-import { useForm } from 'laravel-precognition-react';
+// ✅ Good: Inertia v2.3+ 組み込み Precognition
+import { useForm } from '@inertiajs/react';
+import { store } from 'App/Http/Controllers/PostController';
 
-const form = useForm<App.Data.CreatePostData>('post', store().url, { ... });
+const form = useForm({ title: '', status: 'draft' }).withPrecognition(store());
 
-// ❌ Bad: @inertiajs/react の useForm
-import { useForm } from '@inertiajs/react';  // 使用禁止
+// ❌ Bad: laravel-precognition-react（廃止）
+import { useForm } from 'laravel-precognition-react';  // 使用禁止
 ```
 
 ### 2. 型安全なルーティング
@@ -435,16 +467,17 @@ const PostIndex = ({ statusOptions, filters }) => {
 
 ## 禁止事項
 
-### 1. @inertiajs/react の useForm 使用禁止
+### 1. laravel-precognition-react の単独使用禁止
 
-Laravel Precognition を使用する。
+Inertia v2.3+ 組み込み Precognition を使用する。
 
 ```tsx
-// ❌ 禁止
-import { useForm } from '@inertiajs/react';
-
-// ✅ 推奨
+// ❌ 禁止: laravel-precognition-react（廃止）
 import { useForm } from 'laravel-precognition-react';
+
+// ✅ 推奨: Inertia useForm + withPrecognition()
+import { useForm } from '@inertiajs/react';
+const form = useForm({ ... }).withPrecognition(store());
 ```
 
 ### 2. ハードコードされたURL禁止
@@ -490,46 +523,56 @@ const { auth } = usePage<AppPageProps>().props;
 
 ---
 
-## API データ取得パターン
+## データ取得パターン（Inertia 中心）
 
-動的データは API 経由で取得する。カスタムフックに分離する。
+データ取得は Inertia の機能を優先的に使用する。API は外部サービス連携のみ。
+
+### Partial Reloads（部分的なデータ再取得）
 
 ```tsx
-// hooks/usePosts.ts
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { router } from '@inertiajs/react';
 
-interface Filters {
-  q?: string;
-  status?: string;
-}
+// 特定の props のみ再取得
+router.reload({ only: ['posts'] });
 
-export const useFetchPosts = (filters: Filters) => {
-  return useQuery({
-    queryKey: ['posts', filters],
-    queryFn: async () => {
-      const { data } = await axios.get('/api/posts', {
-        params: filters,
-      });
-      return data;
-    },
+// 検索フィルタ変更時
+const handleFilterChange = (filters: Filters) => {
+  router.reload({
+    data: filters,
+    only: ['posts'],
   });
 };
 ```
 
+### Deferred Props（遅延読み込み）
+
+サーバー側で `Inertia::defer()` を使い、重いデータを遅延ロードする。
+
 ```tsx
-// pages/Post/Index.tsx
-const PostIndex: FC<Props> = ({ statusOptions, filters }) => {
-  const { data: posts, isLoading } = useFetchPosts(filters);
+// コンポーネント側では通常の props として受け取る
+// サーバーが初期レンダリング後に自動的にデータを送信
+interface Props {
+  posts: Post[];           // 即時ロード
+  stats?: DashboardStats;  // 遅延ロード（Deferred Props）
+}
 
-  if (isLoading) return <div>Loading...</div>;
-
+const PostIndex: FC<Props> = ({ posts, stats }) => {
   return (
     <div>
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
+      {stats ? <StatsCard stats={stats} /> : <StatsCardSkeleton />}
     </div>
   );
 };
+```
+
+### Polling（定期更新）
+
+```tsx
+import { usePoll } from '@inertiajs/react';
+
+// 30秒ごとに notifications を再取得
+usePoll(30000, { only: ['notifications'] });
 ```

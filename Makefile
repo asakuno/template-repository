@@ -50,6 +50,8 @@ clear:
 test:
 	git branch --contains=HEAD
 	docker compose exec app php artisan test
+ssr:
+	docker compose exec app php artisan inertia:start-ssr
 yarn-install:
 	docker compose run --rm app yarn install
 vite:

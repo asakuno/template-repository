@@ -12,7 +12,7 @@ alwaysApply: true
 |------|------|
 | **バックエンド** | Laravel 12.x (PHP 8.4+), Inertia.js |
 | **フロントエンド** | React/TypeScript, Tailwind CSS, shadcn/ui |
-| **フォーム** | Laravel Precognition（リアルタイムバリデーション） |
+| **フォーム** | Inertia v2.3+ 組み込み Precognition（`@inertiajs/react` の `useForm` + `withPrecognition()`） |
 | **テスト** | PHPUnit (Backend), Vitest + RTL (Frontend) |
 | **静的解析** | PHPStan, deptrac（依存関係） |
 | **型生成** | spatie/laravel-data, spatie/laravel-typescript-transformer, fumeapp/modeltyper |
@@ -27,11 +27,12 @@ Presentation (Controllers) → Request → UseCase → Service/Repository → Mo
 
 ビジネスロジックは `app/` 配下にフラット配置する。
 
-### フロントエンド: ハイブリッドアーキテクチャ
+### フロントエンド: Inertia 中心アーキテクチャ
 
-- **静的データ**: Inertia Props（認証情報、メニュー、権限）
-- **動的データ**: API + カスタムフック（通知、統計、検索結果）
-- **フォーム**: Laravel Precognition
+- **ページデータ**: Inertia Props（認証情報、メニュー、権限）
+- **動的データ**: Inertia Partial Reloads / Deferred Props / Polling
+- **フォーム**: `@inertiajs/react` の `useForm` + `withPrecognition()`
+- **外部API**: axios（外部サービス連携、モバイルアプリ用のみ）
 
 ## 基本原則
 
@@ -46,7 +47,7 @@ Presentation (Controllers) → Request → UseCase → Service/Repository → Mo
 
 - コンポーネント指向で設計
 - ビジネスロジックとUIを分離
-- `@inertiajs/react` の `useForm` は**使用禁止**（Laravel Precognition を使用）
+- フォームは `@inertiajs/react` の `useForm` + `withPrecognition()` を使用
 
 ---
 

@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "vite build && vite build --ssr",
         "dev": "vite",
         "typecheck": "tsc --noEmit",
         "check": "biome check resources/js",
@@ -41,7 +41,6 @@
         "@inertiajs/react": "^2.3.6",
         "@tanstack/react-query": "^5.90.16",
         "clsx": "^2.1.1",
-        "laravel-precognition-react": "^1.0.0",
         "react": "^19.2.3",
         "react-dom": "^19.2.3"
     }
