@@ -8,7 +8,7 @@ use App\Data\Auth\RegisterUserData;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 
-final class RegisterRequest extends FormRequest
+class RegisterRequest extends FormRequest
 {
     /**
      * リクエストが認可されるか判定

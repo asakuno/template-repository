@@ -11,7 +11,7 @@ use Inertia\Response;
 /**
  * ダッシュボードページコントローラー
  */
-final class DashboardPageController extends Controller
+class DashboardPageController extends Controller
 {
     /**
      * ダッシュボードページ表示
