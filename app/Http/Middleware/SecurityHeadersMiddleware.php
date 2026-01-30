@@ -50,17 +50,32 @@ final class SecurityHeadersMiddleware
      */
     private function buildContentSecurityPolicy(): string
     {
-        $policies = [
-            "default-src 'self'",
-            "script-src 'self'",
-            "style-src 'self'",
-            "img-src 'self' data: https:",
-            "font-src 'self' data:",
-            "frame-ancestors 'self'",
-            "form-action 'self'",
-            "base-uri 'self'",
-            "object-src 'none'",
-        ];
+        if (app()->environment('local', 'development')) {
+            $policies = [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline' http://localhost:5173",
+                "style-src 'self' 'unsafe-inline' http://localhost:5173 https://fonts.bunny.net",
+                "img-src 'self' data: https:",
+                "font-src 'self' data: https://fonts.bunny.net",
+                "connect-src 'self' ws://localhost:5173 http://localhost:5173",
+                "frame-ancestors 'self'",
+                "form-action 'self'",
+                "base-uri 'self'",
+                "object-src 'none'",
+            ];
+        } else {
+            $policies = [
+                "default-src 'self'",
+                "script-src 'self'",
+                "style-src 'self'",
+                "img-src 'self' data: https:",
+                "font-src 'self' data:",
+                "frame-ancestors 'self'",
+                "form-action 'self'",
+                "base-uri 'self'",
+                "object-src 'none'",
+            ];
+        }
 
         return implode('; ', $policies);
     }
