@@ -37,6 +37,7 @@ Presentation (Controllers) → Request (FormRequest) → UseCase → Service/Rep
 | Phase | 内容 | Agent |
 |-------|------|-------|
 | 1. Planning & Review | 調査、計画作成、レビュー | `plan-reviewer` / `backend-plan-reviewer` |
+| 1.5. E2E Spec Design（任意） | 画面仕様書生成（Phase 1承認後） | `e2e-spec-designer` |
 | 2. Implementation & Review | 実装、コードレビュー | `implement-review` / `backend-implement-review` |
 | 3. Quality Checks | 型チェック、lint、テスト、ビルド | - |
 | 4. Browser Verification | UI/パフォーマンス確認（任意） | Chrome DevTools MCP |

@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -24,16 +28,30 @@ jobs:
           path: vendor
           key: ${{ runner.os }}-php-8.4-composer-${{ hashFiles('composer.lock') }}
           restore-keys: |
+            ${{ runner.os }}-php-8.4-composer-${{ hashFiles('composer.lock') }}
             ${{ runner.os }}-php-8.4-composer-
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Setup environment
-        run: cp .env.example .env && php artisan key:generate
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          # テスト環境用の設定
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=:memory:" >> .env
+          echo "APP_ENV=testing" >> .env
+          echo "APP_DEBUG=false" >> .env
+          echo "SESSION_DRIVER=array" >> .env
+          echo "CACHE_DRIVER=array" >> .env
+          echo "QUEUE_CONNECTION=sync" >> .env
+          # Vite マニフェストのダミー作成（Frontend CIと並列実行のため）
+          mkdir -p public/build
+          echo '{}' > public/build/manifest.json
 
       - name: PHPStan
-        run: ./vendor/bin/phpstan analyse
+        run: ./vendor/bin/phpstan analyse --error-format=github
 
       - name: Pint
         run: ./vendor/bin/pint --test
@@ -43,6 +61,9 @@ jobs:
 
       - name: Deptrac
         run: ./vendor/bin/deptrac
+
+      - name: Composer Audit
+        run: composer audit
 
   frontend:
     runs-on: ubuntu-latest
@@ -60,6 +81,7 @@ jobs:
           path: node_modules
           key: ${{ runner.os }}-node-22-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: |
+            ${{ runner.os }}-node-22-yarn-${{ hashFiles('yarn.lock') }}
             ${{ runner.os }}-node-22-yarn-
 
       - name: Install dependencies
@@ -69,10 +91,13 @@ jobs:
         run: yarn typecheck
 
       - name: Biome
-        run: yarn check
+        run: yarn check --reporter=github
 
       - name: Vitest
-        run: yarn test
+        run: yarn test:ci
 
       - name: Build
         run: yarn build:all
+
+      - name: Yarn Audit
+        run: yarn audit || true
