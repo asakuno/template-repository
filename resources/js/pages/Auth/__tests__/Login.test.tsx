@@ -2,8 +2,7 @@
  * ログインページテスト
  */
 import { fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Inertia.js モック
 const mockPost = vi.fn();
@@ -61,7 +60,9 @@ describe('Login', () => {
     render(<Login />);
     const form = screen.getByRole('button', { name: 'ログインする' }).closest('form');
     expect(form).not.toBeNull();
-    fireEvent.submit(form!);
+    if (form) {
+      fireEvent.submit(form);
+    }
     expect(mockPost).toHaveBeenCalledWith('/login');
   });
 

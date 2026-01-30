@@ -4,8 +4,9 @@
  * Inertia useForm によるフォーム管理・送信を行うページコンポーネント。
  * GuestLayout でラップし、メールアドレス・パスワード入力を提供する。
  */
-import type React from 'react';
+
 import { Head, Link, useForm } from '@inertiajs/react';
+import type React from 'react';
 import { InputField } from '@/components/ui/InputField';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
@@ -60,11 +61,11 @@ export default function Login() {
           <PrimaryButton processing={processing}>ログインする</PrimaryButton>
 
           {/* フッターリンク */}
-          <div className="mt-6 flex justify-between items-center text-[13px] text-slate-600">
-            <Link href="#" className="hover:text-[#326CCB] hover:underline transition">
+          <div className="mt-6 flex items-center justify-between text-[13px] text-slate-600">
+            <Link href="#" className="transition hover:text-[#326CCB] hover:underline">
               パスワードをお忘れですか？
             </Link>
-            <Link href="#" className="hover:text-[#326CCB] hover:underline transition">
+            <Link href="#" className="transition hover:text-[#326CCB] hover:underline">
               新規登録はこちら
             </Link>
           </div>

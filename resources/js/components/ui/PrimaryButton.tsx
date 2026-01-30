@@ -29,8 +29,8 @@ export function PrimaryButton({
       disabled={disabled || processing}
       onClick={onClick}
       className={cn(
-        'w-full bg-[#2767cf] hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-200 shadow-md',
-        (disabled || processing) && 'opacity-50 cursor-not-allowed',
+        'w-full rounded bg-[#2767cf] px-4 py-3 font-bold text-white shadow-md transition duration-200 hover:bg-blue-700',
+        (disabled || processing) && 'cursor-not-allowed opacity-50',
         className,
       )}
     >

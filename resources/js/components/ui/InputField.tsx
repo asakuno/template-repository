@@ -13,7 +13,7 @@ interface InputFieldProps {
   type?: string;
   value: string;
   placeholder?: string;
-  error?: string;
+  error?: string | undefined;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: () => void;
   autoComplete?: string;
@@ -34,7 +34,7 @@ export function InputField({
 }: InputFieldProps) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-2">
+      <label htmlFor={id} className="mb-2 block font-medium text-gray-700 text-sm">
         {label}
       </label>
       <input
@@ -49,12 +49,12 @@ export function InputField({
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(
-          'w-full px-4 py-3 rounded border focus:outline-none focus:ring-2 focus:ring-[#2767cf] focus:border-transparent text-gray-600 placeholder-gray-400 shadow-sm',
+          'w-full rounded border px-4 py-3 text-gray-600 placeholder-gray-400 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#2767cf]',
           error ? 'border-red-500' : 'border-gray-300',
         )}
       />
       {error && (
-        <p id={`${id}-error`} className="text-sm text-red-600 mt-1">
+        <p id={`${id}-error`} className="mt-1 text-red-600 text-sm">
           {error}
         </p>
       )}

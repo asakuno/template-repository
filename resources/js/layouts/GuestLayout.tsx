@@ -13,10 +13,10 @@ interface GuestLayoutProps {
 
 export function GuestLayout({ children, title = 'ログイン' }: GuestLayoutProps) {
   return (
-    <div className="bg-[#EEF2F6] min-h-screen flex items-center justify-center p-4">
-      <main className="w-full max-w-[400px] bg-white rounded-lg shadow-lg p-8 sm:p-10">
-        <header className="text-center mb-12">
-          <h1 className="text-2xl font-bold text-gray-800 tracking-wide">{title}</h1>
+    <div className="flex min-h-screen items-center justify-center bg-[#EEF2F6] p-4">
+      <main className="w-full max-w-[400px] rounded-lg bg-white p-8 shadow-lg sm:p-10">
+        <header className="mb-12 text-center">
+          <h1 className="font-bold text-2xl text-gray-800 tracking-wide">{title}</h1>
         </header>
         {children}
       </main>
