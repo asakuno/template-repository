@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, sqlite3, pdo_sqlite
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Setup environment
+        run: cp .env.example .env && php artisan key:generate
+
+      - name: PHPStan
+        run: ./vendor/bin/phpstan analyse
+
+      - name: Pint
+        run: ./vendor/bin/pint --test
+
+      - name: PHPUnit
+        run: ./vendor/bin/phpunit
+
+      - name: Deptrac
+        run: ./vendor/bin/deptrac
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: TypeCheck
+        run: yarn typecheck
+
+      - name: Biome
+        run: yarn check
+
+      - name: Vitest
+        run: yarn test --run
+
+      - name: Build
+        run: yarn build:all
