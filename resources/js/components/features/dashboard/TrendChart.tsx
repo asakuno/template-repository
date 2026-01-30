@@ -43,20 +43,20 @@ export function TrendChart({
   const pathD = buildPath(points);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+    <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="mb-3 flex items-baseline gap-3">
-        <span className="font-bold text-2xl text-gray-900 dark:text-white">{total}</span>
+        <span className="font-bold text-2xl text-gray-900">{total}</span>
         <span
           className={cn(
             'font-medium text-sm',
-            changeDirection === 'up' && 'text-green-600 dark:text-green-400',
-            changeDirection === 'down' && 'text-red-600 dark:text-red-400',
-            changeDirection === 'neutral' && 'text-gray-500 dark:text-gray-400',
+            changeDirection === 'up' && 'text-green-600',
+            changeDirection === 'down' && 'text-red-600',
+            changeDirection === 'neutral' && 'text-gray-500',
           )}
         >
           {changePercent}
         </span>
-        <span className="text-gray-500 text-sm dark:text-gray-400">{description}</span>
+        <span className="text-gray-500 text-sm">{description}</span>
       </div>
 
       {/* SVG折れ線グラフ */}

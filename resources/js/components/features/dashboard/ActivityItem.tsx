@@ -21,9 +21,9 @@ export function ActivityItem({ title, description, timeAgo, dotColor }: Activity
         <span className={cn('h-2.5 w-2.5 rounded-full', DOT_COLOR_MAP[dotColor])} />
       </div>
       <div className="flex-1">
-        <p className="font-medium text-gray-900 text-sm dark:text-white">{title}</p>
-        <p className="text-gray-500 text-sm dark:text-gray-400">{description}</p>
-        <p className="mt-0.5 text-gray-400 text-xs dark:text-gray-500">{timeAgo}</p>
+        <p className="font-medium text-gray-900 text-sm">{title}</p>
+        <p className="text-gray-500 text-sm">{description}</p>
+        <p className="mt-0.5 text-gray-400 text-xs">{timeAgo}</p>
       </div>
     </div>
   );

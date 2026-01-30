@@ -13,14 +13,16 @@ import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { GuestLayout } from '@/layouts/GuestLayout';
 
 export default function Login() {
-  const { data, setData, post, processing, errors } = useForm({
+  const form = useForm({
     email: '',
     password: '',
-  });
+  }).withPrecognition('post', '/login');
+
+  const { data, setData, submit, processing, errors, validate } = form;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    post('/login');
+    submit();
   };
 
   return (
@@ -38,6 +40,7 @@ export default function Login() {
               placeholder="example@email.com"
               error={errors.email}
               onChange={(e) => setData('email', e.target.value)}
+              onBlur={() => validate('email')}
               autoComplete="email"
               required
             />
@@ -52,6 +55,7 @@ export default function Login() {
               placeholder="••••••••••••"
               error={errors.password}
               onChange={(e) => setData('password', e.target.value)}
+              onBlur={() => validate('password')}
               autoComplete="current-password"
               required
             />
