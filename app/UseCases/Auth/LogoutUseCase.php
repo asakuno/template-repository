@@ -14,10 +14,8 @@ final class LogoutUseCase
      */
     public function execute(?Request $request = null): void
     {
-        // ログアウト（web guardを使用）
         Auth::guard('web')->logout();
 
-        // セッション無効化とCSRFトークン再生成
         $req = $request ?? request();
         if ($req->hasSession()) {
             $req->session()->invalidate();

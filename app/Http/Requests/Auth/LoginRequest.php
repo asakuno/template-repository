@@ -48,11 +48,8 @@ final class LoginRequest extends FormRequest
     /**
      * LoginDataに変換
      */
-    public function getLoginData(): LoginData
+    public function toLoginData(): LoginData
     {
-        return LoginData::from([
-            'email' => $this->input('email'),
-            'password' => $this->input('password'),
-        ]);
+        return LoginData::from($this->validated());
     }
 }

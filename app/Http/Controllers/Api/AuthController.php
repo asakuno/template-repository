@@ -27,16 +27,12 @@ final class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
-        $data = $request->getLoginData();
+        $data = $request->toLoginData();
         $user = $this->loginUseCase->execute($data);
 
         return response()->json([
-            'data' => AuthenticatedUserData::from([
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ]),
-        ], 200);
+            'data' => AuthenticatedUserData::from($user),
+        ]);
     }
 
     /**
@@ -50,7 +46,7 @@ final class AuthController extends Controller
 
         return response()->json([
             'message' => 'Logged out successfully.',
-        ], 200);
+        ]);
     }
 
     /**
@@ -64,6 +60,6 @@ final class AuthController extends Controller
 
         return response()->json([
             'data' => $user,
-        ], 200);
+        ]);
     }
 }

@@ -23,10 +23,6 @@ final class GetAuthenticatedUserUseCase
             throw new AuthenticationException('Unauthenticated.');
         }
 
-        return AuthenticatedUserData::from([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-        ]);
+        return AuthenticatedUserData::from($user);
     }
 }

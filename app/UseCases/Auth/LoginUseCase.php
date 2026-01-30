@@ -19,7 +19,6 @@ final class LoginUseCase
      */
     public function execute(LoginData $data, ?Request $request = null): User
     {
-        // Laravel標準のAuth::attempt()でメール・パスワード検証
         $authenticated = Auth::attempt([
             'email' => $data->email,
             'password' => $data->password,
@@ -31,13 +30,12 @@ final class LoginUseCase
             ]);
         }
 
-        // セッション再生成（セッションフィクス化攻撃対策）
+        // セッションフィクス化攻撃対策
         $req = $request ?? request();
         if ($req->hasSession()) {
             $req->session()->regenerate();
         }
 
-        // 認証済みユーザーを返す
         return Auth::user();
     }
 }

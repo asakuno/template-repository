@@ -140,16 +140,16 @@ final class LoginRequestTest extends TestCase
     }
 
     /**
-     * getLoginData()メソッドがLoginDataを返すこと
+     * toLoginData()メソッドがLoginDataを返すこと
      */
-    public function test_get_login_data_returns_login_data(): void
+    public function test_to_login_data_returns_login_data(): void
     {
         $request = LoginRequest::create('/api/login', 'POST', [
             'email' => 'test@example.com',
             'password' => 'password123',
         ]);
 
-        $loginData = $request->getLoginData();
+        $loginData = $request->toLoginData();
 
         $this->assertInstanceOf(LoginData::class, $loginData);
         $this->assertSame('test@example.com', $loginData->email);
