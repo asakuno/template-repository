@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
-use App\Data\Auth\RegisterUserData;
 use App\Models\User;
 
 /**
@@ -17,12 +16,12 @@ final class UserRepository implements UserRepositoryInterface
      *
      * パスワードはUser Modelのhashedキャストにより自動ハッシュ化される
      */
-    public function create(RegisterUserData $data): User
+    public function create(string $name, string $email, string $password): User
     {
         return User::create([
-            'name' => $data->name,
-            'email' => $data->email,
-            'password' => $data->password,
+            'name' => $name,
+            'email' => $email,
+            'password' => $password,
         ]);
     }
 }
