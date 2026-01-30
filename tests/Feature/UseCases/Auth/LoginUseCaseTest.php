@@ -43,11 +43,7 @@ final class LoginUseCaseTest extends TestCase
         );
 
         // Act
-        $request = $this->app->make('request');
-        $session = $this->app['session']->driver();
-        $session->start();
-        $request->setLaravelSession($session);
-        $result = $this->useCase->execute($data, $request);
+        $result = $this->useCase->execute($data);
 
         // Assert
         $this->assertInstanceOf(AuthenticatedUserData::class, $result);
@@ -96,12 +92,12 @@ final class LoginUseCaseTest extends TestCase
     }
 
     /**
-     * セッション再生成が実行されること
+     * ログイン成功後に認証済みユーザーデータが返される
      */
-    public function test_session_regenerates_on_login(): void
+    public function test_returns_authenticated_user_data_on_success(): void
     {
         // Arrange
-        User::factory()->create([
+        $user = User::factory()->create([
             'email' => 'test@example.com',
             'password' => Hash::make('password123'),
         ]);
@@ -111,18 +107,11 @@ final class LoginUseCaseTest extends TestCase
             password: 'password123',
         );
 
-        // セッション開始
-        $request = $this->app->make('request');
-        $session = $this->app['session']->driver();
-        $session->start();
-        $request->setLaravelSession($session);
-        $oldSessionId = $session->getId();
-
         // Act
-        $this->useCase->execute($data, $request);
+        $result = $this->useCase->execute($data);
 
         // Assert
-        $newSessionId = $session->getId();
-        $this->assertNotEquals($oldSessionId, $newSessionId);
+        $this->assertSame($user->name, $result->name);
+        $this->assertSame($user->email, $result->email);
     }
 }
