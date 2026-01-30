@@ -25,7 +25,7 @@ final class RegisterUserUseCase
     public function execute(RegisterUserData $data, ?Request $request = null): AuthenticatedUserData
     {
         // ユーザー作成
-        $user = $this->userRepository->create($data->name, $data->email, $data->password);
+        $user = $this->userRepository->create($data);
 
         // 自動ログイン
         Auth::login($user);

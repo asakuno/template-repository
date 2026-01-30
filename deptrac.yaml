@@ -97,6 +97,7 @@ deptrac:
       - Repository
       - Model
       - Enum
+      - Data
 
     # Model has no dependencies (bottom layer)
     Model:
