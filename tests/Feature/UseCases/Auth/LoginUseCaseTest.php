@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\UseCases\Auth;
 
-use App\Data\Auth\LoginData;
 use App\Data\Auth\AuthenticatedUserData;
+use App\Data\Auth\LoginData;
 use App\Models\User;
 use App\UseCases\Auth\LoginUseCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
