@@ -82,6 +82,9 @@ export default function Register() {
               autoComplete="new-password"
               required
             />
+            <p className="mt-1 text-xs text-slate-400">
+              8文字以上の英数字を含めてください
+            </p>
           </div>
 
           {/* パスワード（確認用） */}
@@ -102,9 +105,9 @@ export default function Register() {
           {/* 利用規約同意テキスト */}
           <p className="mb-6 text-center text-slate-500 text-xs">
             「アカウントを作成する」をクリックすることで、弊社の
-            <span className="text-[#326CCB]">利用規約</span>
+            <span className="font-medium text-slate-700">利用規約</span>
             および
-            <span className="text-[#326CCB]">プライバシーポリシー</span>
+            <span className="font-medium text-slate-700">プライバシーポリシー</span>
             に同意したものとみなされます。
           </p>
 

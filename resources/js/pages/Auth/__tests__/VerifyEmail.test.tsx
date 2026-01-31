@@ -52,7 +52,7 @@ describe('VerifyEmail', () => {
   it('再送ボタンクリックで post が呼ばれること', () => {
     render(<VerifyEmail />);
     fireEvent.click(screen.getByRole('button', { name: '認証メールを再送する' }));
-    expect(mockPost).toHaveBeenCalledWith('/email/verification-notification');
+    expect(mockPost).toHaveBeenCalledWith('/email/verification-notification', expect.objectContaining({ onSuccess: expect.any(Function) }));
   });
 
   it('ページタイトルが「メール認証」であること', () => {
