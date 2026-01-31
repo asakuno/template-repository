@@ -15,7 +15,7 @@
         "spatie/laravel-typescript-transformer": "^2.5"
     },
     "require-dev": {
-        "deptrac/deptrac": "^3.0",
+        "deptrac/deptrac": "^4.5",
         "fakerphp/faker": "^1.23",
         "fumeapp/modeltyper": "^3.5",
         "larastan/larastan": "^3.9",
