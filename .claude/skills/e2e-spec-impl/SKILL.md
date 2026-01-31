@@ -1,5 +1,5 @@
 ---
-name: e2e-spec-impl
+name: implementing-e2e-specs
 description: E2Eテスト仕様書から実装計画書を生成し、Playwrightテストコードを実装する。「セレクタ調査→計画書作成→品質ゲート→実装」の5ステップワークフローで、コンテキスト蓄積による実装ブレを防ぎ品質基準を確保する。/e2e-spec-impl で起動。Playwrightテスト実装、Page Object生成、セレクタ調査、E2Eテスト自動実装に使用。
 disable-model-invocation: true
 ---
@@ -13,6 +13,17 @@ disable-model-invocation: true
 **必須**（常に読み込む）:
 - `references/selector-validation.md` - セレクタ違反パターン検出と修正提案
 - `references/context-management-guide.md` - テスト規模別の実装方法選択ガイド
+
+---
+
+## External Skill Dependencies
+
+このスキルは `playwright-guidelines` スキルに依存しています。以下のセクションが変更された場合、本スキルの動作に影響する可能性があります:
+
+- **セレクタ優先順位** - Step 2 のセレクタ調査で参照
+- **実装計画書テンプレート** - Step 3 の計画書生成で参照
+- **Page Object パターン** - Step 3, 5 の設計・実装で参照
+- **禁止パターン / 正例** - Step 5 の実装で参照
 
 ---
 
@@ -87,13 +98,7 @@ E2Eテスト仕様書からPlaywrightテストコードを5ステップで実装
 
 Taskツールでサブエージェントを起動し、計画書に基づいて実装:
 
-```javascript
-Task({
-  description: "E2Eテスト自動実装",
-  prompt: "計画書の内容を展開し、実装手順を指示",
-  subagent_type: "general-purpose"
-})
-```
+Taskツール（subagent_type: `general-purpose`）でサブエージェントを起動し、計画書の全内容をpromptに含めて実装を指示する。
 
 **実装手順**:
 1. BasePage確認・作成（`tests/e2e/pages/base/BasePage.ts`）
@@ -111,12 +116,3 @@ Task({
 
 計画書のパスと実装開始手順を表示して終了。
 
----
-
-## なぜ5ステップワークフローなのか
-
-1. **コンテキスト蓄積問題の解決**: 仕様書読み込み→Page Object設計→テスト生成を1セッションで行うと後半で実装がブレる
-2. **セレクタ調査による具体性確保**: 実際のDOM構造に基づく具体的なセレクタ値を特定
-3. **品質ゲートによる品質保証**: セレクタ、テストデータ、AAAパターンの品質を担保してから実装
-4. **計画書が真実の情報源**: サブエージェントに一貫した情報を渡せる
-5. **柔軟な実行オプション**: 大規模は自動実装、小規模はセッション継続

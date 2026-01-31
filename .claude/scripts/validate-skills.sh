@@ -5,6 +5,7 @@ set -e
 
 SKILLS_DIR=".claude/skills"
 errors=0
+warnings=0
 
 echo "🔍 スキル構造を検証中..."
 
@@ -15,37 +16,37 @@ for skill_dir in "$SKILLS_DIR"/*/; do
   # SKILL.mdの存在確認
   if [ ! -f "$skill_md" ]; then
     echo "❌ ERROR: SKILL.md が見つかりません: $skill_dir"
-    errors=$((errors + 1))
+    ((errors++))
     continue
   fi
 
   # Required Referencesセクションの存在確認
   if ! grep -q "## Required References" "$skill_md"; then
     echo "⚠️  WARNING: 'Required References' セクションがありません: $skill_md"
+    ((warnings++))
   fi
 
-  # バッククォートで囲まれた参照ファイルパスを抽出して存在確認
-  grep -oP '`references/[^`*]+\.md`' "$skill_md" 2>/dev/null | sed 's/`//g' | sort -u | while read -r ref; do
+  # 参照ファイルの存在確認（一時ファイルを使用）
+  grep -oP '`references/[^`*]+\.md`' "$skill_md" 2>/dev/null | sed 's/`//g' | sort -u > /tmp/refs_$$.txt || true
+  while read -r ref; do
+    [ -z "$ref" ] && continue
     ref_path="${skill_dir}${ref}"
     if [ ! -f "$ref_path" ]; then
       echo "❌ ERROR: 参照ファイルが見つかりません: $ref_path (参照元: $skill_md)"
-      # サブシェル内なのでファイル経由でエラーを伝達
-      echo "1" >> /tmp/validate-skills-errors
+      ((errors++))
     fi
-  done
+  done < /tmp/refs_$$.txt
+  rm -f /tmp/refs_$$.txt
 done
 
-# サブシェルからのエラーを集計
-if [ -f /tmp/validate-skills-errors ]; then
-  errors=$((errors + $(wc -l < /tmp/validate-skills-errors)))
-  rm -f /tmp/validate-skills-errors
-fi
-
 echo ""
+echo "📊 検証結果: エラー $errors 件、警告 $warnings 件"
+
 if [ "$errors" -gt 0 ]; then
   echo "❌ 検証失敗: $errors 件のエラーが見つかりました"
   exit 1
 else
   echo "✅ すべてのスキルの検証に成功しました"
+  [ "$warnings" -gt 0 ] && echo "⚠️  $warnings 件の警告があります（無視可能）"
   exit 0
 fi
