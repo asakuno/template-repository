@@ -27,6 +27,7 @@ export function PrimaryButton({
     <button
       type={type}
       disabled={disabled || processing}
+      aria-busy={processing || undefined}
       onClick={onClick}
       className={cn(
         'w-full rounded bg-[#2767cf] px-4 py-3 font-bold text-white shadow-md transition duration-200 hover:bg-blue-700',
