@@ -16,7 +16,7 @@ describe('LogoutModal', () => {
 
   it('open=true でモーダルが表示されること', () => {
     render(<LogoutModal {...defaultProps} />);
-    expect(screen.getByText('Logout')).toBeInTheDocument();
+    expect(screen.getByText('ログアウト確認')).toBeInTheDocument();
     expect(
       screen.getByText(/ログアウトしてもよろしいですか/),
     ).toBeInTheDocument();
@@ -24,7 +24,7 @@ describe('LogoutModal', () => {
 
   it('open=false でモーダルが非表示であること', () => {
     render(<LogoutModal {...defaultProps} open={false} />);
-    expect(screen.queryByText('Logout')).not.toBeInTheDocument();
+    expect(screen.queryByText('ログアウト確認')).not.toBeInTheDocument();
   });
 
   it('ログアウトボタンクリックで onLogout が呼ばれること', async () => {
@@ -47,6 +47,19 @@ describe('LogoutModal', () => {
 
   it('processing=true でログアウトボタンが無効化されること', () => {
     render(<LogoutModal {...defaultProps} processing={true} />);
-    expect(screen.getByRole('button', { name: 'ログアウト' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'ログアウト中...' })).toBeDisabled();
+  });
+
+  it('processing=true でスピナーとテキストが表示されること', () => {
+    render(<LogoutModal {...defaultProps} processing={true} />);
+    expect(screen.getByText('ログアウト中...')).toBeInTheDocument();
+    const button = screen.getByRole('button', { name: 'ログアウト中...' });
+    expect(button.querySelector('.animate-spin')).toBeInTheDocument();
+  });
+
+  it('processing=false で通常テキストが表示されること', () => {
+    render(<LogoutModal {...defaultProps} processing={false} />);
+    expect(screen.getByRole('button', { name: 'ログアウト' })).toBeInTheDocument();
+    expect(screen.queryByText('ログアウト中...')).not.toBeInTheDocument();
   });
 });

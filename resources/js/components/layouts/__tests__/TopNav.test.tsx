@@ -25,6 +25,7 @@ describe('TopNav', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
   it('検索バーが表示されること', () => {
     render(<TopNav />);
     expect(screen.getByPlaceholderText('検索...')).toBeInTheDocument();
@@ -50,7 +51,7 @@ describe('TopNav', () => {
     render(<TopNav />);
 
     await user.click(screen.getByRole('button', { name: 'ログアウト' }));
-    expect(screen.getByText('Logout')).toBeInTheDocument();
+    expect(screen.getByText('ログアウト確認')).toBeInTheDocument();
   });
 
   it('モーダルのログアウトボタンで router.post が呼ばれること', async () => {
@@ -62,9 +63,11 @@ describe('TopNav', () => {
 
     // モーダル内のログアウトボタンをクリック
     const buttons = screen.getAllByRole('button', { name: 'ログアウト' });
-    // モーダルが開くとトリガーボタンはportal外、モーダルボタンはportal内
+    // モーダル内のログアウトボタン（配列の末尾）をクリック
     await user.click(buttons[buttons.length - 1]!);
 
-    expect(router.post).toHaveBeenCalledWith('/logout');
+    expect(router.post).toHaveBeenCalledWith('/logout', {}, expect.objectContaining({
+      onError: expect.any(Function),
+    }));
   });
 });

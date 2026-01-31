@@ -16,7 +16,9 @@ export function TopNav() {
 
   const handleLogout = () => {
     setProcessing(true);
-    router.post('/logout');
+    router.post('/logout', {}, {
+      onError: () => setProcessing(false),
+    });
   };
 
   return (
