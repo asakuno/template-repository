@@ -1,8 +1,10 @@
 /**
  * TopNav コンポーネントテスト
  */
+import { router } from '@inertiajs/react';
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@inertiajs/react', () => ({
   router: {
@@ -20,6 +22,10 @@ vi.mock('@inertiajs/react', () => ({
 import { TopNav } from '../TopNav';
 
 describe('TopNav', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('検索バーが表示されること', () => {
     render(<TopNav />);
     expect(screen.getByPlaceholderText('検索...')).toBeInTheDocument();
@@ -38,5 +44,30 @@ describe('TopNav', () => {
   it('通知バッジに aria-label が設定されること', () => {
     render(<TopNav />);
     expect(screen.getByLabelText('通知')).toBeInTheDocument();
+  });
+
+  it('ログアウトボタンクリックでモーダルが表示されること', async () => {
+    const user = userEvent.setup();
+    render(<TopNav />);
+
+    await user.click(screen.getByRole('button', { name: 'ログアウト' }));
+    expect(screen.getByText('ログアウト確認')).toBeInTheDocument();
+  });
+
+  it('モーダルのログアウトボタンで router.post が呼ばれること', async () => {
+    const user = userEvent.setup();
+    render(<TopNav />);
+
+    // モーダルを開く
+    await user.click(screen.getByRole('button', { name: 'ログアウト' }));
+
+    // モーダル内のログアウトボタンをクリック
+    const buttons = screen.getAllByRole('button', { name: 'ログアウト' });
+    // モーダル内のログアウトボタン（配列の末尾）をクリック
+    await user.click(buttons[buttons.length - 1]!);
+
+    expect(router.post).toHaveBeenCalledWith('/logout', {}, expect.objectContaining({
+      onError: expect.any(Function),
+    }));
   });
 });
