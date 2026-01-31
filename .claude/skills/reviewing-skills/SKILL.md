@@ -38,24 +38,41 @@ description: Claude Codeスキルを公式ベストプラクティスに基づ�
 
 **フロントマターチェック**
 - name: 長さ、形式、命名規則
-- description: 完全性、具体性、トリガー
+- description: `[What] + [When] + [Key capabilities]` 構造、ネガティブトリガー
+- allowed-tools, compatibility, metadata（オプション項目）
+
+**フォルダ構造チェック**
+- kebab-case命名、SKILL.md大文字小文字厳密
+- README.md不含、不要ファイルなし
 
 **ボディチェック**
-- 行数（目標: 500行以下）
-- 構造の明確さ
-- Progressive Disclosureの使用
-- ワークフロー設計の品質
+- 行数（目標: 500行以下、5,000語以下）
+- 重要な指示がトップに配置されているか
+- 曖昧な表現がないか
+- Progressive Disclosureの3レベルシステム
+- ワークフローパターンの適切さ（Sequential, Multi-MCP, Iterative, Context-Aware, Domain-Specific）
 
 **コンテンツチェック**
 - 用語の一貫性
 - 例の品質
 - テンプレートの適切さ
 
+**テスト品質チェック**
+- トリガーテスト（起動/非起動の確認）
+- 機能テスト（基本・エッジケース）
+- パフォーマンス比較
+
+**Composabilityチェック**
+- 他スキルとの共存性
+- スコープの明確さ
+
 **アンチパターン検出**
 - デフォルトなしの複数選択肢
+- 全コンテンツのインライン詰め込み
+- frontmatterにXMLタグ
+- Model Laziness対策の欠如
 - Windowsスタイルのパス
 - 時間に依存する情報
-- マジック定数
 
 ### ステップ4: レビューレポート生成
 
