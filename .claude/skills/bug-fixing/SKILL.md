@@ -5,6 +5,16 @@ description: Systematic bug investigation and resolution for Laravel + React/Ine
 
 # Bug Fix
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/debugging-checklist.md` - バグ調査の包括的チェックリスト（再現、ログ分析、コード分析、影響評価）
+- `references/common-patterns.md` - よくあるバグパターンと解決策（N+1、CSRF、hooks、セキュリティ等）
+
+---
+
 Systematic workflow for investigating and resolving bugs in Laravel + React/Inertia.js applications.
 
 ## Overview

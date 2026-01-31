@@ -13,6 +13,15 @@ description: >
 
 # Review Fixing
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/review-patterns.md` - よくあるレビューコメント構造と対応パターン
+
+---
+
 ## Overview
 
 This skill provides a structured 6-step workflow for processing code review comments and implementing fixes. It helps Claude systematically analyze review feedback, prioritize items, implement changes, verify the fixes work correctly, and conduct external code review with a review loop pattern to ensure quality. The workflow includes:
@@ -462,85 +471,4 @@ Provide a comprehensive report including all stages of the review fixing process
 - **Unclear requirements**: Don't guess - ask for clarification
 - **Breaking changes**: Warn user before implementing potentially breaking changes
 
-## Common Review Comment Types
-
-### Security Issues
-- Input validation
-- SQL injection prevention
-- XSS prevention
-- CSRF protection
-- Authentication/authorization
-
-**Approach**: Treat as high priority, verify fix with security checklist
-
-### Architecture Violations
-- Layer dependency violations
-- Improper separation of concerns
-- Missing abstractions
-
-**Approach**: May require discussion with user about design trade-offs
-
-### Code Quality
-- Variable naming
-- Code duplication
-- Complex logic
-- Missing error handling
-
-**Approach**: Straightforward to fix, focus on readability
-
-### Configuration Issues
-- Missing settings
-- Incorrect values
-- Inconsistent configuration
-
-**Approach**: Verify correct values with user if not specified in review
-
-## Security Considerations
-
-レビューファイルの解析時には以下のセキュリティ対策を実施する：
-
-### File Path Validation
-
-レビューファイルのパスを処理する際:
-
-1. **ファイル拡張子の検証**: `.md` ファイルのみ許可
-2. **プロジェクトディレクトリ内に制限**: プロジェクトルート外へのアクセスを禁止
-3. **ファイルサイズの確認**: 最大1MBまで
-4. **ディレクトリトラバーサル対策**: `..` を含むパスを拒否
-
-```javascript
-// 検証例
-function validateReviewFilePath(filePath) {
-  // 1. 拡張子チェック
-  if (!filePath.endsWith('.md')) {
-    throw new Error('Only .md files are allowed')
-  }
-
-  // 2. ディレクトリトラバーサル対策
-  if (filePath.includes('..')) {
-    throw new Error('Directory traversal not allowed')
-  }
-
-  // 3. プロジェクトディレクトリ内か確認
-  const projectRoot = '/home/takahiro/project/manage-app'
-  const resolvedPath = path.resolve(filePath)
-  if (!resolvedPath.startsWith(projectRoot)) {
-    throw new Error('File must be within project directory')
-  }
-
-  return resolvedPath
-}
-```
-
-### Content Sanitization
-
-レビューファイルの内容を処理する際:
-
-- コードブロック内のコマンドを自動実行しない
-- ファイルパスの参照は検証後にのみアクセス
-- ユーザー確認なしに破壊的な操作を実行しない
-
-## References
-
-For detailed review patterns and examples, see:
-- `references/review-patterns.md` - Common review comment structures and how to handle them
+詳細なレビューコメント種別、セキュリティ対策、パターン例は `references/review-patterns.md` を参照。

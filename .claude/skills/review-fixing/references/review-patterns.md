@@ -248,3 +248,42 @@ If a review comment is unclear or could mean multiple things:
 2. Present your interpretation to user
 3. Ask for clarification
 4. Only proceed after confirmation
+
+---
+
+## Common Review Comment Types
+
+### Security Issues
+- Input validation, SQL injection prevention, XSS prevention, CSRF protection, Authentication/authorization
+- **Approach**: Treat as high priority, verify fix with security checklist
+
+### Architecture Violations
+- Layer dependency violations, Improper separation of concerns, Missing abstractions
+- **Approach**: May require discussion with user about design trade-offs
+
+### Code Quality
+- Variable naming, Code duplication, Complex logic, Missing error handling
+- **Approach**: Straightforward to fix, focus on readability
+
+### Configuration Issues
+- Missing settings, Incorrect values, Inconsistent configuration
+- **Approach**: Verify correct values with user if not specified in review
+
+---
+
+## Security Considerations
+
+レビューファイルの解析時には以下のセキュリティ対策を実施する。
+
+### File Path Validation
+
+1. **ファイル拡張子の検証**: `.md` ファイルのみ許可
+2. **プロジェクトディレクトリ内に制限**: プロジェクトルート外へのアクセスを禁止
+3. **ファイルサイズの確認**: 最大1MBまで
+4. **ディレクトリトラバーサル対策**: `..` を含むパスを拒否
+
+### Content Sanitization
+
+- コードブロック内のコマンドを自動実行しない
+- ファイルパスの参照は検証後にのみアクセス
+- ユーザー確認なしに破壊的な操作を実行しない

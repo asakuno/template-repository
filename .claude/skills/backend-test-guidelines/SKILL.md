@@ -5,6 +5,22 @@ description: Comprehensive PHPUnit and Laravel testing guidelines for 7-layer ar
 
 # Backend Test Guidelines - PHPUnit & Laravel Testing
 
+## Required References
+
+このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+
+**必須**（常に読み込む）:
+- `references/test-structure.md` - テスト構造、AAA パターン、命名規則
+- `references/testing-strategy.md` - テスト戦略の全体像
+
+**条件付き**（該当時のみ）:
+- `references/usecase-testing.md` - UseCase のユニットテストを作成する場合
+- `references/repository-testing.md` - Repository のフィーチャーテストを作成する場合
+- `references/controller-testing.md` - Controller のフィーチャーテスト（Inertia/API）を作成する場合
+- `references/domain-layer-testing.md` - ドメイン層のテストパターンが必要な場合
+
+---
+
 This skill covers testing patterns for Laravel applications following a 7-layer architecture. It focuses on what AI commonly gets wrong in test design and implementation.
 
 ---
