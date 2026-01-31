@@ -36,26 +36,58 @@ description: Claude Codeスキルを公式ベストプラクティスに基づ�
 
 各カテゴリを評価：
 
-**フロントマターチェック**
-- name: 長さ、形式、命名規則
-- description: 完全性、具体性、トリガー
+#### Critical（スキルが正常に機能しない）
 
-**ボディチェック**
-- 行数（目標: 500行以下）
-- 構造の明確さ
-- Progressive Disclosureの使用
-- ワークフロー設計の品質
+**フロントマター**
+- name: 空でない、64文字以内、kebab-case、予約語を含まない
+- description: 空でない、1024文字以内
 
-**コンテンツチェック**
-- 用語の一貫性
-- 例の品質
-- テンプレートの適切さ
+**フォルダ構造**
+- kebab-case命名、SKILL.md大文字小文字厳密
+- README.md不含、不要ファイルなし
+
+**ボディ**
+- 行数が500行以下、5,000語以下
+- スクリプトのセキュリティ脆弱性がない
+- スクリプトのエラー処理が適切
+
+#### Warning（スキルの効果が低下する）
+
+**フロントマター**
+- description: `[What] + [When] + [Key capabilities]` 構造を満たす
+- description: ネガティブトリガーを含む
+
+**ボディ**
+- 重要な指示がトップに配置されているか
+- 曖昧な表現がないか
+- Progressive Disclosureの3レベルシステムが適用されているか
+- ワークフローパターンが適切か（Sequential, Multi-MCP, Iterative, Context-Aware, Domain-Specific）
+- 用語が一貫しているか
+- 例が十分にあるか
 
 **アンチパターン検出**
 - デフォルトなしの複数選択肢
+- 全コンテンツのインライン詰め込み
+- frontmatterにXMLタグ
+- Model Laziness対策の欠如
 - Windowsスタイルのパス
 - 時間に依存する情報
-- マジック定数
+
+#### Info（改善の機会）
+
+**フロントマター**
+- metadata: author, version, createdの追加推奨
+- allowed-tools, compatibilityの設定推奨
+
+**ボディ・コンテンツ**
+- より簡潔にできる箇所がないか
+- テンプレートの適切さ
+- トリガーテスト（起動/非起動の確認）の文書化
+- 機能テスト（基本・エッジケース）の文書化
+
+**Composability**
+- 他スキルとの共存性
+- スコープの明確さ
 
 ### ステップ4: レビューレポート生成
 
