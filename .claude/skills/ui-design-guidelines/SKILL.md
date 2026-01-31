@@ -10,15 +10,31 @@ description: Comprehensive UI/UX design guidelines covering visual design (typog
 このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
 
 **条件付き - Phase 1（UI/UXデザインレビュー）**:
+読み込みタイミング: 以下のいずれかに該当する場合
+- `plan-reviewer` エージェントの実行時
+- ユーザーが「UI/UXデザインレビュー」「UIレビュー」「デザイン確認」を明示的に要求した場合
+- 新規画面・コンポーネントの設計レビューを行う場合
+- CLAUDE.md の Phase 1 に記載された UI/UX 関連タスク実行時
+
+参照ファイル:
 - `references/ui-design.md` - ビジュアルデザイン原則（タイポグラフィ、カラー、モーション、4pxグリッド）
 - `references/ux-design.md` - UX原則（メンタルモデル、認知心理学、43の心理原則）
 - `references/hi-design.md` - Sociomedia HI ガイドライン（100項目: フォーム設計、OOUI、アクセシビリティ等）
 
 **条件付き - Phase 4（ブラウザ検証）**:
+読み込みタイミング: 以下のいずれかに該当する場合
+- Chrome DevTools MCP を使用したブラウザ検証を行う場合
+- ユーザーが「ブラウザ確認」「UI確認」「アクセシビリティチェック」を要求した場合
+- 実装後のビジュアル/パフォーマンス確認を行う場合
+
+参照ファイル:
 - `references/verification-guide.md` - 検証ツール手順（WebAIM, Lighthouse, NVDA）
 
 **条件付き - その他**:
-- `references/ai-oversights-detailed.md` - AI Aesthetics の具体例・コード例が必要な場合
+- `references/ai-oversights-detailed.md` - 読み込み条件:
+  - AI が生成したUIの品質改善を行う場合
+  - 「AIっぽいデザイン」の回避方法を確認する場合
+  - 具体的なコード例が必要な場合
 
 ---
 

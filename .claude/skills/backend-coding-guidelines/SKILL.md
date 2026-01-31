@@ -14,15 +14,31 @@ description: Comprehensive Laravel backend coding guidelines for 7-layer archite
 - `references/repository-pattern.md` - Repository パターンの詳細実装
 - `references/layer-separation.md` - レイヤー分離ルールの詳細
 
-**条件付き**（該当時のみ）:
-- `references/dto-laravel-data.md` - DTO（Laravel Data）を設計・実装する場合
-- `references/inertia-backend.md` - Inertia.js バックエンド実装（Web/API Controller）の場合
-- `references/coding-standards.md` - コーディング規約の詳細を確認する場合
-- `references/best-practices.md` - ベストプラクティスを確認する場合
-- `references/entity-design.md` - エンティティ設計の詳細が必要な場合
-- `references/valueobject-design.md` - Value Object 設計の詳細が必要な場合
-- `references/module-isolation.md` - モジュール分離の詳細が必要な場合
-- `references/layer-details.md` - 各レイヤーの詳細責務を確認する場合
+**条件付き**（該当時のみ - 以下の判断基準に従って読み込む）:
+- `references/dto-laravel-data.md` - 読み込み条件:
+  - DTOクラス（`*Data.php`）を新規作成・変更する場合
+  - FormRequest で DTO への変換を実装する場合
+  - `spatie/laravel-data` の機能を使用する場合
+- `references/inertia-backend.md` - 読み込み条件:
+  - Web Controller（`*PageController.php`）を実装する場合
+  - `Inertia::render()` を使用するレスポンスを実装する場合
+  - Shared Data や Deferred Props を設定する場合
+- `references/coding-standards.md` - 読み込み条件:
+  - 新規ファイルを作成する場合（命名規則・構造の確認）
+  - コードレビューで規約違反を指摘された場合
+- `references/best-practices.md` - 読み込み条件:
+  - アーキテクチャ判断で迷った場合
+  - 既存コードのリファクタリングを行う場合
+- `references/entity-design.md` - 読み込み条件:
+  - Eloquent Model を新規作成・変更する場合
+- `references/valueobject-design.md` - 読み込み条件:
+  - Value Object クラスを新規作成する場合
+- `references/module-isolation.md` - 読み込み条件:
+  - 新規モジュール（機能領域）を追加する場合
+  - deptrac の依存ルールを変更する場合
+- `references/layer-details.md` - 読み込み条件:
+  - レイヤー間の責務境界が不明確な場合
+  - 新しいレイヤー要素を追加する場合
 
 ---
 
