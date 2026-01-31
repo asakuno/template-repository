@@ -47,7 +47,7 @@ export default function Login() {
           </div>
 
           {/* パスワード */}
-          <div className="mb-10">
+          <div className="mb-8">
             <PasswordInput
               id="password"
               label="パスワード"
@@ -66,10 +66,10 @@ export default function Login() {
 
           {/* フッターリンク */}
           <div className="mt-6 flex items-center justify-between text-[13px] text-slate-600">
-            <Link href="#" className="transition hover:text-[#326CCB] hover:underline">
+            <span className="cursor-default text-slate-400">
               パスワードをお忘れですか？
-            </Link>
-            <Link href="#" className="transition hover:text-[#326CCB] hover:underline">
+            </span>
+            <Link href="/register" className="transition hover:text-[#326CCB] hover:underline">
               新規登録はこちら
             </Link>
           </div>

@@ -51,7 +51,7 @@ export function PasswordInput({
           aria-invalid={error ? 'true' : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
           className={cn(
-            'w-full rounded border px-4 py-3 pr-10 text-gray-600 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#2767cf]',
+            'w-full rounded border px-4 py-3 pr-12 text-gray-600 shadow-sm focus:outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#2767cf]',
             error ? 'border-red-500' : 'border-gray-300',
           )}
         />
@@ -59,7 +59,7 @@ export function PasswordInput({
           type="button"
           aria-label={visible ? 'パスワードを非表示' : 'パスワードを表示'}
           onClick={() => setVisible(!visible)}
-          className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          className="absolute top-1/2 right-2 -translate-y-1/2 p-2 text-gray-500 hover:text-gray-700"
         >
           {/* 目アイコン SVG */}
           <svg
@@ -99,7 +99,7 @@ export function PasswordInput({
         </button>
       </div>
       {error && (
-        <p id={`${id}-error`} className="mt-1 text-red-600 text-sm">
+        <p id={`${id}-error`} role="alert" className="mt-1 text-red-600 text-sm">
           {error}
         </p>
       )}

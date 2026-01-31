@@ -49,12 +49,12 @@ export function InputField({
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(
-          'w-full rounded border px-4 py-3 text-gray-600 placeholder-gray-400 shadow-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#2767cf]',
+          'w-full rounded border px-4 py-3 text-gray-600 placeholder-gray-400 shadow-sm focus:outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-[#2767cf]',
           error ? 'border-red-500' : 'border-gray-300',
         )}
       />
       {error && (
-        <p id={`${id}-error`} className="mt-1 text-red-600 text-sm">
+        <p id={`${id}-error`} role="alert" className="mt-1 text-red-600 text-sm">
           {error}
         </p>
       )}
