@@ -30,7 +30,7 @@ export function PrimaryButton({
       aria-busy={processing || undefined}
       onClick={onClick}
       className={cn(
-        'w-full rounded bg-[#2767cf] px-4 py-3 font-bold text-white shadow-md transition duration-200 hover:bg-blue-700',
+        'w-full cursor-pointer rounded bg-[#2767cf] px-4 py-3 font-bold text-white shadow-md transition duration-200 hover:bg-blue-700',
         (disabled || processing) && 'cursor-not-allowed opacity-50',
         className,
       )}
