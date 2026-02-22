@@ -1,7 +1,6 @@
 ---
 name: implementing-e2e-specs
 description: E2Eテスト仕様書から実装計画書を生成し、Playwrightテストコードを実装する。「セレクタ調査→計画書作成→品質ゲート→実装」の5ステップワークフローで、コンテキスト蓄積による実装ブレを防ぎ品質基準を確保する。/e2e-spec-impl で起動。Playwrightテスト実装、Page Object生成、セレクタ調査、E2Eテスト自動実装に使用。
-disable-model-invocation: true
 ---
 
 # Playwrightテスト実装

@@ -1,7 +1,6 @@
 ---
 name: designing-e2e-specs
 description: 画面仕様書からE2Eテスト仕様書を生成する。画面仕様書（Markdown/Excel）を入力として、テストケース設計・バリデーション網羅・トレーサビリティマトリクスを含むテスト仕様書を出力する。/e2e-spec-design で起動し、生成した仕様書は /e2e-spec-impl でPlaywrightテストコードに変換可能。E2Eテスト仕様書、テストケース設計、バリデーションカバレッジ、トレーサビリティ、画面テスト設計に使用。
-disable-model-invocation: true
 ---
 
 # E2Eテスト仕様書作成
