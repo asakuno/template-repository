@@ -1,23 +1,25 @@
 ---
 name: designing-e2e-specs
-description: 画面仕様書からE2Eテスト仕様書を生成する。画面仕様書（Markdown/Excel）を入力として、テストケース設計・バリデーション網羅・トレーサビリティマトリクスを含むテスト仕様書を出力する。/e2e-spec-design で起動し、生成した仕様書は /e2e-spec-impl でPlaywrightテストコードに変換可能。E2Eテスト仕様書、テストケース設計、バリデーションカバレッジ、トレーサビリティ、画面テスト設計に使用。
+description: 画面仕様書（Markdown/Excel）からE2Eテスト仕様書を生成する7ステップワークフロー。責務分類（E2E/Feature/Unit）、バリデーション全層割当、トレーサビリティマトリクスを含む仕様書を出力する。前提: Skill('playwright-guidelines') が利用可能であること。/e2e-spec-design で起動。テストコード実装には使用しない（→ implementing-e2e-specs）。
+disable-model-invocation: true
 ---
 
 # E2Eテスト仕様書作成
 
-## Required References
+## References
 
-このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+各ステップで必要になったタイミングでReadツールで読み込むこと。
 
-**必須**（常に読み込む）:
-- `references/quality-checklist.md` - 品質チェック13項目の詳細と修正指示例
-- `references/validation-coverage-format.md` - バリデーションカバレッジ表のフォーマット
-- `references/responsibility-matrix-format.md` - 責務マトリクスのフォーマット
+| ファイル | 使用ステップ | 説明 |
+|---------|------------|------|
+| `references/responsibility-matrix-format.md` | [3/7] [5/7] | 責務マトリクスのフォーマット |
+| `references/validation-coverage-format.md` | [4/7] [5/7] | バリデーションカバレッジ表のフォーマット |
+| `references/quality-checklist.md` | [6/7] | 品質チェック報告フォーマットと修正指示例 |
+| `references/seed-spec-examples.md` | [4/7] ※条件付き | 粒度合わせ用Seed例（login仕様書例） |
 
-**条件付き**（画面の状態遷移やデータパターンが複雑な場合）:
-- `../test-methodology-reviewer/references/e2e-test-patterns.md` - 技法選定ルール（ユースケース/状態遷移/データ駆動）
-**条件付き**（仕様書の粒度・記述が揺れている/新規ドメインの場合）:
-- `references/seed-spec-examples.md` - 仕様書の粒度合わせ用Seed例（login仕様書例）
+**条件付き参照**（他スキルのリソース）:
+- 技法選定ルール: `Skill('test-methodology-reviewer')` の `references/e2e-test-patterns.md` — 状態遷移やデータパターンが複雑な場合に [3/7] で参照
+- 実装例: `Skill('playwright-guidelines')` の `references/examples/login-example.md` — Seed仕様書の対応実装を確認する場合に参照
 
 ---
 
@@ -62,15 +64,15 @@ E2E過多を防ぐため、テストケース設計前に要件を責務分類�
 2. E2E対象判定ルール:
    - 画面横断 or 業務クリティカル or 回帰影響が高い項目はE2E候補
    - 上記に該当しない入力バリデーション詳細はFeature/Unitを優先
-3. 技法選定（必要時のみ `e2e-test-patterns.md` 参照）:
+3. 技法選定（必要時のみ `Skill('test-methodology-reviewer')` の `references/e2e-test-patterns.md` 参照）:
    - **ユースケーステスト**: クリティカル導線に適用
    - **状態遷移テスト**: 状態が3以上ある機能に適用
    - **データ駆動テスト**: 入力パターンが多い機能に適用（原則Feature/Unit）
-4. 技法選定ゲート（必須判定）:
-   - **状態が3以上あるか**: Yesなら状態遷移テストを適用
+4. 技法選定ゲート（該当する項目のみ判定。全Noの場合はユースケーステストをデフォルト適用）:
+   - **状態が3以上あるか**: Yesなら状態遷移テストを適用（画面のライフサイクル全体で判定: 例 未入力→入力中→下書き→公開 = 4状態）
    - **複数条件の組み合わせがあるか**: Yesならデシジョンテーブル要約を作成（E2E対象は最小ケースのみ）
    - **クリティカルユーザー導線か**: Yesならユースケーステストを適用
-   - 各判定の結果と根拠を記録する
+   - 各判定の結果と根拠を記録する（該当なしの場合も「該当なし」と明記）
 5. `references/responsibility-matrix-format.md` の形式で責務マトリクスを作成
    - Feature/Unitは **ID・委譲先パス・理由(1行)** のみ記載
    - Feature/Unitの詳細手順・期待結果はE2E仕様書に記載しない
@@ -78,10 +80,7 @@ E2E過多を防ぐため、テストケース設計前に要件を責務分類�
 
 ### [4/7] テストケース設計
 
-0. **Seed 仕様書整合チェック（必要時）**:
-   - `references/seed-spec-examples.md` の構成（見出し/表/粒度）と整合しているかを確認
-   - 整合していない場合は形式・粒度をseedに合わせて調整
-   - seedのログイン仕様書例は `playwright-guidelines/references/examples/login-example.md` の実装例と対応する
+> **Seed整合チェック（条件付き）**: 初めて仕様書を作成する画面カテゴリ、または既存仕様書と構成（見出し・テーブル列・ID命名）が不統一な場合、`references/seed-spec-examples.md` の構成と整合確認し調整する。Seedのログイン仕様書例は `Skill('playwright-guidelines')` の `references/examples/login-example.md` の実装例と対応する。
 
 1. `Skill('playwright-guidelines')` を参照（テスト仕様書フォーマット、Page Objectパターン、セレクタ戦略）
 2. **責務マトリクスでE2Eに分類された要件のみ**テストケースを設計:
@@ -139,14 +138,27 @@ E2E仕様書では、Feature/Unitは委譲情報のみを記載し、詳細ケ�
 
 ### [6/7] 品質チェック
 
-品質チェック13項目を検証する。詳細は `references/quality-checklist.md` を参照。
+以下の13項目を検証する:
 
-**品質ゲートA**: 「クリティカル導線のE2Eカバレッジ100%」は必須。未達の場合は不足ケースを追加するまで次に進めない。
-**品質ゲートB**: 「バリデーション要件の全層割当100%」は必須。未達の場合は不足ケースの割当を完了するまで次に進めない。
+| # | 項目 | 確認内容 |
+|---|------|---------|
+| 1 | クリティカル導線正常系カバレッジ | 主要ジャーニーすべてに正常系E2Eテスト存在 |
+| 2 | 高リスク異常系カバレッジ | 認証エラー、重要失敗フローの異常系テスト存在 |
+| 3 | **クリティカル導線E2E 100%** ★ゲートA | E2E対象クリティカル導線がすべてE2Eケースに反映 |
+| 4 | **バリデーション全層割当100%** ★ゲートB | 全バリデーションルールがE2E/Feature/Unitいずれかに割当済 |
+| 5 | 責務分類の妥当性 | E2E過多でなく、詳細がFeature/Unitへ適切に委譲 |
+| 6 | 技法選定根拠の明確性 | 採否が根拠付きで記載 |
+| 7 | 状態遷移一覧の整備 | 状態3以上で正常/無効遷移各1件以上 |
+| 8 | 条件組み合わせ要約の整備 | 複数条件でE2E対象の最小ケース |
+| 9 | 非E2E詳細混入なし | Feature/Unitの詳細手順がE2E仕様書に混入していない |
+| 10 | 前提条件の具体性 | 認証状態・データ状態が明確 |
+| 11 | 操作手順の再現性 | 第三者が再現可能な粒度 |
+| 12 | 期待結果の検証可能性 | 具体的に検証可能な記述 |
+| 13 | トレーサビリティ完全性 | E2E対象要素がテストケースに紐付け |
+
+**★ゲートA/B**: いずれか未達の場合、次のステップへ進めない。
 
 **品質スコア**: `(合格項目数 / 13) × 100`
-
-**Seed整合チェック（Warning）**: 仕様書の形式・粒度・表構成が `references/seed-spec-examples.md` と整合しているか確認する。未達でもゲートA/Bには影響しないが、修正を推奨する。
 
 | スコア | 判定 | アクション |
 |--------|------|----------|
@@ -154,11 +166,14 @@ E2E仕様書では、Feature/Unitは委譲情報のみを記載し、詳細ケ�
 | 70-99% | 条件付き合格 | 警告を表示し、修正を推奨 |
 | 0-69% | 不合格 | 修正必須、再チェックが必要 |
 
+**Seed整合チェック（Warning）**: 仕様書の形式・粒度が `references/seed-spec-examples.md` と整合しているか確認。未達でもゲートに影響しないが修正推奨。
+
+報告フォーマットと修正指示例は `references/quality-checklist.md` を参照。
 品質チェック結果をユーザーに報告し、承認/修正/却下を選択。修正選択時は不合格項目を修正後、再チェック。
 
 ### [7/7] 完了と次ステップ
 
 サマリーを表示し、次のアクションをユーザーに確認:
-- **テストコード生成**: `Skill('e2e-spec-impl')` でPlaywrightテストを生成
+- **テストコード生成**: `Skill('implementing-e2e-specs')` でPlaywrightテストを生成
 - **レビュー指摘を反映**: テスト仕様書を修正
 - **完了**: テスト仕様書作成のみで終了
