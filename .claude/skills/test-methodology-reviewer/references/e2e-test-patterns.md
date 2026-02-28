@@ -265,7 +265,7 @@ test('二重クリックでも二重注文にならない', async ({ page }) => 
 
   // 注文は1件のみ
   await page.goto('/orders');
-  await expect(page.getByTestId('order-item')).toHaveCount(1);
+  await expect(page.getByRole('listitem')).toHaveCount(1);
 });
 ```
 

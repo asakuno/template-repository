@@ -1,6 +1,6 @@
 ---
 name: designing-e2e-specs
-description: 画面仕様書（Markdown/Excel）からE2Eテスト仕様書を生成する7ステップワークフロー。責務分類（E2E/Feature/Unit）、バリデーション全層割当、トレーサビリティマトリクスを含む仕様書を出力する。前提: Skill('playwright-guidelines') が利用可能であること。/e2e-spec-design で起動。テストコード実装には使用しない（→ implementing-e2e-specs）。
+description: 画面仕様書（Markdown/Excel）からE2Eテスト仕様書を生成する7ステップワークフロー。責務分類（E2E/Feature/Unit）、バリデーション全層割当、トレーサビリティマトリクスを含む仕様書を出力する。前提: Skill('playwright-guidelines') が利用可能であること。/designing-e2e-specs で起動。テストコード実装には使用しない（→ implementing-e2e-specs）。
 disable-model-invocation: true
 ---
 

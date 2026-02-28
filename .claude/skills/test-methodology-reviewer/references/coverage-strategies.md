@@ -258,9 +258,9 @@ npm install --save-dev @stryker-mutator/core @stryker-mutator/vitest-runner
   },
   "coverageAnalysis": "perTest",
   "mutate": [
-    "src/**/*.ts",
-    "!src/**/*.test.ts",
-    "!src/**/*.spec.ts"
+    "resources/js/**/*.ts",
+    "!resources/js/**/*.test.ts",
+    "!resources/js/**/*.spec.ts"
   ],
   "thresholds": {
     "high": 80,
@@ -677,9 +677,5 @@ yarn test --coverage --coverage.thresholds.lines=80
   run: yarn test --coverage
 
 - name: Check coverage threshold
-  run: |
-    if [ $(yarn test --coverage --json | jq '.coverageMap.total.lines.pct') -lt 80 ]; then
-      echo "Coverage is below 80%"
-      exit 1
-    fi
+  run: yarn test --coverage --coverage.thresholds.lines=80 --coverage.thresholds.branches=80
 ```

@@ -64,10 +64,10 @@
 
 ## 責務マトリクス
 
-| 要件ID | 要件 | 推奨層 | 対応テストID | 委譲先 | 理由 |
-|---|---|---|---|---|---|
-| REQ-AUTH-001 | 正常ログイン導線 | E2E | AUTH_LOGIN_001 | - | クリティカル導線 |
-| REQ-AUTH-VAL-001 | メールアドレス必須 | Feature | - | tests/Feature/Auth/LoginValidationTest.php | 入力バリデーション |
+| 要件ID | 要件 | リスク | 推奨層 | 対応テストID | 委譲先 | 理由 |
+|---|---|---|---|---|---|---|
+| REQ-AUTH-001 | 正常ログイン導線 | 高 | E2E | AUTH_LOGIN_001 | - | クリティカル導線 |
+| REQ-AUTH-VAL-001 | メールアドレス必須 | 中 | Feature | - | tests/Feature/Auth/LoginValidationTest.php | 入力バリデーション |
 
 ## トレーサビリティマトリクス
 
