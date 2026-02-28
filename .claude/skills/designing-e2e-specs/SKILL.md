@@ -14,11 +14,11 @@ disable-model-invocation: true
 |---------|------------|------|
 | `references/responsibility-matrix-format.md` | [3/7] [5/7] | 責務マトリクスのフォーマット |
 | `references/validation-coverage-format.md` | [4/7] [5/7] | バリデーションカバレッジ表のフォーマット |
+| `references/technique-patterns.md` | [3/7] | 技法パターン（ユースケース・状態遷移・デシジョンテーブル） |
 | `references/quality-checklist.md` | [6/7] | 品質チェック報告フォーマットと修正指示例 |
 | `references/seed-spec-examples.md` | [4/7] ※条件付き | 粒度合わせ用Seed例（login仕様書例） |
 
 **条件付き参照**（他スキルのリソース）:
-- 技法選定ルール: `Skill('test-methodology-reviewer')` の `references/e2e-test-patterns.md` — 状態遷移やデータパターンが複雑な場合に [3/7] で参照
 - 実装例: `Skill('playwright-guidelines')` の `references/examples/login-example.md` — Seed仕様書の対応実装を確認する場合に参照
 
 ---
@@ -64,7 +64,7 @@ E2E過多を防ぐため、テストケース設計前に要件を責務分類�
 2. E2E対象判定ルール:
    - 画面横断 or 業務クリティカル or 回帰影響が高い項目はE2E候補
    - 上記に該当しない入力バリデーション詳細はFeature/Unitを優先
-3. 技法選定（必要時のみ `Skill('test-methodology-reviewer')` の `references/e2e-test-patterns.md` 参照）:
+3. 技法選定（`references/technique-patterns.md` を参照）:
    - **ユースケーステスト**: クリティカル導線に適用
    - **状態遷移テスト**: 状態が3以上ある機能に適用
    - **データ駆動テスト**: 入力パターンが多い機能に適用（原則Feature/Unit）
