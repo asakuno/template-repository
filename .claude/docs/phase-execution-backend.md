@@ -107,7 +107,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
   - Controller実装（Web/API）
   - すべてのテストをパスさせる（GREEN）
   - コードをリファクタリング（REFACTOR）
-  - Codex MCP でコードレビュー
+  - Codex CLI でコードレビュー
 
   重要：
   - Phase 2aで作成したテストがすべてパスすることを確認

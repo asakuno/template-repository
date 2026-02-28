@@ -1,6 +1,6 @@
 ---
 name: backend-plan-reviewer
-description: Phase 1（Planning & Review）を実行。Laravel 7層アーキテクチャ対応。調査、アーキテクチャ分析、実装計画作成、Codex MCPでの統合レビューを担当。
+description: Phase 1（Planning & Review）を実行。Laravel 7層アーキテクチャ対応。調査、アーキテクチャ分析、実装計画作成、Codex CLIでの統合レビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion
 model: inherit
 ---
@@ -31,14 +31,14 @@ Phase 1（Planning & Review）を完遂し、承認された実装計画を提�
 - Step 1: アーキテクチャ分析
 - Step 2: 実装計画作成（TodoWrite）
 - Step 3: 実装計画レビュー
-- Step 4: Codex MCPで統合レビュー
+- Step 4: Codex CLIで統合レビュー
 - Step 5-6: レビュー結果分析と計画修正
 
 ## 参照するSkills
 
 - `Skill('backend-architecture-guidelines')` - 7層設計、依存ルール
 - `Skill('backend-coding-guidelines')` - UseCase構造、Repositoryパターン
-- `Skill('codex-mcp-guide')` - Codex MCPの使用方法
+- `Skill('utility-codex')` - Codex CLIの使用方法
 
 ---
 
@@ -171,25 +171,18 @@ Skill('backend-coding-guidelines')
 
 ---
 
-### Step 4: Codex MCPで統合レビュー
+### Step 4: Codex CLIで統合レビュー
 
 ```
-Skill('codex-mcp-guide')
+Skill('utility-codex')
 ```
 
-**注意**: Cursor Agent ModeでCodexモデル選択時はCodex MCPを使用しない（詳細はSkill参照）。
-
-```
-mcp__codex__codex
-prompt: "Based on .claude/skills/backend-architecture-guidelines/ and .claude/skills/backend-coding-guidelines/ for Laravel 7-layer architecture, review:
+```bash
+codex exec "以下の実装計画をレビューしてください。
+観点: 1) レイヤー配置 2) UseCase構造 3) Repositoryパターン 4) DTO設計 5) 依存方向 6) Web vs API Controller 7) 不足事項
 
 【Implementation Plan】
-${plan}
-
-Review: 1) Layer placement 2) UseCase structure 3) Repository pattern 4) DTO design 5) Dependency direction 6) Web vs API Controller 7) Missing items"
-sessionId: "backend-plan-review-${taskName}"
-model: "gpt-5-codex"
-reasoningEffort: "high"
+${plan}"
 ```
 
 ---
@@ -252,6 +245,6 @@ reasoningEffort: "high"
 - [ ] UseCase構造を確認
 - [ ] Repositoryパターン（interface/実装）を確認
 - [ ] DTO設計を確認
-- [ ] Codexで統合レビュー（Step 4）
+- [ ] Codex CLIで統合レビュー（Step 4）
 - [ ] 問題を確認し修正（Step 5-6）
 - [ ] Phase 2（Implementation）へ進む準備完了

@@ -194,8 +194,13 @@ project/
 | Kiri | セマンティックコード検索、依存関係分析 |
 | Context7 | ライブラリドキュメント取得 |
 | Serena | シンボルベースコード編集 |
-| Codex | AI コードレビュー |
 | Chrome DevTools | ブラウザ自動化 |
+
+### CLI ツール
+
+| ツール | 用途 |
+|--------|------|
+| Codex CLI | AI コードレビュー・設計相談（`codex review`, `codex exec`） |
 
 ## コーディング原則（クイックリファレンス）
 

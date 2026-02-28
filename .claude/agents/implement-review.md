@@ -1,6 +1,6 @@
 ---
 name: implement-review
-description: Phase 2（Implementation & Review）を実行。Phase 1の計画承認後、またはreview-fixingスキルのStep 5（外部レビュー）から呼び出し。React/TypeScript実装・レビュー時に必須。Laravel + Inertia.js + Laravel Precognition + Hybrid APIアーキテクチャ対応。Serena MCPでシンボルベース編集、Codex MCPでコードレビューを担当。
+description: Phase 2（Implementation & Review）を実行。Phase 1の計画承認後、またはreview-fixingスキルのStep 5（外部レビュー）から呼び出し。React/TypeScript実装・レビュー時に必須。Laravel + Inertia.js + Laravel Precognition + Hybrid APIアーキテクチャ対応。Serena MCPでシンボルベース編集、Codex CLIでコードレビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion, Task
 model: inherit
 ---
@@ -24,14 +24,14 @@ Phase 2（Implementation & Review）を完遂する。
 
 **責任範囲:**
 - Step 1: Serena MCPで実装
-- Step 2: Codex MCPでコードレビュー
+- Step 2: Codex CLIでコードレビュー
 - TodoWriteで進捗管理
 
 ## 前提条件
 
 - Phase 1完了（承認された実装計画がTodoWriteにある）
 - Serena MCP利用可能
-- Codex MCP利用可能
+- Codex CLI利用可能
 
 ## 呼び出しパターン
 
@@ -62,15 +62,15 @@ Phase 1 計画レビュー完了後に呼び出される標準的なフロー。
    - `mcp__serena__list_symbols` を実行してレスポンスを確認
    - 失敗時: 通常のEdit/Writeツールにフォールバック
 
-2. **Codex MCP確認**（Cursor Agent Mode以外の場合）
-   - `mcp__codex__codex` の可用性を確認
+2. **Codex CLI確認**
+   - `codex review --uncommitted` の実行可能性を確認
    - 失敗時: 手動チェックリストでレビュー実施
 
 ## 参照するSkills
 
 - `Skill('coding-guidelines')` - Laravel Precognition + Hybrid APIパターン
 - `Skill('serena-mcp-guide')` - Serena MCPの使用方法
-- `Skill('codex-mcp-guide')` - Codex MCPの使用方法
+- `Skill('utility-codex')` - Codex CLIの使用方法
 
 ---
 
@@ -81,7 +81,7 @@ Phase 1 計画レビュー完了後に呼び出される標準的なフロー。
 2. 失敗した場合、Edit/Writeツールで手動編集にフォールバック
 3. ユーザーにMCP接続状況を報告
 
-### Codex MCPレビュー失敗時
+### Codex CLIレビュー失敗時
 1. ローカルのTypeScript/Biomeチェックを代替実行
 2. 手動チェックリストを提示して確認を依頼
 
@@ -290,25 +290,14 @@ function StatsCard({ stats, isLoading, error }: StatsCardProps) {
 - API Controllers（app/Http/Controllers/Api/）
 - FormRequests（app/Http/Requests/）
 
-#### 2-2. Codex MCPでレビュー
+#### 2-2. Codex CLIでレビュー
 
 ```
-Skill('codex-mcp-guide')
+Skill('utility-codex')
 ```
 
-**注意**: Cursor Agent ModeでCodexモデル選択時はCodex MCPを使用しない（詳細はSkill参照）。
-
-```
-mcp__codex__codex
-prompt: "Based on .claude/skills/coding-guidelines/ for Laravel + Inertia.js with Laravel Precognition and hybrid API, review:
-
-【Implementation Code】
-${code}
-
-Review: 1) Laravel Precognition usage 2) Hybrid architecture 3) Data fetching patterns 4) Testability 5) Code quality 6) Performance 7) Responsibility separation"
-sessionId: "code-review-${taskName}"
-model: "gpt-5-codex"
-reasoningEffort: "high"
+```bash
+codex review --uncommitted
 ```
 
 #### 2-3. レビュー結果分析
@@ -427,7 +416,7 @@ Phase 3（Quality Checks）へ:
 - [ ] 全データ取得用カスタムフック
 
 **Step 2: Code Review**
-- [ ] Codexコードレビュー実行
+- [ ] Codex CLIコードレビュー実行
 - [ ] 問題を確認し修正
 - [ ] 適切な責務分離
 - [ ] コンポーネントはテスト可能（props制御）

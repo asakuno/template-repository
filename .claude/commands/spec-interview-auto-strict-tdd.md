@@ -179,7 +179,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
     - コード品質を向上（重複削除、命名改善、最適化）
     - Serena MCP でシンボルベース編集
     - テストが引き続き成功することを確認
-    - Codex MCP でコードレビュー
+    - Codex CLI でコードレビュー
     - コミット:
       ```
       git add .
@@ -355,7 +355,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
     - Laravel Pint 適用
     - Serena MCP でシンボルベース編集
     - テストが引き続き成功することを確認
-    - Codex MCP でコードレビュー
+    - Codex CLI でコードレビュー
     - コミット:
       ```
       git add .

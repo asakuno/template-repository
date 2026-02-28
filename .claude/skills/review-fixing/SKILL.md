@@ -223,28 +223,14 @@ After verification passes, conduct an independent code review to ensure quality 
 
 Choose one of the following review methods based on project setup:
 
-**Recommended approach:** Use **Option A (Codex MCP)** if available, otherwise use **Option B (Subagents)**.
+**Recommended approach:** Use **Option A (Codex CLI)** if available, otherwise use **Option B (Subagents)**.
 
-**Option A: Codex MCP (Recommended - faster and more comprehensive)**
+**Option A: Codex CLI (Recommended - faster and more comprehensive)**
 
-Use Codex MCP for AI-powered code review that checks:
-- Code quality and best practices
-- Security vulnerabilities
-- Architecture compliance
-- Test coverage
+Use Codex CLI for AI-powered code review:
 
-```markdown
-Please review the following changes using Codex MCP:
-
-**Changed Files:**
-- path/to/file1.php
-- path/to/file2.tsx
-
-**Review Focus:**
-- Security: Check for XSS, SQL injection, CSRF vulnerabilities
-- Architecture: Verify layer dependencies (Backend: deptrac rules)
-- Code Quality: Check for code smells, duplication
-- Tests: Verify test coverage for changed code
+```bash
+codex review --uncommitted
 ```
 
 **Option B: Review Subagent (Frontend/Backend separated)**
@@ -334,7 +320,7 @@ Implement the review loop pattern inspired by tips.md:
                    ↓
 ┌─────────────────────────────────────────────┐
 │ Step 5: External Code Review                │
-│  - Codex MCP or quality-check-expert        │
+│  - Codex CLI or quality-check-expert         │
 │  - Identify remaining issues                │
 └──────────────────┬──────────────────────────┘
                    ↓

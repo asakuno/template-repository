@@ -1,6 +1,6 @@
 ---
 name: backend-test-review
-description: Testing & Review実行。Laravel 7層アーキテクチャ対応。Serena MCPでテスト作成、Codex MCPでテストコードレビューを担当。
+description: Testing & Review実行。Laravel 7層アーキテクチャ対応。Serena MCPでテスト作成、Codex CLIでテストコードレビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion
 model: inherit
 ---
@@ -25,20 +25,20 @@ Testing & Reviewワークフローを完遂する。
 
 **責任範囲:**
 - Step 1: テスト作成
-- Step 2: Codex MCPでテストコードレビュー
+- Step 2: Codex CLIでテストコードレビュー
 - TodoWriteで進捗管理
 
 ## 前提条件
 
 - 実装コード完了
 - Serena MCP利用可能
-- Codex MCP利用可能
+- Codex CLI利用可能
 
 ## 参照するSkills
 
 - `Skill('backend-test-guidelines')` - PHPUnitテスト規約、AAAパターン
 - `Skill('serena-mcp-guide')` - Serena MCPの使用方法
-- `Skill('codex-mcp-guide')` - Codex MCPの使用方法
+- `Skill('utility-codex')` - Codex CLIの使用方法
 
 ---
 
@@ -271,25 +271,14 @@ final class PostControllerTest extends TestCase
 - Unitテスト（tests/Unit/）
 - Featureテスト（tests/Feature/）
 
-#### 2-2. Codex MCPでレビュー
+#### 2-2. Codex CLIでレビュー
 
 ```
-Skill('codex-mcp-guide')
+Skill('utility-codex')
 ```
 
-**注意**: Cursor Agent ModeでCodexモデル選択時はCodex MCPを使用しない（詳細はSkill参照）。
-
-```
-mcp__codex__codex
-prompt: "Based on .claude/skills/backend-test-guidelines/ for Laravel 7-layer architecture, review:
-
-【Test Code】
-${testCode}
-
-Review: 1) Test type by layer (Unit vs Feature) 2) AAA pattern 3) Mocking strategy 4) Database usage 5) Japanese test names 6) Data provider usage 7) Edge case coverage 8) Test isolation"
-sessionId: "backend-test-review-${taskName}"
-model: "gpt-5-codex"
-reasoningEffort: "high"
+```bash
+codex review --uncommitted
 ```
 
 #### 2-3. レビュー結果分析
@@ -367,7 +356,7 @@ reasoningEffort: "high"
 - [ ] エッジケースカバー
 
 **Step 2: Test Code Review**
-- [ ] Codexテストコードレビュー実行
+- [ ] Codex CLIテストコードレビュー実行
 - [ ] 問題を確認し修正
 - [ ] テストカバレッジ十分
 

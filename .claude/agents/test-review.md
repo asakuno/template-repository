@@ -1,6 +1,6 @@
 ---
 name: test-review
-description: Testing & Stories作成とレビュー。Laravel + Inertia.js + Laravel Precognition + Hybrid APIアーキテクチャ対応。Serena MCPでテスト/ストーリー作成、Codex MCPでテストコードレビューを担当。
+description: Testing & Stories作成とレビュー。Laravel + Inertia.js + Laravel Precognition + Hybrid APIアーキテクチャ対応。Serena MCPでテスト/ストーリー作成、Codex CLIでテストコードレビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion
 model: inherit
 ---
@@ -25,21 +25,21 @@ Testing & Storiesワークフローを完遂する。
 
 **責任範囲:**
 - Step 1: テストとストーリーの作成
-- Step 2: Codex MCPでテストコードレビュー
+- Step 2: Codex CLIでテストコードレビュー
 - TodoWriteで進捗管理
 
 ## 前提条件
 
 - 実装コード完了
 - Serena MCP利用可能
-- Codex MCP利用可能
+- Codex CLI利用可能
 
 ## 参照するSkills
 
 - `Skill('test-guidelines')` - Vitest/RTLテスト規約
 - `Skill('storybook-guidelines')` - Storybookストーリー規約
 - `Skill('serena-mcp-guide')` - Serena MCPの使用方法
-- `Skill('codex-mcp-guide')` - Codex MCPの使用方法
+- `Skill('utility-codex')` - Codex CLIの使用方法
 
 ---
 
@@ -269,25 +269,14 @@ describe('MemberFormPresenter', () => {
 - テストファイル（resources/js/**/__tests__/*.test.tsx）
 - ストーリーファイル（resources/js/**/*.stories.tsx）
 
-#### 2-2. Codex MCPでレビュー
+#### 2-2. Codex CLIでレビュー
 
 ```
-Skill('codex-mcp-guide')
+Skill('utility-codex')
 ```
 
-**注意**: Cursor Agent ModeでCodexモデル選択時はCodex MCPを使用しない（詳細はSkill参照）。
-
-```
-mcp__codex__codex
-prompt: "Based on .claude/skills/test-guidelines/ and .claude/skills/storybook-guidelines/ for Laravel + Inertia.js with Laravel Precognition and hybrid API, review:
-
-【Test Code】
-${testCode}
-
-Review: 1) test-guidelines compliance 2) AAA pattern 3) Branch coverage 4) Test naming (Japanese) 5) Presentational component testing 6) Custom hook testing 7) Laravel Precognition form testing 8) Story structure 9) Best practices"
-sessionId: "test-review-${taskName}"
-model: "gpt-5-codex"
-reasoningEffort: "high"
+```bash
+codex review --uncommitted
 ```
 
 #### 2-3. レビュー結果分析
@@ -368,7 +357,7 @@ reasoningEffort: "high"
 - [ ] 日本語テストタイトル
 
 **Step 2: Test Code Review**
-- [ ] Codexテストコードレビュー実行
+- [ ] Codex CLIテストコードレビュー実行
 - [ ] 問題を確認し修正
 - [ ] テスト品質が基準を満たす
 - [ ] ブランチカバレッジ完全
