@@ -59,20 +59,6 @@ yarn test --coverage
 
 **重要**: カバレッジ基準を満たさない場合は、追加テストを作成してから次のフェーズに進む。
 
-### バグ修正時のワークフロー統合
-
-バグ修正は通常の開発ワークフローに統合されます（詳細は`bug-fixing`スキルを参照）:
-
-| Bug Fix Step | Project Phase | 対応内容 |
-|--------------|---------------|---------|
-| 1-5 (調査・計画) | Phase 1: Planning & Review | バグ再現、根本原因特定、修正計画作成 |
-| 6-7 (実装・テスト) | Phase 2: Implementation & Review | 修正実装、テストケース追加、コードレビュー |
-| 8 (検証) | Phase 3: Quality Checks | 全チェック実行、カバレッジ確認 |
-| 9 (ドキュメント) | Phase 5: Git Commit | コミットメッセージに根本原因記載 |
-| 10 (監視) | Phase 6後: Post-deployment | 本番環境での動作確認 |
-
-**スキル呼び出し**: バグ報告、エラー発生時は `Skill('bug-fixing')` を使用
-
 ## ディレクトリ構成
 
 - `app/`: Controllers(Web/Api), Requests, UseCases, Services, Repositories, Data(DTO), Models, Policies, Enums, Resources
@@ -106,8 +92,6 @@ yarn test --coverage
 | `backend-test-guidelines` | PHPUnit テスト規約 |
 | `backend-architecture-guidelines` | 7層設計、レイヤー分離、TypeScript型生成 |
 | `security-guidelines` | IPA準拠セキュリティ診断ワークフロー（オンデマンド参照） |
-| `bug-fixing` | 体系的なバグ調査・修正ワークフロー（10ステップ） |
-| `review-fixing` | PRレビューコメント処理・修正ワークフロー（6ステップ、レビューループ対応） |
 
 #### 実装時の Skill 参照
 

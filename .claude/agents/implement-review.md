@@ -1,6 +1,6 @@
 ---
 name: implement-review
-description: Phase 2（Implementation & Review）を実行。Phase 1の計画承認後、またはreview-fixingスキルのStep 5（外部レビュー）から呼び出し。React/TypeScript実装・レビュー時に必須。Laravel + Inertia.js + Inertia v2.3+ Precognition + Inertia中心アーキテクチャ対応。Serena MCPでシンボルベース編集、Codex CLIでコードレビューを担当。
+description: Phase 2（Implementation & Review）を実行。Phase 1の計画承認後、またはレビュー指摘の修正時に呼び出し。React/TypeScript実装・レビュー時に必須。Laravel + Inertia.js + Inertia v2.3+ Precognition + Inertia中心アーキテクチャ対応。Serena MCPでシンボルベース編集、Codex CLIでコードレビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion, Task
 model: inherit
 ---
@@ -46,14 +46,14 @@ Phase 1 計画レビュー完了後に呼び出される標準的なフロー。
 4. 必要なSkillファイルを読み込み
 5. Step 1から実装開始
 
-### パターン2: review-fixingスキルから（レビューループ）
+### パターン2: レビュー指摘修正（レビューループ）
 
 外部レビューで問題が見つかった場合のフロー。
 
 1. レビュー指摘内容を確認（引数として渡される）
 2. MCP前提条件の検証（既に実施済みなら省略可）
 3. 指摘された問題のみをStep 1から修正実装
-4. 修正完了後、呼び出し元（review-fixing）に戻る
+4. 修正完了後、呼び出し元に戻る
 
 ### MCP前提条件の検証
 
