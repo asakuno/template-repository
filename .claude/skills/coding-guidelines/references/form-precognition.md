@@ -1,49 +1,50 @@
-# Laravel Precognition Form Patterns
+# Inertia Precognition Form Patterns
 
 ## Overview
 
-**AI's critical mistake**: Using Inertia's `useForm` or manual fetch for forms instead of Laravel Precognition.
+**AI's critical mistake**: Using `laravel-precognition-react` package or manual fetch for forms instead of Inertia v2.3+ built-in Precognition.
 
-Laravel Precognition enables real-time server-side validation without full form submission, providing immediate feedback to users while maintaining Laravel's validation rules as the single source of truth.
+Inertia v2.3+ has built-in Precognition support via `useForm().withPrecognition()`. This enables real-time server-side validation without full form submission, providing immediate feedback to users while maintaining Laravel's validation rules as the single source of truth.
 
 ## The Problem: Wrong Form Libraries
 
-### Anti-Pattern 1: Inertia's useForm
+### Anti-Pattern 1: laravel-precognition-react（使用禁止）
 
 ```typescript
-// ❌ AI writes: Inertia useForm (doesn't use Precognition)
-import { useForm } from '@inertiajs/react'
+// ❌ AI writes: laravel-precognition-react（Inertia v2.3+ では不要）
+import { useForm } from 'laravel-precognition-react'
 
 function CreateMember() {
-  const { data, setData, post, processing, errors } = useForm({
+  const form = useForm('post', route('members.store'), {
     name: '',
     email: '',
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    post('/members')
+    form.submit({
+      onSuccess: () => router.visit(route('members.index')),
+    })
   }
 
   return (
     <form onSubmit={handleSubmit}>
       <Input
-        value={data.name}
-        onChange={(e) => setData('name', e.target.value)}
-        error={errors.name}
+        value={form.data.name}
+        onChange={(e) => form.setData('name', e.target.value)}
+        onBlur={() => form.validate('name')}
+        error={form.errors.name}
       />
-      {/* Problem: No real-time validation */}
-      {/* Problem: Validation only happens on submit */}
     </form>
   )
 }
 ```
 
 **Why this is wrong:**
-- No real-time validation feedback
-- Users only see errors after full form submission
-- Poor user experience for complex forms
-- Duplicate validation logic needed for client-side checks
+- `laravel-precognition-react` is for non-Inertia React apps
+- Inertia v2.3+ includes Precognition support natively
+- Using the standalone package adds unnecessary dependency
+- API differs from Inertia's `useForm` (initialization, submission patterns)
 
 ### Anti-Pattern 2: Manual Form Handling
 
@@ -84,14 +85,14 @@ function CreateMember() {
 - Duplicate validation logic on client and server
 - More code to maintain
 
-## The Solution: Laravel Precognition
+## The Solution: Inertia v2.3+ Built-in Precognition
 
 ### Pattern 1: Basic Form with Real-time Validation
 
 ```typescript
-// ✅ Correct: Laravel Precognition
-import { useForm } from 'laravel-precognition-react'
-import { router } from '@inertiajs/react'
+// ✅ Correct: Inertia v2.3+ useForm + withPrecognition
+import { useForm } from '@inertiajs/react'
+import { store } from 'App/Http/Controllers/MemberController'
 
 interface CreateMemberFormData {
   name: string
@@ -100,20 +101,15 @@ interface CreateMemberFormData {
 }
 
 export default function Create() {
-  const form = useForm<CreateMemberFormData>('post', route('members.store'), {
+  const form = useForm<CreateMemberFormData>({
     name: '',
     email: '',
     role: 'member',
-  })
+  }).withPrecognition(store())
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    form.submit({
-      onSuccess: () => {
-        // Redirect after successful creation
-        router.visit(route('members.index'))
-      },
-    })
+    form.submit(store())
   }
 
   return (
@@ -208,29 +204,24 @@ final class CreateMemberRequest extends FormRequest
 ## Pattern 2: Edit Form with Initial Values
 
 ```typescript
-// ✅ Edit form with Precognition
+// ✅ Edit form with Inertia Precognition
+import { useForm } from '@inertiajs/react'
+import { update } from 'App/Http/Controllers/MemberController'
+
 interface Props {
   member: Member // From Inertia props
 }
 
 export default function Edit({ member }: Props) {
-  const form = useForm<UpdateMemberFormData>(
-    'put',
-    route('members.update', member.id),
-    {
-      name: member.name,
-      email: member.email,
-      role: member.role,
-    }
-  )
+  const form = useForm<UpdateMemberFormData>({
+    name: member.name,
+    email: member.email,
+    role: member.role,
+  }).withPrecognition('put', route('members.update', member.id))
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    form.submit({
-      onSuccess: () => {
-        router.visit(route('members.show', member.id))
-      },
-    })
+    form.put(route('members.update', member.id))
   }
 
   return (
@@ -264,6 +255,9 @@ export default function Edit({ member }: Props) {
 
 ```typescript
 // ✅ Complex form with nested data
+import { useForm } from '@inertiajs/react'
+import { store } from 'App/Http/Controllers/ProjectController'
+
 interface ProjectFormData {
   name: string
   description: string
@@ -281,7 +275,7 @@ export default function CreateProject({
 }: {
   members: { id: string; name: string }[]
 }) {
-  const form = useForm<ProjectFormData>('post', route('projects.store'), {
+  const form = useForm<ProjectFormData>({
     name: '',
     description: '',
     managerId: '',
@@ -291,15 +285,11 @@ export default function CreateProject({
       allowComments: true,
       notifyMembers: true,
     },
-  })
+  }).withPrecognition(store())
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    form.submit({
-      onSuccess: () => {
-        router.visit(route('projects.index'))
-      },
-    })
+    form.submit(store())
   }
 
   return (
@@ -390,7 +380,10 @@ export default function CreateProject({
 ## Pattern 4: Form with File Upload
 
 ```typescript
-// ✅ Form with file upload
+// ✅ Form with file upload (Inertia handles FormData automatically)
+import { useForm } from '@inertiajs/react'
+import { update } from 'App/Http/Controllers/ProfileController'
+
 interface ProfileFormData {
   name: string
   bio: string
@@ -398,29 +391,16 @@ interface ProfileFormData {
 }
 
 export default function EditProfile({ user }: { user: User }) {
-  const form = useForm<ProfileFormData>('put', route('profile.update'), {
+  const form = useForm<ProfileFormData>({
     name: user.name,
     bio: user.bio,
     avatar: null,
-  })
+  }).withPrecognition(update())
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Convert to FormData for file upload
-    const formData = new FormData()
-    formData.append('name', form.data.name)
-    formData.append('bio', form.data.bio)
-    if (form.data.avatar) {
-      formData.append('avatar', form.data.avatar)
-    }
-
-    form.submit({
-      data: formData,
-      onSuccess: () => {
-        router.visit(route('profile.show'))
-      },
-    })
+    // Inertia automatically converts to FormData when File is detected
+    form.post(route('profile.update'))
   }
 
   return (
@@ -458,8 +438,8 @@ export default function EditProfile({ user }: { user: User }) {
 ### Available Properties
 
 ```typescript
-// ✅ Form state properties from Precognition
-const form = useForm(/* ... */)
+// ✅ Form state properties from Inertia v2.3+ Precognition
+const form = useForm({ /* ... */ }).withPrecognition(store())
 
 // Data
 form.data              // Current form data
@@ -467,14 +447,16 @@ form.setData(key, val) // Update single field
 form.setData(data)     // Update multiple fields
 
 // Validation
-form.validate(field)   // Validate single field
-form.validateFiles()   // Validate file fields
+form.validate(field)   // Validate single field (Precognition)
 form.errors            // Current validation errors
 form.hasErrors         // Boolean: any errors present
-form.touched(field)    // Boolean: field has been validated
+form.invalid(field)    // Boolean: field has validation error
 
 // Submission
-form.submit(options)   // Submit form
+form.submit(action())  // Submit form with Wayfinder action
+form.post(route())     // Submit via POST
+form.put(route())      // Submit via PUT
+form.delete(route())   // Submit via DELETE
 form.processing        // Boolean: submission in progress
 form.reset()           // Reset to initial values
 ```
@@ -486,10 +468,9 @@ form.reset()           // Reset to initial values
 const handleSubmit = (e: React.FormEvent) => {
   e.preventDefault()
 
-  form.submit({
-    onSuccess: (response) => {
-      // Handle successful submission
-      router.visit(route('members.index'))
+  form.post(route('members.store'), {
+    onSuccess: () => {
+      // Handle successful submission (Inertia redirects automatically)
     },
     onError: (errors) => {
       // Handle validation errors (automatic)
@@ -498,7 +479,6 @@ const handleSubmit = (e: React.FormEvent) => {
     },
     onFinish: () => {
       // Always called after submission (success or error)
-      console.log('Form submission completed')
     },
   })
 }
@@ -533,12 +513,12 @@ const handleSubmit = (e: React.FormEvent) => {
 ### 3. Show Validation Feedback
 
 ```typescript
-// ✅ Show error only after field has been touched
+// ✅ Show error only after field has been validated
 <Input
   value={form.data.name}
   onChange={(e) => form.setData('name', e.target.value)}
   onBlur={() => form.validate('name')}
-  error={form.touched('name') ? form.errors.name : undefined}
+  error={form.invalid('name') ? form.errors.name : undefined}
 />
 ```
 
@@ -546,7 +526,7 @@ const handleSubmit = (e: React.FormEvent) => {
 
 Before considering a form complete, verify:
 
-- [ ] Using `useForm` from `laravel-precognition-react` (NOT from `@inertiajs/react`)
+- [ ] Using `useForm` from `@inertiajs/react` + `withPrecognition()` (NOT from `laravel-precognition-react`)
 - [ ] All fields have `onBlur` validation
 - [ ] Errors are displayed for each field
 - [ ] Submit button is disabled during processing
@@ -558,12 +538,13 @@ Before considering a form complete, verify:
 ## Quick Reference: Setup Checklist
 
 **Frontend:**
-1. Import `useForm` from `laravel-precognition-react`
-2. Initialize with method, route, and initial data
-3. Add `onChange` handlers with `setData`
-4. Add `onBlur` handlers with `validate`
-5. Display errors for each field
-6. Handle submit with success/error callbacks
+1. Import `useForm` from `@inertiajs/react`
+2. Initialize with data object: `useForm({ ... })`
+3. Chain `withPrecognition(action())` for real-time validation
+4. Add `onChange` handlers with `setData`
+5. Add `onBlur` handlers with `validate`
+6. Display errors for each field
+7. Submit with `form.submit(action())` or `form.post(route())`
 
 **Backend:**
 1. Create FormRequest with validation rules

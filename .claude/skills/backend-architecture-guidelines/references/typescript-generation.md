@@ -360,26 +360,22 @@ export default PostDetail;
 ### フォームでの使用
 
 ```tsx
-import { useForm } from 'laravel-precognition-react';
+import { useForm } from '@inertiajs/react';
 import { store } from '@/routes/weekly-reports';
 
 const PostCreate = () => {
-  const form = useForm<App.Data.CreatePostData>(
-    'post',
-    store().url,
-    {
-      userId: 0,
-      weekStartDate: '',
-      title: '',
-      memo: undefined,
-      status: 'draft',
-      tagValues: [],
-    }
-  );
+  const form = useForm<App.Data.CreatePostData>({
+    userId: 0,
+    weekStartDate: '',
+    title: '',
+    memo: undefined,
+    status: 'draft',
+    tagValues: [],
+  }).withPrecognition(store());
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    form.submit();
+    form.submit(store());
   };
 
   return (

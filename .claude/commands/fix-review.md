@@ -117,7 +117,7 @@ yarn typecheck && yarn check && yarn test && yarn build
 
 ### レビュー方法選択
 
-1. **Codex MCP**: `mcp__codex__codex` でAIレビュー
+1. **Codex CLI**: `codex review --uncommitted` でAIレビュー
 2. **Subagent**: `implement-review` または `backend-implement-review`
 
 ### レビューループパターン
@@ -178,7 +178,7 @@ Implement → Verify → External Review → Issues found?
 
 ### MCP接続失敗時
 
-Codex/Serena MCP接続失敗時は、ローカルツールにフォールバック。
+Codex CLI / Serena MCP接続失敗時は、ローカルツールにフォールバック。
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: plan-reviewer
-description: Phase 1（Planning & Review）を実行。Laravel + Inertia.js + Inertia v2.3+ 組み込みPrecognition + Inertia中心アーキテクチャ対応。調査、UI/UXデザインレビュー、実装計画作成、Codex MCPでの統合レビューを担当。
+description: Phase 1（Planning & Review）を実行。Laravel + Inertia.js + Inertia v2.3+ 組み込みPrecognition + Inertia中心アーキテクチャ対応。調査、UI/UXデザインレビュー、実装計画作成、Codex CLIでの統合レビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion
 model: inherit
 ---
@@ -29,14 +29,14 @@ Phase 1（Planning & Review）を完遂し、承認された実装計画を提�
 - Step 2: UI/UXデザインレビュー（UI変更時）
 - Step 3: 実装計画作成（TodoWrite）
 - Step 4: 実装計画レビュー
-- Step 5: Codex MCPで統合レビュー
+- Step 5: Codex CLIで統合レビュー
 - Step 6-7: レビュー結果分析と計画修正
 
 ## 参照するSkills
 
 - `Skill('ui-design-guidelines')` - UI/UXデザイン原則（UI変更時）
 - `Skill('coding-guidelines')` - Inertia中心アーキテクチャ + 組み込みPrecognitionパターン
-- `Skill('codex-mcp-guide')` - Codex MCPの使用方法
+- `Skill('utility-codex')` - Codex CLIの使用方法
 
 ---
 
@@ -194,45 +194,18 @@ Skill('coding-guidelines')
 
 ---
 
-### Step 5: Codex MCPで統合レビュー
+### Step 5: Codex CLIで統合レビュー
 
 ```
-Skill('codex-mcp-guide')
+Skill('utility-codex')
 ```
 
-**注意**: Cursor Agent ModeでCodexモデル選択時はCodex MCPを使用しない（詳細はSkill参照）。
-
-#### UI変更ありの場合
-
-```
-mcp__codex__codex
-prompt: "Based on .claude/skills/ui-design-guidelines/ and .claude/skills/coding-guidelines/ for Laravel + Inertia.js with Inertia v2.3+ built-in Precognition and Inertia-centric architecture, review:
+```bash
+codex exec "以下の実装計画をレビューしてください。
+観点: 1) UIガイドライン準拠 2) Inertia Precognition使用 3) Inertia中心アーキテクチャ 4) データ取得パターン 5) テスタビリティ 6) UI/コード一貫性 7) 不足事項
 
 【Implementation Plan】
-${plan}
-
-【UI Design】
-${uiDesign}
-
-Review: 1) UI guidelines compliance 2) Inertia Precognition usage 3) Inertia-centric architecture 4) Data fetching patterns 5) Testability 6) UI/code consistency 7) Missing items"
-sessionId: "plan-review-${taskName}"
-model: "gpt-5-codex"
-reasoningEffort: "high"
-```
-
-#### UI変更なしの場合
-
-```
-mcp__codex__codex
-prompt: "Based on .claude/skills/coding-guidelines/ for Laravel + Inertia.js with Inertia v2.3+ built-in Precognition and Inertia-centric architecture, review:
-
-【Implementation Plan】
-${plan}
-
-Review: 1) Inertia Precognition usage 2) Inertia-centric architecture 3) Data fetching patterns 4) Missing items"
-sessionId: "plan-review-${taskName}"
-model: "gpt-5-codex"
-reasoningEffort: "high"
+${plan}"
 ```
 
 ---
@@ -301,6 +274,6 @@ reasoningEffort: "high"
 - [ ] Inertia中心アーキテクチャ（Inertia Props + Partial Reloads）を確認
 - [ ] 動的データ用カスタムフックを計画
 - [ ] テスタビリティ用Presentationalコンポーネントを計画
-- [ ] Codexで統合レビュー（Step 5）
+- [ ] Codex CLIで統合レビュー（Step 5）
 - [ ] 問題を確認し修正（Step 6-7）
 - [ ] Phase 2（Implementation）へ進む準備完了

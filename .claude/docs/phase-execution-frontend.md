@@ -133,7 +133,7 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
   - すべてのテストをパスさせる（GREEN）
   - コードをリファクタリング（REFACTOR）
   - Serena MCP でシンボルベース編集
-  - Codex MCP でコードレビュー
+  - Codex CLI でコードレビュー
 
   重要：
   - Phase 2aで作成したテストがすべてパスすることを確認

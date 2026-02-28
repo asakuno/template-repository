@@ -480,24 +480,21 @@ class StorePostRequest extends FormRequest
 }
 ```
 
-### React側（Laravel Precognition）
+### React側（Inertia v2.3+ Precognition）
 
 ```tsx
-import { useForm } from 'laravel-precognition-react';
+import { useForm } from '@inertiajs/react';
+import { store } from '@/routes/weekly-reports';
 
-const form = useForm<App.Data.CreatePostData>(
-    'post',
-    route('weekly-reports.store'),
-    {
-        userId: 0,
-        title: '',
-        status: 'draft',
-        tagValues: [],
-    }
-);
+const form = useForm<App.Data.CreatePostData>({
+    userId: 0,
+    title: '',
+    status: 'draft',
+    tagValues: [],
+}).withPrecognition(store());
 
 // リアルタイムバリデーション
 form.validate('title');
 ```
 
-**重要**: `@inertiajs/react` の `useForm` は**使用禁止**。Laravel Precognition を使用する。
+**重要**: `laravel-precognition-react` は**使用禁止**。`@inertiajs/react` の `useForm` + `withPrecognition()` を使用する。

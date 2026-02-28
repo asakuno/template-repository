@@ -41,13 +41,6 @@
                 "--watch"
             ]
         },
-        "codex": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "codex-mcp-server@latest"
-            ]
-        },
         "laravel-boost": {
             "command": "php",
             "args": [
