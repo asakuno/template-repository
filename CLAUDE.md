@@ -4,31 +4,7 @@
 
 ## プロジェクト概要
 
-| 領域 | 技術 |
-|------|------|
-| バックエンド | Laravel 12.x (PHP 8.4+), Inertia.js |
-| フロントエンド | React/TypeScript, Tailwind CSS, shadcn/ui |
-| フォーム | Inertia v2.3+ 組み込み Precognition（`@inertiajs/react` の `useForm` + `withPrecognition()`） |
-| テスト | PHPUnit (Backend), Vitest + RTL (Frontend), Playwright (E2E), Storybook |
-| ビルド | Composer (Backend), Vite (Frontend) |
-| Lint/Format | Laravel Pint (Backend), Biome (Frontend) |
-| 静的解析 | PHPStan, deptrac（依存関係） |
-
-## アーキテクチャ
-
-### バックエンド: 7層レイヤードアーキテクチャ
-```
-Presentation (Controllers) → Request (FormRequest) → UseCase → Service/Repository → Model → Resource
-```
-詳細: `.claude/rules/backend/` または `.claude/docs/architecture.md`
-
-### フロントエンド: Inertia 中心アーキテクチャ
-- **ページデータ**: Inertia Props（認証情報、メニュー、権限、SEO コンテンツ）
-- **動的データ**: Inertia Partial Reloads / Deferred Props / Polling
-- **フォーム**: `@inertiajs/react` の `useForm` + `withPrecognition()`（リアルタイムバリデーション）
-- **外部API**: axios（外部サービス連携、モバイルアプリ用のみ）
-
-詳細: `Skill('coding-guidelines')`
+技術スタック・アーキテクチャの詳細は `.claude/rules/` を参照。
 
 ## 開発ワークフロー
 
@@ -99,39 +75,10 @@ yarn test --coverage
 
 ## ディレクトリ構成
 
-```
-project/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Api/              # API Controllers（REST API）
-│   │   │   └── Web/              # Web Controllers（Inertia.js用）
-│   │   ├── Requests/             # FormRequests（バリデーション）
-│   │   └── Resources/            # API Resources（JSONレスポンス）
-│   ├── UseCases/                 # UseCases（ビジネスロジック）
-│   ├── Services/                 # Services（共通ロジック）
-│   ├── Repositories/             # Repositories（データアクセス）
-│   ├── Data/                     # DTOs（Laravel Data）
-│   ├── Models/                   # Eloquent Models
-│   ├── Policies/                 # Policies（認可）
-│   └── Enums/                    # Enums（列挙型）
-├── resources/js/
-│   ├── pages/                    # Inertia Pages（Reactコンポーネント）
-│   ├── components/               # 共通コンポーネント
-│   ├── layouts/                  # レイアウト
-│   ├── hooks/                    # カスタムフック（API データ取得）
-│   ├── types/                    # TypeScript型定義
-│   │   ├── generated.d.ts        # 自動生成（Laravel Data）
-│   │   └── model.d.ts            # 自動生成（modeltyper）
-│   ├── actions/                  # Wayfinder Actions（自動生成）
-│   └── routes/                   # Wayfinder Routes（自動生成）
-├── routes/
-│   ├── web.php                   # Inertia routes
-│   └── api.php                   # API routes
-└── tests/
-    ├── Unit/                     # ユニットテスト
-    └── Feature/                  # フィーチャーテスト
-```
+- `app/`: Controllers(Web/Api), Requests, UseCases, Services, Repositories, Data(DTO), Models, Policies, Enums, Resources
+- `resources/js/`: pages, components, layouts, hooks, types(`generated.d.ts`/`model.d.ts`は自動生成), actions/routes(Wayfinder自動生成)
+- `routes/`: web.php(Inertia), api.php(API)
+- `tests/`: Unit, Feature
 
 ## 利用可能なツール
 
@@ -162,18 +109,6 @@ project/
 | `bug-fixing` | 体系的なバグ調査・修正ワークフロー（10ステップ） |
 | `review-fixing` | PRレビューコメント処理・修正ワークフロー（6ステップ、レビューループ対応） |
 
-#### セキュリティ: Rules vs Skills の使い分け
-
-- **Rules（`.claude/rules/security/`）**: プロジェクト全体の**必須セキュリティ規約**
-  - すべてのコードで遵守すべき対策（SQLインジェクション、XSS、CSRF等）
-  - 常に参照され、コード実装時に自動適用される
-  - 例: Eloquent ORM必須、Blade `{{ }}` 必須、CSRF トークン必須
-
-- **Skills（`security-guidelines`）**: セキュリティレビュー時の**診断ワークフロー**
-  - オンデマンドで参照される実行手順
-  - 既存コードのセキュリティ診断、レビュー時に使用
-  - 例: IPA 11脆弱性の診断チェックリスト、修正手順
-
 #### 実装時の Skill 参照
 
 実装フェーズでは、対応する Skill を参照して詳細なガイドラインを確認すること。
@@ -201,24 +136,6 @@ project/
 | ツール | 用途 |
 |--------|------|
 | Codex CLI | AI コードレビュー・設計相談（`codex review`, `codex exec`） |
-
-## コーディング原則（クイックリファレンス）
-
-### 共通
-- TypeScript/PHP の型定義は厳格に（`any` 禁止）
-- コード内コメントは日本語
-
-### フロントエンド
-- バレルインポート禁止（直接パス指定）
-- データ取得はカスタムフックに分離
-- コンポーネントはプレゼンテーショナルに保つ
-- Page コンポーネントのみ `export default` 許可、その他は名前付きエクスポート
-
-### バックエンド
-- UseCase は Laravel Data の DTO を使用
-- Repository は Interface 経由でアクセス
-- Controller は UseCase のみを呼び出し、ビジネスロジックを含まない
-- TypeScript型は自動生成（`php artisan typescript:transform`）
 
 ## 重要な原則
 
