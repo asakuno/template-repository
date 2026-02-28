@@ -315,20 +315,17 @@ declare namespace App.Data {
 ### React Usage
 
 ```tsx
-import { useForm } from 'laravel-precognition-react';
+import { useForm } from '@inertiajs/react';
+import { store } from '@/routes/weekly-reports';
 
-const form = useForm<App.Data.CreatePostData>(
-    'post',
-    store().url,
-    {
-        userId: 0,
-        weekStartDate: '',
-        title: '',
-        memo: undefined,
-        status: 'draft',
-        tagValues: [],
-    }
-);
+const form = useForm<App.Data.CreatePostData>({
+    userId: 0,
+    weekStartDate: '',
+    title: '',
+    memo: undefined,
+    status: 'draft',
+    tagValues: [],
+}).withPrecognition(store());
 ```
 
 ---

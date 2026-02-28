@@ -114,16 +114,16 @@ class User extends Model
 </form>
 ```
 
-**React SPAの場合**: Laravel Precognitionを使用
+**React SPAの場合**: Inertia v2.3+ Precognitionを使用
 
 ```typescript
-// ✅ React SPA
-import { useForm } from 'laravel-precognition-react';
+// ✅ React SPA（Inertia v2.3+ 組み込み Precognition）
+import { useForm } from '@inertiajs/react';
 
-const form = useForm('post', route('login'), {
+const form = useForm({
     email: '',
     password: '',
-});
+}).withPrecognition('post', route('login'));
 ```
 
 ---

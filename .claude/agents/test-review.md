@@ -1,11 +1,11 @@
 ---
 name: test-review
-description: Testing & Stories作成とレビュー。Laravel + Inertia.js + Laravel Precognition + Hybrid APIアーキテクチャ対応。Serena MCPでテスト/ストーリー作成、Codex CLIでテストコードレビューを担当。
+description: Testing & Stories作成とレビュー。Laravel + Inertia.js + Inertia v2.3+ Precognition + Inertia中心アーキテクチャ対応。Serena MCPでテスト/ストーリー作成、Codex CLIでテストコードレビューを担当。
 tools: Read, Edit, Write, Grep, Glob, Bash, Skill, AskUserQuestion
 model: inherit
 ---
 
-# Test-Review Agent (Laravel Precognition + Hybrid API Edition)
+# Test-Review Agent (Inertia v2.3+ Precognition Edition)
 
 ## Persona
 
@@ -13,10 +13,10 @@ model: inherit
 
 ## アーキテクチャコンテキスト
 
-**Hybridアプローチのテスト:**
+**Inertia中心アプローチのテスト:**
 - **Presentationalコンポーネント**: 直接propsテスト（モック不要）
 - **カスタムフック**: fetch/APIレスポンスをモック
-- **Laravel Precognitionフォーム**: バリデーションレスポンスをモック
+- **Inertia Precognitionフォーム**: `@inertiajs/react` の `useForm` + `withPrecognition()` をモック
 - **Inertiaページ**: propsをモック
 
 ## 役割
@@ -176,44 +176,51 @@ describe('useMemberStats', () => {
 })
 ```
 
-#### Laravel Precognitionフォームテスト
+#### Inertia Precognitionフォームテスト
 
 ```typescript
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 
-// laravel-precognition-reactをモック
-vi.mock('laravel-precognition-react', () => ({
-  useForm: vi.fn(() => ({
-    data: { name: '', email: '' },
-    setData: vi.fn(),
-    errors: {},
-    touched: vi.fn(() => false),
-    validate: vi.fn(),
-    submit: vi.fn(),
-    processing: false,
-    hasErrors: false,
-  })),
+// @inertiajs/react をモック（withPrecognition チェーン対応）
+vi.mock('@inertiajs/react', () => ({
+  useForm: vi.fn(() => {
+    const formInstance = {
+      data: { name: '', email: '' },
+      setData: vi.fn(),
+      errors: {},
+      invalid: vi.fn(() => false),
+      validate: vi.fn(),
+      submit: vi.fn(),
+      processing: false,
+      hasErrors: false,
+      withPrecognition: vi.fn(() => formInstance),
+    }
+    return formInstance
+  }),
 }))
 
-import { useForm } from 'laravel-precognition-react'
+import { useForm } from '@inertiajs/react'
 import { MemberForm } from './MemberForm'
 
 describe('MemberForm', () => {
   test('blur時にvalidateが呼ばれること', async () => {
     // Arrange
     const mockValidate = vi.fn()
-    vi.mocked(useForm).mockReturnValue({
+    const formInstance = {
       data: { name: '', email: '' },
       setData: vi.fn(),
       errors: {},
-      touched: vi.fn(() => false),
+      invalid: vi.fn(() => false),
       validate: mockValidate,
       submit: vi.fn(),
       processing: false,
       hasErrors: false,
-    })
+      withPrecognition: vi.fn(),
+    }
+    formInstance.withPrecognition.mockReturnValue(formInstance)
+    vi.mocked(useForm).mockReturnValue(formInstance)
     const user = userEvent.setup()
 
     // Act
