@@ -1,28 +1,24 @@
 ---
 name: implementing-e2e-specs
-description: E2Eテスト仕様書から実装計画書を生成し、Playwrightテストコードを実装する。「セレクタ調査→計画書作成→品質ゲート→実装」の5ステップワークフローで、コンテキスト蓄積による実装ブレを防ぎ品質基準を確保する。/e2e-spec-impl で起動。Playwrightテスト実装、Page Object生成、セレクタ調査、E2Eテスト自動実装に使用。
+description: E2Eテスト仕様書から実装計画書を生成し、Playwrightテストコードを実装する。「セレクタ調査→計画書作成→品質ゲート→実装」の6ステップワークフローで、コンテキスト蓄積による実装ブレを防ぎ品質基準を確保する。/e2e-spec-impl で起動。Playwrightテスト実装、Page Object生成、セレクタ調査、E2Eテスト自動実装に使用。テスト仕様書設計には使用しない（→ designing-e2e-specs）。
+disable-model-invocation: true
 ---
 
 # Playwrightテスト実装
 
-## Required References
+## References
 
-このスキルを読み込んだ後、以下のファイルをReadツールで読み込むこと。
+各ステップで必要になったタイミングでReadツールで読み込むこと。
 
-**必須**（常に読み込む）:
-- `references/selector-validation.md` - セレクタ違反パターン検出と修正提案
-- `references/context-management-guide.md` - テスト規模別の実装方法選択ガイド
+| ファイル | 使用ステップ | 説明 |
+|---------|------------|------|
+| `references/selector-validation.md` | [4/6] [6/6] | セレクタ違反パターン検出と修正提案 |
+| `references/context-management-guide.md` | [5/6] | テスト規模別の実装方法選択ガイド |
 
----
-
-## External Skill Dependencies
-
-このスキルは `playwright-guidelines` スキルに依存しています。以下のセクションが変更された場合、本スキルの動作に影響する可能性があります:
-
-- **セレクタ優先順位** - Step 2 のセレクタ調査で参照
-- **実装計画書テンプレート** - Step 3 の計画書生成で参照
-- **Page Object パターン** - Step 3, 5 の設計・実装で参照
-- **禁止パターン / 正例** - Step 5 の実装で参照
+**条件付き参照**（他スキルのリソース）:
+- セレクタ優先順位・実装計画書テンプレート: `Skill('playwright-guidelines')` — [2/6] [3/6] で参照
+- Page Objectパターン・禁止パターン/正例: `Skill('playwright-guidelines')` — [3/6] [5/6] で参照
+- Seed実装例: `Skill('playwright-guidelines')` の `references/examples/login-example.md` — Seed仕様書の対応実装を確認する場合に [3/6] で参照
 
 ---
 
@@ -62,7 +58,7 @@ E2Eテスト仕様書からPlaywrightテストコードを6ステップで実装
 4. 仕様書の各画面要素に対してセレクタを決定:
    - ロールベースセレクタの検討（`getByRole`）
    - ラベルセレクタの検討（`getByLabel`）
-   - 代替セレクタの検討
+   - 代替セレクタの検討（`getByRole`/`getByLabel`/`getByPlaceholder`/`getByText`/`getByTestId` のみ。CSS/XPathセレクタは代替でも禁止）
    - TestIDは上記で特定できない場合のみ
 5. セレクタ調査結果を以下の形式で記録:
 
@@ -75,7 +71,7 @@ E2Eテスト仕様書からPlaywrightテストコードを6ステップで実装
 ### [3/6] 実装計画書の生成
 
 1. `Skill('playwright-guidelines')` を参照（実装計画書テンプレート、Page Objectパターン、セレクタ分離、フィクスチャ設計、Laravel統合）
-2. Seed実装例が必要な場合は `playwright-guidelines/references/examples/login-example.md` を参照（Seed仕様書例と対応）
+2. Seed実装例が必要な場合は `Skill('playwright-guidelines')` の `references/examples/login-example.md` を参照（Seed仕様書例と対応）
 3. `.claude/specs/e2e/{category}/` ディレクトリを作成
 4. 計画書を生成（`Skill('playwright-guidelines')` のフォーマットに従う）:
    - 参照仕様書情報
@@ -85,6 +81,9 @@ E2Eテスト仕様書からPlaywrightテストコードを6ステップで実装
    - テストコード設計（**E2E対象ケースのみ**、AAA詳細）
    - フィクスチャ設計
    - 実装手順チェックリスト・実装ルール
+5. **時間経過テストの記述ルール**: 仕様書に待機時間（例: 「30秒後に自動保存」）が含まれる場合:
+   - `page.waitForTimeout()` は使用禁止。代わりに状態変化を `expect(locator).toBeVisible()` 等の Web-first Assertion で検出する
+   - 計画書のAAA詳細に具体的な待機対象（例: 「自動保存ステータスの出現を待つ」）を記述する
 
 ### [4/6] 品質ゲート
 
@@ -100,7 +99,7 @@ E2Eテスト仕様書からPlaywrightテストコードを6ステップで実装
 - **セレクタ検証**: 具体的なセレクタ値、優先順位遵守、代替セレクタ検討。違反パターンの詳細は `references/selector-validation.md` を参照
 - **セレクタ分離**: 中規模以上（Page Object 4件以上）で推奨。詳細は `Skill('playwright-guidelines')` を参照
 - **テストデータ検証**: ファクトリー名だけでなくカスタム属性が明記、用途が明確、必要なステートが指定
-- **AAAパターン検証**: Arrange（データ準備・ページ遷移）が具体的、Act（1つの主要操作）が明確、Assert（具体的なアサーション）が検証可能
+- **AAAパターン検証**: Arrange（データ準備・ページ遷移）が具体的、Act（1つの主要操作）が明確、Assert（具体的なアサーション）が検証可能。`page.waitForTimeout()` が含まれていないこと
 - **責務境界検証**: E2E対象ケースのみを実装対象にし、Feature/Unit委譲要件は計画書へ明記
 
 #### 並列レビュー（6件以上の場合）
