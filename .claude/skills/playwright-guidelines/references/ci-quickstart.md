@@ -172,8 +172,8 @@ echo -e "${GREEN}🎉 E2Eテスト環境の初期化が完了しました！${NC
 echo ""
 echo "次のステップ:"
 echo "  1. playwright.config.ts を環境に合わせて調整"
-echo "  2. /e2e-spec-design でテスト仕様書を作成"
-echo "  3. /e2e-spec-impl でテストコードを生成"
+echo "  2. /designing-e2e-specs でテスト仕様書を作成"
+echo "  3. /implementing-e2e-specs でテストコードを生成"
 echo ""
 echo "テスト実行:"
 echo "  npx playwright test                    # 全テスト実行"
@@ -200,8 +200,8 @@ echo "  npx playwright test --debug            # デバッグモードで実行"
 | ステップ | コマンド | 説明 |
 |---------|---------|------|
 | 環境セットアップ | `npm run e2e:setup` または `./scripts/setup-e2e.sh` | ディレクトリ構造とBasePage作成 |
-| テスト仕様書作成 | `/e2e-spec-design docs/specs/auth/login.md` | 画面仕様書からテスト仕様書生成 |
-| テストコード生成 | `/e2e-spec-impl tests/e2e/specs/auth/login.spec.md` | 仕様書からPlaywrightコード生成 |
+| テスト仕様書作成 | `/designing-e2e-specs docs/specs/auth/login.md` | 画面仕様書からテスト仕様書生成 |
+| テストコード生成 | `/implementing-e2e-specs tests/e2e/specs/auth/login.spec.md` | 仕様書からPlaywrightコード生成 |
 | テスト実行 | `npm run e2e` | 全E2Eテスト実行 |
 | レポート確認 | `npm run e2e:report` | HTMLレポート表示 |
 

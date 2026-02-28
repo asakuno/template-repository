@@ -1,6 +1,6 @@
 ---
 name: playwright-guidelines
-description: E2Eテスト仕様書の作成とPlaywrightテストコード生成のガイドライン。画面仕様書（Excel/Markdown）から日本語テスト仕様書を作成し、Playwrightテストコードを生成する2ステップワークフロー。Laravel + Inertia.js + React環境に特化し、hyvor/laravel-playwright統合をサポート。型安全なテストデータ管理（Interface + Factory パターン）を含む。/e2e-spec-design（仕様書作成）と/e2e-spec-impl（テスト実装）の2コマンドで実行。E2Eテスト、Playwright、テスト仕様書、POM、Page Object Model、ブラウザテスト自動化、画面テスト、結合テスト、Dataクラスに使用。
+description: E2Eテスト仕様書の作成とPlaywrightテストコード生成のガイドライン。画面仕様書（Excel/Markdown）から日本語テスト仕様書を作成し、Playwrightテストコードを生成する2ステップワークフロー。Laravel + Inertia.js + React環境に特化し、hyvor/laravel-playwright統合をサポート。型安全なテストデータ管理（Interface + Factory パターン）を含む。/designing-e2e-specs（仕様書作成）と/implementing-e2e-specs（テスト実装）の2コマンドで実行。E2Eテスト、Playwright、テスト仕様書、POM、Page Object Model、ブラウザテスト自動化、画面テスト、結合テスト、Dataクラスに使用。
 ---
 
 # Playwright E2E Testing Guidelines
@@ -19,7 +19,7 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 - `references/fixtures-guide.md` - カスタムフィクスチャ、スコープ、自動フィクスチャの詳細が必要な場合
 - `references/data-patterns.md` - テストデータパターン（Interface + Factory）の詳細が必要な場合
 - `references/laravel-integration.md` - hyvor/laravel-playwright 統合の詳細が必要な場合
-- `references/impl-plan-templates.md` - 実装計画書テンプレート（/e2e-spec-impl 用）が必要な場合
+- `references/impl-plan-templates.md` - 実装計画書テンプレート（/implementing-e2e-specs 用）が必要な場合
 - `references/test-stability.md` - テスト安定性のベストプラクティスが必要な場合
 - `references/security-testing.md` - セキュリティテストパターン（XSS/CSRF検証）が必要な場合
 - `references/visual-regression.md` - ビジュアルリグレッションテストが必要な場合
@@ -35,12 +35,12 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 
 このスキルは以下の2ステップワークフローを提供する:
 
-1. **Phase 1: 仕様書作成** (`/e2e-spec-design`)
+1. **Phase 1: 仕様書作成** (`/designing-e2e-specs`)
    - 画面仕様書（Excel/Markdown）を入力として受け取る
    - 日本語でE2Eテスト仕様書を作成
    - ユーザー承認後にPhase 2へ
 
-2. **Phase 2: テスト実装** (`/e2e-spec-impl`)
+2. **Phase 2: テスト実装** (`/implementing-e2e-specs`)
    - 承認済みテスト仕様書をもとにPlaywrightテストコードを生成
    - Page Object Model（POM）パターンを適用
    - hyvor/laravel-playwright統合でLaravelファクトリーを活用
@@ -459,7 +459,7 @@ export default defineConfig({
 ### コード生成・品質
 
 - **[references/code-generation-checklist.md](references/code-generation-checklist.md)**: コード生成時の品質チェックリスト（禁止パターン、BasePage要件）
-- **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/e2e-spec-impl用）
+- **[references/impl-plan-templates.md](references/impl-plan-templates.md)**: 実装計画書テンプレート（/implementing-e2e-specs用）
 
 ### 統合・テスト
 
