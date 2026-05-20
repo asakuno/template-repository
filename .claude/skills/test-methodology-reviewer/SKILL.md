@@ -20,10 +20,10 @@ description: 既存テストコードのレビューと改善提案。テスト�
 
 必要に応じて以下を読み込むこと:
 
-- **技法選択が必要な場合**: `references/technique-selection.md`
+- **技法選択が必要な場合**: `references/technique-selection.md`（原因結果グラフ→デシジョンテーブル含む）
 - **Unit テストのレビュー時**: `references/unit-test-patterns.md`
 - **E2E テストのレビュー時**: `references/e2e-test-patterns.md`
-- **カバレッジ改善時**: `references/coverage-strategies.md`
+- **カバレッジ改善・テストサイズ/リスクベース選定時**: `references/coverage-strategies.md`
 
 ## Workflow
 
@@ -34,6 +34,16 @@ description: 既存テストコードのレビューと改善提案。テスト�
 5. 改善提案をリスト化して出力
 
 ## Review Checklist
+
+### テストレベル配置の判断（全レベル共通）
+
+テスト設計技法の評価に入る前に、まず**配置が適切か**を確認する。詳細は `references/coverage-strategies.md`。
+
+- [ ] **最小サイズ原則**: この確認は Small / Medium / Large のうち**最小のサイズ**で実施されているか（仕様ロジックや分岐を E2E に積んでいないか）
+- [ ] **E2E に置く理由**: E2E（Large）の各テストは「ユーザー価値の高い代表シナリオ」「統合境界」「Happy path」「重大リスク」のいずれかに該当するか
+- [ ] **リグレッションの目的**: 対象は「新規欠陥の探索」ではなく「**既存ふるまいの維持確認**」になっているか（リグレッション≠E2E。目的であってレベルではない）
+- [ ] **論理の組み合わせ**: 複数条件の分岐は[原因結果グラフ→デシジョンテーブル](references/technique-selection.md#原因結果グラフceg-デシジョンテーブル)で整理すべきでないか
+- [ ] **維持基準**: 重複・陳腐化した E2E は降格／集約／削除の対象になっていないか（根拠＝対象機能・リスク・期待結果の出典が紐づくか）
 
 ### Unit テストのレビュー
 

@@ -131,25 +131,28 @@ test('テスト2', async ({ page }) => {
 
 ```typescript
 test.beforeEach(async ({ laravel }) => {
-  // 各テスト前にDBリセット
-  await laravel.artisan('migrate:fresh');
+  // 各テスト前にDBリセット（laravel fixture 経由 / testing:reset を実行）
+  await laravel.reset();
 });
 
 // または
 test.describe.configure({ mode: 'serial' });
 test.beforeAll(async ({ laravel }) => {
-  await laravel.artisan('migrate:fresh');
+  await laravel.reset({ seed: true });
 });
 ```
+
+> **注意**: `migrate:fresh` をテストごとに実行すると遅く不安定になりやすい。原則は globalSetup で1回リセットし、各テストは必要なデータだけを生成する方針が望ましい（[laravel-test-data-setup.md](laravel-test-data-setup.md) 参照）。
 
 ### 避けるべきパターン
 
 ```typescript
 // ❌ テスト間で状態を共有
-let sharedUser: User;
+let sharedUser: { id: number };
 
 test('ユーザー作成', async ({ laravel }) => {
-  sharedUser = await laravel.factory('User');
+  const { model } = await laravel.factory<{ model: { id: number } }>('user');
+  sharedUser = model;
 });
 
 test('ユーザー更新', async ({ page }) => {
@@ -163,7 +166,7 @@ test('ユーザー更新', async ({ page }) => {
 ```typescript
 // ✅ 各テストで必要なデータを作成
 test('ユーザー更新', async ({ laravel, page }) => {
-  const user = await laravel.factory('User');
+  const { model: user } = await laravel.factory<{ model: { id: number } }>('user');
   await page.goto(`/users/${user.id}`);
 });
 ```

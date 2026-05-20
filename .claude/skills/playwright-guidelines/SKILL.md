@@ -1,6 +1,6 @@
 ---
 name: playwright-guidelines
-description: E2Eテスト仕様書の作成とPlaywrightテストコード生成のガイドライン。画面仕様書（Excel/Markdown）から日本語テスト仕様書を作成し、Playwrightテストコードを生成する2ステップワークフロー。Laravel + Inertia.js + React環境に特化し、hyvor/laravel-playwright統合をサポート。型安全なテストデータ管理（Interface + Factory パターン）を含む。/designing-e2e-specs（仕様書作成）と/implementing-e2e-specs（テスト実装）の2コマンドで実行。E2Eテスト、Playwright、テスト仕様書、POM、Page Object Model、ブラウザテスト自動化、画面テスト、結合テスト、Dataクラスに使用。
+description: E2Eテスト仕様書の作成とPlaywrightテストコード生成のガイドライン。画面仕様書（Excel/Markdown）から日本語テスト仕様書を作成し、Playwrightテストコードを生成する2ステップワークフロー。Laravel + Inertia.js + React環境に特化し、自前のtesting用Artisanコマンド連携（reset/factory/scenario）でテストデータを準備する。型安全なテストデータ管理（Interface + Factory パターン）を含む。/designing-e2e-specs（仕様書作成）と/implementing-e2e-specs（テスト実装）の2コマンドで実行。E2Eテスト、Playwright、テスト仕様書、POM、Page Object Model、ブラウザテスト自動化、画面テスト、結合テスト、Dataクラスに使用。
 ---
 
 # Playwright E2E Testing Guidelines
@@ -18,7 +18,8 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 - `references/selector-separation.md` - セレクタ分離管理パターンの詳細が必要な場合
 - `references/fixtures-guide.md` - カスタムフィクスチャ、スコープ、自動フィクスチャの詳細が必要な場合
 - `references/data-patterns.md` - テストデータパターン（Interface + Factory）の詳細が必要な場合
-- `references/laravel-integration.md` - hyvor/laravel-playwright 統合の詳細が必要な場合
+- `references/scenario-derivation.md` - 画面遷移図・アクティビティ図からE2Eシナリオを導出する場合（Phase 1）
+- `references/laravel-test-data-setup.md` - Laravel連携（自前 testing コマンド + TSラッパー）でE2Eテストデータを準備する場合
 - `references/impl-plan-templates.md` - 実装計画書テンプレート（/implementing-e2e-specs 用）が必要な場合
 - `references/test-stability.md` - テスト安定性のベストプラクティスが必要な場合
 - `references/security-testing.md` - セキュリティテストパターン（XSS/CSRF検証）が必要な場合
@@ -43,7 +44,7 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 2. **Phase 2: テスト実装** (`/implementing-e2e-specs`)
    - 承認済みテスト仕様書をもとにPlaywrightテストコードを生成
    - Page Object Model（POM）パターンを適用
-   - hyvor/laravel-playwright統合でLaravelファクトリーを活用
+   - testing用Artisanコマンド連携（reset/factory/scenario）でLaravelのテストデータを準備
 
 ## Quick Reference
 
@@ -211,6 +212,19 @@ tests/e2e/
 | 中 | 準主要機能、エラーハンドリング | 推奨 |
 | 低 | エッジケース、UIの細かい確認 | 任意 |
 
+#### 3. E2E化するシナリオの選定（何をE2Eにするか）
+
+E2E は最も遅く不安定化しやすい Large レベル。**仕様の分岐ロジックまで E2E に積まない**。
+
+- **E2E（Large）に残すのは**「ユーザー価値の高い代表シナリオ」「統合境界」「Happy path」「重大リスク」に限定する。
+- **仕様ロジック・入力条件の組み合わせ**は下位レベル（同値分割・境界値・原因結果グラフ→デシジョンテーブル）へ落とす。
+- 選定の判断軸（テストサイズ × リスクベース選定、リグレッション≠E2E）の詳細は `test-methodology-reviewer` の `references/coverage-strategies.md` を参照。
+- E2E に置くと決めたシナリオは、**データ準備も Large 相応に明示**する（`references/laravel-test-data-setup.md`）。
+
+#### 4. 画面遷移図・アクティビティ図からのシナリオ導出
+
+シナリオは思いつきで挙げず、**画面遷移図 × アクティビティ図から再現可能に導出**する（遷移エッジを基準に網羅 → 操作可能な手順列に展開 → Happy path/重大リスクを Large に昇格）。手順の詳細は [references/scenario-derivation.md](references/scenario-derivation.md) を参照。
+
 ## テストセットアップ戦略
 
 ### フィクスチャ vs Before/After フック
@@ -300,26 +314,25 @@ export class LoginPage extends BasePage {
 4. `getByText()` - 非インタラクティブ要素
 5. `getByTestId()` - 明示的なテスト用契約（最後の手段）
 
-### Laravel統合（hyvor/laravel-playwright）
+### Laravel連携（自前 testing コマンド + TSラッパー）
 
-詳細は [references/laravel-integration.md](references/laravel-integration.md) を参照。
+外部パッケージに依存せず、testing環境専用のArtisanコマンド（`testing:reset` / `testing:factory` / `testing:scenario`）を薄いTSラッパー（`laravel` fixture）から叩いてテストデータを準備する。詳細は [references/laravel-test-data-setup.md](references/laravel-test-data-setup.md) を参照。
 
 ```typescript
-import { test } from '@hyvor/laravel-playwright';
+import { test, expect } from '../fixtures/laravel';
 
 test('データベースセットアップ付きテスト', async ({ laravel, page }) => {
-  // Artisanコマンド実行
-  await laravel.artisan('migrate:fresh');
-  await laravel.artisan('db:seed', ['--class', 'DatabaseSeeder']);
+  // DBリセット（土台データはseederへ）
+  await laravel.reset({ seed: true });
 
-  // ファクトリーでモデル作成
-  const user = await laravel.factory('User', {
-    name: '山田太郎',
-    email: 'yamada@example.com'
-  });
+  // 許可リストの論理名でファクトリー生成（クラス名は渡さない）
+  const { model: user } = await laravel.factory<{ model: { id: number; name: string } }>(
+    'user',
+    { name: '山田太郎' },
+  );
 
   // テスト実行
-  await page.goto('/login');
+  await page.goto(`/users/${user.id}`);
   // ...
 });
 ```
@@ -398,51 +411,12 @@ test('テスト2', async ({ page }) => { /* 独立した状態 */ });
 
 ## CI/CD設定
 
-詳細は [references/ci-config.md](references/ci-config.md) を参照。
+完全な `playwright.config.ts`（本番向け・GitHub Actions・Docker対応）は [references/ci-config.md](references/ci-config.md) を参照。要点のみ:
 
-### playwright.config.ts
-
-```typescript
-import { defineConfig, devices } from '@playwright/test';
-
-export default defineConfig({
-  testDir: './tests/e2e/tests',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-
-  reporter: process.env.CI
-    ? [['blob'], ['github'], ['junit', { outputFile: 'test-results/results.xml' }]]
-    : [['html'], ['list']],
-
-  use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:8000',
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-  },
-
-  projects: [
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
-    {
-      name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/user.json'
-      },
-      dependencies: ['setup']
-    }
-  ],
-
-  webServer: {
-    command: 'php artisan serve --port=8000',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
-});
-```
+- `testDir: './tests/e2e'`（`*.setup.ts` も発見対象に含めるため `tests/` 直下に絞らない）
+- `setup` プロジェクト（`testMatch: /.*\.setup\.ts/`）を用意し、ブラウザプロジェクトは `dependencies: ['setup']` ＋ `testIgnore: /.*\.setup\.ts/`（二重実行防止）
+- `storageState: 'playwright/.auth/user.json'` で認証状態を再利用
+- 共有DB前提のため初期は `workers: 1`。並列化はDB分離とセットで検討（`references/laravel-test-data-setup.md`）
 
 ## Reference Documentation
 
@@ -455,6 +429,7 @@ export default defineConfig({
 - **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細（優先順位、ロールベースセレクタ）
 - **[references/fixtures-guide.md](references/fixtures-guide.md)**: フィクスチャの詳細ガイド（カスタムフィクスチャ、スコープ、自動フィクスチャ）
 - **[references/data-patterns.md](references/data-patterns.md)**: テストデータパターン（Interface + Factory、型安全なデータ管理、Laravel Factoryとの使い分け）
+- **[references/scenario-derivation.md](references/scenario-derivation.md)**: 画面遷移図・アクティビティ図からのE2Eシナリオ導出（遷移網羅基準、Large昇格の判断）
 
 ### コード生成・品質
 
@@ -463,7 +438,7 @@ export default defineConfig({
 
 ### 統合・テスト
 
-- **[references/laravel-integration.md](references/laravel-integration.md)**: Laravel統合パターン
+- **[references/laravel-test-data-setup.md](references/laravel-test-data-setup.md)**: Laravel連携でのE2Eテストデータ準備（自前 testing コマンド + TSラッパー、許可リスト + シナリオseeder + JSON契約）
 - **[references/security-testing.md](references/security-testing.md)**: セキュリティテストパターン（XSS/CSRF検証）
 - **[references/test-stability.md](references/test-stability.md)**: テスト安定性のベストプラクティス
 - **[references/visual-regression.md](references/visual-regression.md)**: ビジュアルリグレッションテスト（Percy連携参考）
@@ -485,4 +460,4 @@ export default defineConfig({
 4. **POMパターン**: 保守性を高めるためPage Object Modelを適用
 5. **ロールベースセレクタ**: ユーザー視点のセレクタを優先
 6. **Auto-waiting活用**: 手動待機は禁止、Playwrightの自動待機を信頼
-7. **Laravel統合**: hyvor/laravel-playwrightでファクトリー・シーダーを活用
+7. **Laravel連携**: 自前の testing 用Artisanコマンド（reset/factory/scenario）でテストデータを準備（外部パッケージ非依存・許可リスト・JSON契約固定）

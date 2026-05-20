@@ -202,7 +202,7 @@ test.describe('認証テスト', () => {
 
   test('ログアウト後にセッションが無効化されること', async ({ page, laravel }) => {
     // ログイン
-    const user = await laravel.factory('User');
+    const { model: user } = await laravel.factory<{ model: { id: number; email: string } }>('user');
     await page.goto('/login');
     await page.getByLabel('メールアドレス').fill(user.email);
     await page.getByLabel('パスワード').fill('password');
@@ -224,10 +224,10 @@ test.describe('認証テスト', () => {
 ```typescript
 test.describe('認可テスト', () => {
   test('他ユーザーのデータにアクセスできないこと', async ({ page, laravel }) => {
-    // 2人のユーザーを作成
-    const userA = await laravel.factory('User');
-    const userB = await laravel.factory('User');
-    const postB = await laravel.factory('Post', { user_id: userB.id });
+    // 2人のユーザーを作成（許可リストの論理名で生成）
+    const { model: userA } = await laravel.factory<{ model: { id: number; email: string } }>('user');
+    const { model: userB } = await laravel.factory<{ model: { id: number; email: string } }>('user');
+    const { model: postB } = await laravel.factory<{ model: { id: number } }>('post', { user_id: userB.id });
 
     // ユーザーAでログイン
     await page.goto('/login');
@@ -243,8 +243,8 @@ test.describe('認可テスト', () => {
   });
 
   test('IDパラメータ改ざんが防止されること', async ({ page, laravel, request }) => {
-    const user = await laravel.factory('User');
-    const otherUser = await laravel.factory('User');
+    const { model: user } = await laravel.factory<{ model: { id: number; email: string } }>('user');
+    const { model: otherUser } = await laravel.factory<{ model: { id: number } }>('user');
 
     // ログイン
     await page.goto('/login');
@@ -273,7 +273,7 @@ test.describe('認可テスト', () => {
 ```typescript
 test.describe('セッション管理', () => {
   test('ログイン成功時にセッションIDが再生成されること', async ({ page, laravel }) => {
-    const user = await laravel.factory('User');
+    const { model: user } = await laravel.factory<{ model: { id: number; email: string } }>('user');
 
     // ログイン前のセッションID取得
     await page.goto('/login');
@@ -346,12 +346,16 @@ const testConfig = {
 
 ### テスト後のクリーンアップ
 
+生SQLをE2Eから叩く口（`laravel.query()` 等）は**意図的に提供しない**（生SQL禁止の規約に従う）。クリーンアップはDBリセットで行う。
+
 ```typescript
 test.afterEach(async ({ laravel }) => {
-  // テストで作成したデータをクリーンアップ
-  await laravel.query('DELETE FROM users WHERE email LIKE ?', ['test-%@example.com']);
+  // テストで作成したデータをクリーンアップ（testing:reset を実行）
+  await laravel.reset();
 });
 ```
+
+> 原則は globalSetup で1回リセットし、各テストは独立した（衝突しない）データだけを生成する方針が望ましい。詳細は [laravel-test-data-setup.md](laravel-test-data-setup.md) を参照。
 
 ## チェックリスト
 

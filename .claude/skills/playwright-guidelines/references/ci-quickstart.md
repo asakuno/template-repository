@@ -20,20 +20,19 @@ E2Eテスト環境を素早くセットアップするためのコマンドと�
 # 1. Playwright と依存関係のインストール
 npm init playwright@latest
 
-# 2. Laravel 統合パッケージのインストール
-composer require hyvor/laravel-playwright --dev
-
-# 3. Playwright ブラウザのインストール
+# 2. Playwright ブラウザのインストール
 npx playwright install --with-deps chromium
 
-# 4. テストディレクトリ構造の作成
+# 3. テストディレクトリ構造の作成
 mkdir -p tests/e2e/{pages,tests,fixtures,specs}
 mkdir -p tests/e2e/pages/{auth,dashboard}
 mkdir -p tests/e2e/tests/{auth,dashboard}
 
-# 5. 初期化スクリプトの実行（オプション）
+# 4. 初期化スクリプトの実行（オプション）
 ./scripts/setup-e2e.sh
 ```
+
+> **Laravel連携**: 外部パッケージ（`hyvor/laravel-playwright` 等）は導入しない。テストデータ準備は testing 環境専用のArtisanコマンド（`testing:reset` / `testing:factory` / `testing:scenario`）と薄いTSラッパーで行う。実装手順は [laravel-test-data-setup.md](laravel-test-data-setup.md) を参照。
 
 ## 2. 初期化スクリプトテンプレート
 
@@ -76,18 +75,23 @@ else
     echo -e "${GREEN}✓ playwright.config.ts は既に存在します${NC}"
 fi
 
-# ステップ3: Laravel Playwright パッケージ
-echo -e "${YELLOW}[3/6] Laravel Playwright パッケージを確認中...${NC}"
-if ! grep -q "hyvor/laravel-playwright" composer.json 2>/dev/null; then
-    echo "hyvor/laravel-playwright をインストールしますか？ (y/n)"
-    read -r answer
-    if [ "$answer" = "y" ]; then
-        composer require hyvor/laravel-playwright --dev
-        php artisan vendor:publish --tag=playwright-config
-        echo -e "${GREEN}✓ hyvor/laravel-playwright をインストールしました${NC}"
-    fi
+# ステップ3: Laravel連携（自前 testing コマンド + TSラッパー）
+echo -e "${YELLOW}[3/6] Laravel連携（testing用Artisanコマンド）を確認中...${NC}"
+# 外部パッケージは導入しない。testing:reset / testing:factory / testing:scenario を
+# 自前で用意し、Playwright からは tests/e2e/fixtures/laravel.ts 経由で叩く。
+# 実装手順は references/laravel-test-data-setup.md を参照。
+if [ ! -f "app/Console/Commands/Testing/MakeFactoryCommand.php" ]; then
+    echo -e "${YELLOW}  testing用Artisanコマンドが未実装です。${NC}"
+    echo -e "${YELLOW}  references/laravel-test-data-setup.md の手順で作成してください。${NC}"
 else
-    echo -e "${GREEN}✓ hyvor/laravel-playwright は既にインストールされています${NC}"
+    echo -e "${GREEN}✓ testing用Artisanコマンドを検出しました${NC}"
+fi
+# 環境差異は E2E_ARTISAN に集約。これは Playwright(Node) の process.env から読まれるため、
+# PHP用の .env.testing ではなく、シェルの export / CIの env / playwright.config の dotenv で渡す。
+#   ローカル例: export E2E_ARTISAN="docker compose exec -T app php artisan"
+#   CI例:       env に E2E_ARTISAN: "php artisan"（+ APP_ENV: testing）
+if [ -z "${E2E_ARTISAN:-}" ]; then
+    echo -e "${YELLOW}  E2E_ARTISAN が未設定です。シェル/CIの環境変数として設定してください（.env.testing には書かない）${NC}"
 fi
 
 # ステップ4: ブラウザのインストール

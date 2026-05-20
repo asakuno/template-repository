@@ -26,7 +26,8 @@ E2Eテスト実装計画書のテンプレートとガイドライン。
 ## Playwright環境
 - 設定ファイル: playwright.config.ts
 - ベースURL: {baseURL}
-- Laravel統合: {hyvor/laravel-playwright使用有無}
+- Laravel連携: testing用Artisanコマンド（reset/factory/scenario）+ TSラッパー（laravel fixture）
+- 使用するfactory論理名/scenario: {例: factory「user」, scenario「organization-owner」}
 
 ## カバレッジサマリー
 
