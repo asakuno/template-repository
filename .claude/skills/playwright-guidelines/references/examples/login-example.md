@@ -15,7 +15,7 @@
 ## Playwright環境
 - 設定ファイル: playwright.config.ts
 - ベースURL: http://localhost:8000
-- Laravel統合: hyvor/laravel-playwright 使用
+- Laravel連携: testing用Artisanコマンド（reset/factory/scenario）+ TSラッパー（laravel fixture）
 ```
 
 ## Page Object設計
@@ -281,9 +281,9 @@ test.describe('ログイン画面', () => {
   test.describe('正常系', () => {
     test('AUTH_LOGIN_001: 有効な認証情報でログイン成功', async ({ authLoginPage, page }) => {
       // Arrange
-      // Laravel ファクトリーでユーザー作成（hyvor/laravel-playwright使用時）
-      // await page.request.post('/playwright/factory/User', {
-      //   data: { email: 'test@example.com', password: 'password123' }
+      // Laravel ファクトリーでユーザー作成（laravel fixture 経由 / 許可リストの論理名 'user'）
+      // const { model: user } = await laravel.factory<{ model: { email: string } }>('user', {
+      //   email: 'test@example.com',
       // });
 
       // Act

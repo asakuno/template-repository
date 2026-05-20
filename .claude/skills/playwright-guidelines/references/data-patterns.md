@@ -237,22 +237,26 @@ E2E テストでは、データの用途に応じて **Laravel Factory** と **E
 
 | 用途 | 使用するもの | 理由 |
 |------|-------------|------|
-| DB 永続化データ | Laravel Factory | データベースに保存するデータは Laravel 側で管理 |
+| DB 永続化データ | Laravel Factory（`laravel` fixture 経由） | データベースに保存するデータは Laravel 側で管理 |
 | フォーム入力値 | E2E Data クラス | UI からの入力をシミュレート |
 | エラーケーステスト | E2E Data クラス | 無効なデータパターンを柔軟に生成 |
 | 認証情報 | E2E Data クラス | ログインフォームへの入力 |
 | API レスポンスのモック | E2E Data クラス | フロントエンドテスト用 |
 
+> **`laravel` fixture について**: DB永続化データの生成は、自前の testing 用Artisanコマンドを叩く `laravel` fixture 経由で行う（外部パッケージ非依存）。論理名（許可リスト）でモデルを指定し、返却は `{ ok, data }` のJSON契約に従う。詳細は [laravel-test-data-setup.md](laravel-test-data-setup.md) を参照。
+
 ### 具体例
 
 ```typescript
-// Laravel Factory: DB にユーザーを作成
+import { test, expect } from '../fixtures/laravel';
+
+// Laravel Factory: DB にユーザーを作成（laravel fixture 経由）
 test('ユーザー詳細表示', async ({ laravel, page }) => {
-  // Laravel Factory でDBにデータ作成
-  const user = await laravel.factory('User', {
-    name: '山田太郎',
-    email: 'yamada@example.com',
-  });
+  // 許可リストの論理名 'user' で生成（クラス名は渡さない）
+  const { model: user } = await laravel.factory<{ model: { id: number; name: string } }>(
+    'user',
+    { name: '山田太郎', email: 'yamada@example.com' },
+  );
 
   await page.goto(`/users/${user.id}`);
   await expect(page.getByText('山田太郎')).toBeVisible();

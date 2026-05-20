@@ -34,8 +34,8 @@ E2Eテスト環境の初期セットアップについては **[ci-quickstart.md
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  // テストディレクトリ
-  testDir: './tests/e2e/tests',
+  // テストディレクトリ（setup ファイル *.setup.ts も発見対象に含めるため tests/e2e 全体）
+  testDir: './tests/e2e',
 
   // 並列実行
   fullyParallel: true,
@@ -91,9 +91,10 @@ export default defineConfig({
       name: 'setup',
       testMatch: /.*\.setup\.ts/
     },
-    // Chromiumテスト
+    // Chromiumテスト（setup ファイルは二重実行しないよう除外）
     {
       name: 'chromium',
+      testIgnore: /.*\.setup\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json'
@@ -103,6 +104,7 @@ export default defineConfig({
     // Firefoxテスト（オプション）
     {
       name: 'firefox',
+      testIgnore: /.*\.setup\.ts/,
       use: {
         ...devices['Desktop Firefox'],
         storageState: 'playwright/.auth/user.json'
@@ -112,6 +114,7 @@ export default defineConfig({
     // モバイルテスト（オプション）
     {
       name: 'mobile-chrome',
+      testIgnore: /.*\.setup\.ts/,
       use: {
         ...devices['Pixel 5'],
         storageState: 'playwright/.auth/user.json'
@@ -466,15 +469,18 @@ CACHE_DRIVER=array
 QUEUE_CONNECTION=sync
 SESSION_DRIVER=array
 SESSION_LIFETIME=120
-
-PLAYWRIGHT_ENABLED=true
 ```
+
+> **E2E_ARTISAN はここ（.env.testing）に書かない**。これはPHP用のdotenvで、Playwright（Node）プロセスは読み込まない。`E2E_ARTISAN` は **シェルの export / CIの `env:` ブロック / `playwright.config.ts` 冒頭の dotenv ロード**で Node の `process.env` に渡すこと（下記「CI環境変数」参照）。
 
 ### CI環境変数
 
 ```yaml
 # GitHub Actions環境変数
 env:
+  # ジョブ全体を testing 環境にする（php artisan serve も artisan コマンドも .env.testing をロードし、
+  # 同一の testing DB を共有する）。これがないと AbstractTestingCommand のガードに弾かれ NOT_TESTING_ENV になる。
+  APP_ENV: testing
   BASE_URL: http://localhost:8000
   CI: true
   DB_CONNECTION: mysql
@@ -482,6 +488,7 @@ env:
   DB_DATABASE: testing
   DB_USERNAME: root
   DB_PASSWORD: password
+  E2E_ARTISAN: "php artisan"  # ローカル(Docker)では "docker compose exec -T app php artisan"
 ```
 
 ## レポート設定
