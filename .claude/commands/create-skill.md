@@ -1,13 +1,13 @@
 ---
 description: "スキルを作成し、レビュー・自動修正まで行う"
 argument-hint: "[スキル名] [スキルの説明]"
-allowed-tools: ["Skill", "AskUserQuestion", "TodoWrite", "Read", "Glob"]
+allowed-tools: ["Skill", "AskUserQuestion", "TodoWrite", "Read", "Glob", "Grep", "Bash"]
 ---
 
 # /create-skill - スキル作成コマンド
 
 このコマンドは、skill-creatorスキル（外部スキル: example-skills:skill-creator）を使って新しいスキルを作成し、
-reviewing-skillsスキルでレビュー・自動修正を行います。
+同スキルの検証スクリプトと設計原則でレビュー・自動修正を行います。
 
 **注意**: このコマンドを実行する前に、example-skillsパッケージがインストールされていることを確認してください。
 
@@ -95,7 +95,7 @@ TodoWrite({
       status: "in_progress"
     },
     {
-      content: "reviewing-skillsでスキルをレビュー",
+      content: "skill-creatorの検証・設計原則でレビュー",
       activeForm: "スキルをレビューしている",
       status: "pending"
     },
@@ -142,7 +142,7 @@ TodoWrite({
       status: "completed"
     },
     {
-      content: "reviewing-skillsでスキルをレビュー",
+      content: "skill-creatorの検証・設計原則でレビュー",
       activeForm: "スキルをレビューしている",
       status: "in_progress"
     },
@@ -155,15 +155,26 @@ TodoWrite({
 })
 ```
 
-### reviewing-skillsの実行
+### skill-creatorによるレビュー・検証
 
-Skillツールを使用してreviewing-skillsスキルを実行します：
+[2/3] で使用した skill-creator スキルの**検証スクリプト**と**設計原則**で、作成したスキルをレビューします。
 
-```javascript
-Skill({
-  skill: "reviewing-skills"
-})
-```
+1. **構造検証**: skill-creator の検証スクリプトを実行します（base ディレクトリは [2/3] の skill-creator スキルが提示するパス）。
+
+   ```bash
+   python3 <skill-creator>/scripts/quick_validate.py <作成したスキルのパス>
+   # または（パッケージ化まで行う場合）
+   python3 <skill-creator>/scripts/package_skill.py <作成したスキルのパス>
+   ```
+
+   YAMLフロントマター・命名規則（hyphen-case）・必須フィールド（name/description）・許可外キー・description長（≤1024字, 角括弧禁止）をチェックします。`pyyaml` 未導入で実行できない場合は、次の設計原則チェックで代替します。
+
+2. **設計原則チェック**（skill-creator準拠）:
+   - SKILL.md 本文が **500行以下**か（超過時は `references/` へ分割）
+   - `description` に「何をするか」＋「いつ使うか（トリガー）」の両方が含まれるか
+   - プログレッシブディスクロージャ（`references/` は1階層・SKILL.mdから直リンク、100行超のファイルは冒頭にTOC）
+   - SKILL.md と `references/` で**情報が重複していない**か
+   - README/INSTALLATION 等の**余分なドキュメントを作っていない**か
 
 ### レビュー結果の処理
 
@@ -180,7 +191,7 @@ TodoWrite({
       status: "completed"
     },
     {
-      content: "reviewing-skillsでスキルをレビュー",
+      content: "skill-creatorの検証・設計原則でレビュー",
       activeForm: "スキルをレビューしている",
       status: "completed"
     },
@@ -196,7 +207,7 @@ TodoWrite({
 **問題がある場合**：
 1. TodoWriteを更新して自動修正フェーズに移行
 2. 指摘された問題を自動的に修正
-3. 再度reviewing-skillsを実行して確認
+3. 再度 skill-creator の検証・設計原則チェックを実行して確認
 4. 問題がなくなるまで繰り返す（最大3回）
 
 ```javascript
@@ -208,7 +219,7 @@ TodoWrite({
       status: "completed"
     },
     {
-      content: "reviewing-skillsでスキルをレビュー",
+      content: "skill-creatorの検証・設計原則でレビュー",
       activeForm: "スキルをレビューしている",
       status: "completed"
     },
@@ -223,7 +234,7 @@ TodoWrite({
 
 ### 自動修正のルール
 
-reviewing-skillsから指摘された問題を自動修正する際：
+skill-creatorの検証・設計原則から指摘された問題を自動修正する際：
 
 1. **構造的な問題**: ディレクトリ構造やファイル配置を修正
 2. **内容の問題**: SKILL.mdの内容を修正・改善
@@ -264,5 +275,5 @@ reviewing-skillsから指摘された問題を自動修正する際：
 ### エラーハンドリング
 
 - skill-creatorの実行エラー時は明確なエラーメッセージを表示
-- reviewing-skillsの実行エラー時はリトライオプションを提供
+- 検証スクリプト（skill-creator）の実行エラー時はリトライオプションを提供
 - 修正不可能な問題はユーザーに報告
