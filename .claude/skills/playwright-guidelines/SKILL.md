@@ -411,54 +411,12 @@ test('テスト2', async ({ page }) => { /* 独立した状態 */ });
 
 ## CI/CD設定
 
-詳細は [references/ci-config.md](references/ci-config.md) を参照。
+完全な `playwright.config.ts`（本番向け・GitHub Actions・Docker対応）は [references/ci-config.md](references/ci-config.md) を参照。要点のみ:
 
-### playwright.config.ts
-
-```typescript
-import { defineConfig, devices } from '@playwright/test';
-
-export default defineConfig({
-  // setup ファイル（*.setup.ts）も発見対象に含めるため testDir は tests/e2e 全体にする
-  testDir: './tests/e2e',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-
-  reporter: process.env.CI
-    ? [['blob'], ['github'], ['junit', { outputFile: 'test-results/results.xml' }]]
-    : [['html'], ['list']],
-
-  use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:8000',
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-  },
-
-  projects: [
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
-    {
-      name: 'chromium',
-      // setup ファイルはブラウザプロジェクトで二重実行しないよう明示的に除外
-      testIgnore: /.*\.setup\.ts/,
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'playwright/.auth/user.json'
-      },
-      dependencies: ['setup']
-    }
-  ],
-
-  webServer: {
-    command: 'php artisan serve --port=8000',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
-});
-```
+- `testDir: './tests/e2e'`（`*.setup.ts` も発見対象に含めるため `tests/` 直下に絞らない）
+- `setup` プロジェクト（`testMatch: /.*\.setup\.ts/`）を用意し、ブラウザプロジェクトは `dependencies: ['setup']` ＋ `testIgnore: /.*\.setup\.ts/`（二重実行防止）
+- `storageState: 'playwright/.auth/user.json'` で認証状態を再利用
+- 共有DB前提のため初期は `workers: 1`。並列化はDB分離とセットで検討（`references/laravel-test-data-setup.md`）
 
 ## Reference Documentation
 
