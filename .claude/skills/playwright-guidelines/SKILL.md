@@ -18,6 +18,7 @@ description: E2Eテスト仕様書の作成とPlaywrightテストコード生成
 - `references/selector-separation.md` - セレクタ分離管理パターンの詳細が必要な場合
 - `references/fixtures-guide.md` - カスタムフィクスチャ、スコープ、自動フィクスチャの詳細が必要な場合
 - `references/data-patterns.md` - テストデータパターン（Interface + Factory）の詳細が必要な場合
+- `references/scenario-derivation.md` - 画面遷移図・アクティビティ図からE2Eシナリオを導出する場合（Phase 1）
 - `references/laravel-test-data-setup.md` - Laravel連携（自前 testing コマンド + TSラッパー）でE2Eテストデータを準備する場合
 - `references/impl-plan-templates.md` - 実装計画書テンプレート（/implementing-e2e-specs 用）が必要な場合
 - `references/test-stability.md` - テスト安定性のベストプラクティスが必要な場合
@@ -220,7 +221,9 @@ E2E は最も遅く不安定化しやすい Large レベル。**仕様の分岐�
 - 選定の判断軸（テストサイズ × リスクベース選定、リグレッション≠E2E）の詳細は `test-methodology-reviewer` の `references/coverage-strategies.md` を参照。
 - E2E に置くと決めたシナリオは、**データ準備も Large 相応に明示**する（`references/laravel-test-data-setup.md`）。
 
-シナリオの着想は、画面遷移図・アクティビティ図から「実際に操作可能な手順の組み合わせ」を辿ると、網羅の抜けを抑えられる。
+#### 4. 画面遷移図・アクティビティ図からのシナリオ導出
+
+シナリオは思いつきで挙げず、**画面遷移図 × アクティビティ図から再現可能に導出**する（遷移エッジを基準に網羅 → 操作可能な手順列に展開 → Happy path/重大リスクを Large に昇格）。手順の詳細は [references/scenario-derivation.md](references/scenario-derivation.md) を参照。
 
 ## テストセットアップ戦略
 
@@ -468,6 +471,7 @@ export default defineConfig({
 - **[references/selector-strategy.md](references/selector-strategy.md)**: セレクタ戦略の詳細（優先順位、ロールベースセレクタ）
 - **[references/fixtures-guide.md](references/fixtures-guide.md)**: フィクスチャの詳細ガイド（カスタムフィクスチャ、スコープ、自動フィクスチャ）
 - **[references/data-patterns.md](references/data-patterns.md)**: テストデータパターン（Interface + Factory、型安全なデータ管理、Laravel Factoryとの使い分け）
+- **[references/scenario-derivation.md](references/scenario-derivation.md)**: 画面遷移図・アクティビティ図からのE2Eシナリオ導出（遷移網羅基準、Large昇格の判断）
 
 ### コード生成・品質
 
