@@ -72,6 +72,7 @@ describe('TopNav', () => {
       {},
       expect.objectContaining({
         onError: expect.any(Function),
+        onFinish: expect.any(Function),
       }),
     );
   });

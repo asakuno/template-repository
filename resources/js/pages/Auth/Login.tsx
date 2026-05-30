@@ -7,12 +7,14 @@
 
 import { Head, Link, useForm } from '@inertiajs/react';
 import type React from 'react';
+import { useTransition } from 'react';
 import { InputField } from '@/components/ui/InputField';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { GuestLayout } from '@/layouts/GuestLayout';
 
 export default function Login() {
+  const [isPending, startTransition] = useTransition();
   const form = useForm({
     email: '',
     password: '',
@@ -22,7 +24,9 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submit();
+    startTransition(() => {
+      submit();
+    });
   };
 
   return (
@@ -62,7 +66,7 @@ export default function Login() {
           </div>
 
           {/* 送信ボタン */}
-          <PrimaryButton processing={processing}>ログインする</PrimaryButton>
+          <PrimaryButton processing={processing || isPending}>ログインする</PrimaryButton>
 
           {/* フッターリンク */}
           <div className="mt-6 flex items-center justify-between text-[13px] text-slate-600">

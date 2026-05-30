@@ -7,12 +7,14 @@
 
 import { Head, Link, useForm } from '@inertiajs/react';
 import type React from 'react';
+import { useTransition } from 'react';
 import { InputField } from '@/components/ui/InputField';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { GuestLayout } from '@/layouts/GuestLayout';
 
 export default function Register() {
+  const [isPending, startTransition] = useTransition();
   const form = useForm({
     name: '',
     email: '',
@@ -24,7 +26,9 @@ export default function Register() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submit();
+    startTransition(() => {
+      submit();
+    });
   };
 
   return (
@@ -110,7 +114,7 @@ export default function Register() {
           </p>
 
           {/* 送信ボタン */}
-          <PrimaryButton processing={processing}>アカウントを作成する</PrimaryButton>
+          <PrimaryButton processing={processing || isPending}>アカウントを作成する</PrimaryButton>
 
           {/* 区切り線 */}
           <hr className="my-6 border-slate-200" />

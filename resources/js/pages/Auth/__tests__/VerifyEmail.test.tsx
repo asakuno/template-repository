@@ -54,7 +54,10 @@ describe('VerifyEmail', () => {
     fireEvent.click(screen.getByRole('button', { name: '認証メールを再送する' }));
     expect(mockPost).toHaveBeenCalledWith(
       '/email/verification-notification',
-      expect.objectContaining({ onSuccess: expect.any(Function) }),
+      expect.objectContaining({
+        onFinish: expect.any(Function),
+        onSuccess: expect.any(Function),
+      }),
     );
   });
 

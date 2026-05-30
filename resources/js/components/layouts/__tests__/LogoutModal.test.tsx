@@ -10,7 +10,7 @@ describe('LogoutModal', () => {
   const defaultProps = {
     open: true,
     onClose: vi.fn(),
-    onLogout: vi.fn(),
+    action: vi.fn(),
     processing: false,
   };
 
@@ -25,13 +25,13 @@ describe('LogoutModal', () => {
     expect(screen.queryByText('ログアウト確認')).not.toBeInTheDocument();
   });
 
-  it('ログアウトボタンクリックで onLogout が呼ばれること', async () => {
+  it('ログアウトボタンクリックで action が呼ばれること', async () => {
     const user = userEvent.setup();
-    const onLogout = vi.fn();
-    render(<LogoutModal {...defaultProps} onLogout={onLogout} />);
+    const action = vi.fn();
+    render(<LogoutModal {...defaultProps} action={action} />);
 
     await user.click(screen.getByRole('button', { name: 'ログアウト' }));
-    expect(onLogout).toHaveBeenCalledOnce();
+    expect(action).toHaveBeenCalledOnce();
   });
 
   it('キャンセルクリックで onClose が呼ばれること', async () => {

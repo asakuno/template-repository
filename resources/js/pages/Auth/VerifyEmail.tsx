@@ -18,11 +18,13 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
   const { post, processing } = useForm({});
   const [cooldown, setCooldown] = useState(0);
 
-  const handleResend = () => {
-    post('/email/verification-notification', {
-      onSuccess: () => setCooldown(60),
+  const resendVerificationEmail = () =>
+    new Promise<void>((resolve) => {
+      post('/email/verification-notification', {
+        onSuccess: () => setCooldown(60),
+        onFinish: () => resolve(),
+      });
     });
-  };
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -67,7 +69,12 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
           </div>
         )}
 
-        <PrimaryButton processing={processing} onClick={handleResend} disabled={cooldown > 0}>
+        <PrimaryButton
+          action={resendVerificationEmail}
+          processing={processing}
+          disabled={cooldown > 0}
+          processingLabel="送信中..."
+        >
           {cooldown > 0 ? `再送可能まで ${cooldown}秒` : '認証メールを再送する'}
         </PrimaryButton>
 
