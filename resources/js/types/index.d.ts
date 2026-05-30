@@ -8,8 +8,17 @@
 /**
  * 認証情報
  */
+export interface User {
+  id: number;
+  name: string;
+  email?: string;
+  email_verified_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Auth {
-  user: App.Models.User | null;
+  user: User | null;
 }
 
 /**
@@ -30,8 +39,9 @@ export interface Flash {
  * @example
  * interface IndexPageProps extends AppPageProps<{ users: User[] }> {}
  */
-export interface AppPageProps<T extends Record<string, unknown> = Record<string, unknown>>
-  extends T {
+export interface AppPageProps<
+  T extends Record<string, unknown> = Record<string, unknown>,
+> extends T {
   app: {
     name: string;
     env: string;

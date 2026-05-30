@@ -19,4 +19,6 @@ RUN install-php-extensions \
 
 RUN curl -sL https://deb.nodesource.com/setup_lts.x | bash -
 RUN apt install -y nodejs
-RUN npm install --global yarn
+RUN curl -fsSL https://vite.plus | bash
+
+ENV PATH="/root/.vite-plus/bin:$PATH"

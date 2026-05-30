@@ -82,9 +82,7 @@ export default function Register() {
               autoComplete="new-password"
               required
             />
-            <p className="mt-1 text-xs text-slate-400">
-              8文字以上の英数字を含めてください
-            </p>
+            <p className="mt-1 text-xs text-slate-400">8文字以上の英数字を含めてください</p>
           </div>
 
           {/* パスワード（確認用） */}

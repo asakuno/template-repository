@@ -16,9 +16,13 @@ export function TopNav() {
 
   const handleLogout = () => {
     setProcessing(true);
-    router.post('/logout', {}, {
-      onError: () => setProcessing(false),
-    });
+    router.post(
+      '/logout',
+      {},
+      {
+        onError: () => setProcessing(false),
+      },
+    );
   };
 
   return (

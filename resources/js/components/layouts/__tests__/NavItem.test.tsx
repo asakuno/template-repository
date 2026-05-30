@@ -2,7 +2,7 @@
  * NavItem コンポーネントテスト
  */
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 vi.mock('@inertiajs/react', () => ({
   Link: ({ href, children, ...props }: Record<string, unknown>) => (

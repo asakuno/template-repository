@@ -59,7 +59,10 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
         </p>
 
         {status === 'verification-link-sent' && (
-          <div role="status" className="mb-6 rounded-md bg-green-50 p-3 text-center text-green-700 text-sm">
+          <div
+            role="status"
+            className="mb-6 rounded-md bg-green-50 p-3 text-center text-green-700 text-sm"
+          >
             認証リンクを再送しました。
           </div>
         )}

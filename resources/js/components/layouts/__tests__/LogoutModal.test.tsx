@@ -3,7 +3,7 @@
  */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import { LogoutModal } from '../LogoutModal';
 
 describe('LogoutModal', () => {
@@ -17,9 +17,7 @@ describe('LogoutModal', () => {
   it('open=true でモーダルが表示されること', () => {
     render(<LogoutModal {...defaultProps} />);
     expect(screen.getByText('ログアウト確認')).toBeInTheDocument();
-    expect(
-      screen.getByText(/ログアウトしてもよろしいですか/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/ログアウトしてもよろしいですか/)).toBeInTheDocument();
   });
 
   it('open=false でモーダルが非表示であること', () => {

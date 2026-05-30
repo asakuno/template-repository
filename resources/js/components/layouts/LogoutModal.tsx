@@ -4,12 +4,7 @@
  * Glassmorphismデザインの確認モーダル。
  * shadcn/ui Dialog をベースにカスタムスタイルを適用。
  */
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 type LogoutModalProps = {
   open: boolean;
@@ -18,12 +13,7 @@ type LogoutModalProps = {
   processing: boolean;
 };
 
-export function LogoutModal({
-  open,
-  onClose,
-  onLogout,
-  processing,
-}: LogoutModalProps) {
+export function LogoutModal({ open, onClose, onLogout, processing }: LogoutModalProps) {
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent
