@@ -88,6 +88,8 @@ jobs:
 
       - name: Vite+ Test
         run: npm run test:ci
+        env:
+          LARAVEL_BYPASS_ENV_CHECK: 1
 
       - name: Build
         run: npm run build:all

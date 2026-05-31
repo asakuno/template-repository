@@ -66,7 +66,7 @@ final class RegisterUserUseCaseTest extends TestCase
         $this->useCase->execute($data);
 
         // Assert
-        $user = \App\Models\User::where('email', 'test@example.com')->first();
+        $user = User::where('email', 'test@example.com')->first();
         $this->assertTrue(Hash::check('Password1!', $user->password));
         $this->assertNotSame('Password1!', $user->password);
     }
