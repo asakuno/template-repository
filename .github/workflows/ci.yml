@@ -77,6 +77,29 @@ jobs:
           node-version: '24'
           cache: npm
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, sqlite3, pdo_sqlite
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-8.4-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-8.4-composer-${{ hashFiles('composer.lock') }}
+            ${{ runner.os }}-php-8.4-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Setup Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
       - name: Install dependencies
         run: npm ci
 
