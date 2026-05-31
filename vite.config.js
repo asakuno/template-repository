@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite-plus';
+import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
@@ -6,6 +7,7 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [
+    wayfinder(),
     laravel({
       input: ['resources/css/app.css', 'resources/js/app.tsx'],
       ssr: 'resources/js/ssr.tsx',
@@ -79,6 +81,7 @@ export default defineConfig({
       'resources/js/types/model.d.ts',
       'resources/js/actions/**',
       'resources/js/routes/**',
+      'resources/js/wayfinder/**',
     ],
   },
   fmt: {
@@ -98,6 +101,7 @@ export default defineConfig({
       'resources/js/types/model.d.ts',
       'resources/js/actions/**',
       'resources/js/routes/**',
+      'resources/js/wayfinder/**',
     ],
   },
   staged: {

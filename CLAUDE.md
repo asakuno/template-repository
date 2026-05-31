@@ -22,11 +22,11 @@
 
 ### Quality Checks コマンド
 
-> **注意**: ローカル開発では `php`、`artisan`、`composer`、`yarn` コマンドはすべて Docker コンテナ内で実行する（`docker compose exec app` を先頭に付ける）。CI環境（GitHub Actions）ではホスト上で直接実行する。
+> **注意**: ローカル開発では `php`、`artisan`、`composer`、`npm`、`npx`、`node`、`vp` コマンドはすべて Docker コンテナ内で実行する（`docker compose exec app` を先頭に付ける）。ホスト側で直接 `npm install` / `npm run ...` を実行すると、Docker/Linux とホストOSの native optional dependency が混在して壊れるため禁止。CI環境（GitHub Actions）ではホスト上で直接実行する。
 
 **フロントエンド**:
 ```bash
-docker compose exec app yarn typecheck && docker compose exec app yarn check && docker compose exec app yarn test && docker compose exec app yarn build:all
+docker compose exec app npm run typecheck && docker compose exec app npm run check && docker compose exec app npm run test:ci && docker compose exec app npm run build:all
 ```
 
 **バックエンド**:
@@ -54,7 +54,7 @@ docker compose exec app ./vendor/bin/phpstan analyse && docker compose exec app 
 - **ユーティリティ関数**: 80%以上
 
 ```bash
-yarn test --coverage
+docker compose exec app npm run test:coverage
 ```
 
 **重要**: カバレッジ基準を満たさない場合は、追加テストを作成してから次のフェーズに進む。

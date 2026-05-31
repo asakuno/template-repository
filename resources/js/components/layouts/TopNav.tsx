@@ -3,9 +3,9 @@
  *
  * 検索バー、通知ベル、ユーザー情報、ログアウトボタンを表示。
  */
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
-import { authRepository } from '@/repositories';
+import { logout } from '@/actions/App/Http/Controllers/Web/AuthPageController';
 import type { AppPageProps } from '@/types/index.d.ts';
 import { LogoutModal } from './LogoutModal';
 
@@ -14,7 +14,20 @@ export function TopNav() {
   const userName = props.auth.user?.name ?? '';
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const logoutAction = useCallback(() => authRepository.logout(), []);
+  const logoutAction = useCallback(
+    () =>
+      new Promise<void>((resolve) => {
+        router.post(
+          logout.url(),
+          {},
+          {
+            onError: () => resolve(),
+            onFinish: () => resolve(),
+          },
+        );
+      }),
+    [],
+  );
 
   return (
     <>

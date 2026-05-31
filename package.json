@@ -31,6 +31,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@laravel/vite-plugin-wayfinder": "^0.1.7",
     "@playwright/test": "^1.58.0",
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/dom": "^10.4.1",

@@ -8,11 +8,11 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type React from 'react';
 import { useTransition } from 'react';
+import { register, showLogin } from '@/actions/App/Http/Controllers/Web/AuthPageController';
 import { InputField } from '@/components/ui/InputField';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { GuestLayout } from '@/layouts/GuestLayout';
-import { authRoutes } from '@/repositories';
 
 export default function Register() {
   const [isPending, startTransition] = useTransition();
@@ -21,7 +21,7 @@ export default function Register() {
     email: '',
     password: '',
     password_confirmation: '',
-  }).withPrecognition('post', authRoutes.register);
+  }).withPrecognition(register().method, register.url());
 
   const { data, setData, submit, processing, errors, validate } = form;
 
@@ -123,7 +123,7 @@ export default function Register() {
           {/* フッターリンク */}
           <div className="text-center text-[13px] text-slate-600">
             <Link
-              href={authRoutes.login}
+              href={showLogin.url()}
               className="transition hover:text-[#326CCB] hover:underline"
             >
               既にアカウントをお持ちの方はこちら &rarr;
