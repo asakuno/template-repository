@@ -14,9 +14,7 @@ interface RecentActivityProps {
 export function RecentActivity({ activities }: RecentActivityProps) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
-      <h3 className="mb-4 font-semibold text-base text-gray-900">
-        最近のアクティビティ
-      </h3>
+      <h3 className="mb-4 font-semibold text-base text-gray-900">最近のアクティビティ</h3>
       <div className="flex flex-col gap-4">
         {activities.map((activity) => (
           <ActivityItem key={activity.id} {...activity} />

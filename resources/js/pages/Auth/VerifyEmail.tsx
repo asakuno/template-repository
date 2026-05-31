@@ -7,6 +7,8 @@
 
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { logout } from '@/actions/App/Http/Controllers/Web/AuthPageController';
+import { send } from '@/actions/App/Http/Controllers/Web/EmailVerificationPageController';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { GuestLayout } from '@/layouts/GuestLayout';
 
@@ -18,11 +20,13 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
   const { post, processing } = useForm({});
   const [cooldown, setCooldown] = useState(0);
 
-  const handleResend = () => {
-    post('/email/verification-notification', {
-      onSuccess: () => setCooldown(60),
+  const resendVerificationEmail = () =>
+    new Promise<void>((resolve) => {
+      post(send.url(), {
+        onSuccess: () => setCooldown(60),
+        onFinish: () => resolve(),
+      });
     });
-  };
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -59,12 +63,20 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
         </p>
 
         {status === 'verification-link-sent' && (
-          <div role="status" className="mb-6 rounded-md bg-green-50 p-3 text-center text-green-700 text-sm">
+          <div
+            role="status"
+            className="mb-6 rounded-md bg-green-50 p-3 text-center text-green-700 text-sm"
+          >
             認証リンクを再送しました。
           </div>
         )}
 
-        <PrimaryButton processing={processing} onClick={handleResend} disabled={cooldown > 0}>
+        <PrimaryButton
+          action={resendVerificationEmail}
+          processing={processing}
+          disabled={cooldown > 0}
+          processingLabel="送信中..."
+        >
           {cooldown > 0 ? `再送可能まで ${cooldown}秒` : '認証メールを再送する'}
         </PrimaryButton>
 
@@ -72,8 +84,8 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
 
         <div className="text-center text-[13px] text-slate-600">
           <Link
-            href="/logout"
-            method="post"
+            href={logout.url()}
+            method={logout().method}
             as="button"
             className="transition hover:text-[#326CCB] hover:underline"
           >

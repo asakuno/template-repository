@@ -40,21 +40,10 @@
     "skipLibCheck": true,
 
     // Path Aliases
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./resources/js/*"]
     }
   },
-  "include": [
-    "resources/js/**/*.ts",
-    "resources/js/**/*.tsx",
-    "resources/js/**/*.d.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "vendor",
-    "public",
-    "storage",
-    "dist"
-  ]
+  "include": ["resources/js/**/*.ts", "resources/js/**/*.tsx", "resources/js/**/*.d.ts"],
+  "exclude": ["node_modules", "vendor", "public", "storage", "dist"]
 }

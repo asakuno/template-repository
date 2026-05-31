@@ -59,15 +59,21 @@ ssr-daemon:
 ssr-stop:
 	docker compose exec app php artisan inertia:stop-ssr
 ssr-build:
-	docker compose exec app yarn build:ssr
-yarn-install:
-	docker compose run --rm app yarn install
+	docker compose exec app npm run build:ssr
+npm-install:
+	docker compose run --rm app npm install
 vite:
-	docker compose exec app yarn dev
+	docker compose exec app npm run dev
 vite-build:
-	docker compose exec app yarn build
+	docker compose exec app npm run build
+vite-build-all:
+	docker compose exec app npm run build:all
+js-check:
+	docker compose exec app npm run check
+js-test:
+	docker compose exec app npm run test:ci
 vite-kill:
-	docker compose exec app pkill -f "vite"
+	docker compose exec app pkill -f "vp dev"
 
 setup-storage:
 	docker compose exec app mkdir -p storage/framework/{sessions,views,cache}
@@ -90,7 +96,7 @@ init:
 	cp .env.example .env
 	@make up-build
 	@make composer-install
-	@make yarn-install
+	@make npm-install
 	@make setup-storage
 	docker compose exec app php artisan key:generate
 	@make migrate

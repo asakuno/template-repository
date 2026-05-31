@@ -4,26 +4,26 @@
  * Glassmorphismデザインの確認モーダル。
  * shadcn/ui Dialog をベースにカスタムスタイルを適用。
  */
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useTransition } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 type LogoutModalProps = {
   open: boolean;
   onClose: () => void;
-  onLogout: () => void;
-  processing: boolean;
+  action: () => void | Promise<void>;
+  processing?: boolean;
 };
 
-export function LogoutModal({
-  open,
-  onClose,
-  onLogout,
-  processing,
-}: LogoutModalProps) {
+export function LogoutModal({ open, onClose, action, processing }: LogoutModalProps) {
+  const [isPending, startTransition] = useTransition();
+  const isProcessing = Boolean(processing || isPending);
+
+  const handleLogout = () => {
+    startTransition(async () => {
+      await action();
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent
@@ -57,11 +57,12 @@ export function LogoutModal({
         <div className="flex w-full flex-col items-center gap-5">
           <button
             type="button"
-            onClick={onLogout}
-            disabled={processing}
+            onClick={handleLogout}
+            disabled={isProcessing}
+            aria-busy={isProcessing || undefined}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#0F172A] px-6 py-3 text-xs font-medium tracking-widest text-white shadow-lg shadow-[#0F172A]/20 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#1E1B4B] dark:shadow-black/40"
           >
-            {processing ? (
+            {isProcessing ? (
               <>
                 <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 <span>ログアウト中...</span>
@@ -73,6 +74,7 @@ export function LogoutModal({
           <button
             type="button"
             onClick={onClose}
+            disabled={isProcessing}
             className="border-b border-transparent px-4 py-2 text-xs font-light text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-800 dark:text-slate-500 dark:hover:border-slate-500 dark:hover:text-slate-200"
           >
             キャンセル

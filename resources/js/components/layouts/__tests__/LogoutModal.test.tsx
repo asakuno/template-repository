@@ -3,23 +3,21 @@
  */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vite-plus/test';
 import { LogoutModal } from '../LogoutModal';
 
 describe('LogoutModal', () => {
   const defaultProps = {
     open: true,
     onClose: vi.fn(),
-    onLogout: vi.fn(),
+    action: vi.fn(),
     processing: false,
   };
 
   it('open=true でモーダルが表示されること', () => {
     render(<LogoutModal {...defaultProps} />);
     expect(screen.getByText('ログアウト確認')).toBeInTheDocument();
-    expect(
-      screen.getByText(/ログアウトしてもよろしいですか/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/ログアウトしてもよろしいですか/)).toBeInTheDocument();
   });
 
   it('open=false でモーダルが非表示であること', () => {
@@ -27,13 +25,13 @@ describe('LogoutModal', () => {
     expect(screen.queryByText('ログアウト確認')).not.toBeInTheDocument();
   });
 
-  it('ログアウトボタンクリックで onLogout が呼ばれること', async () => {
+  it('ログアウトボタンクリックで action が呼ばれること', async () => {
     const user = userEvent.setup();
-    const onLogout = vi.fn();
-    render(<LogoutModal {...defaultProps} onLogout={onLogout} />);
+    const action = vi.fn();
+    render(<LogoutModal {...defaultProps} action={action} />);
 
     await user.click(screen.getByRole('button', { name: 'ログアウト' }));
-    expect(onLogout).toHaveBeenCalledOnce();
+    expect(action).toHaveBeenCalledOnce();
   });
 
   it('キャンセルクリックで onClose が呼ばれること', async () => {

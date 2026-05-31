@@ -74,31 +74,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-22-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node-22-yarn-${{ hashFiles('yarn.lock') }}
-            ${{ runner.os }}-node-22-yarn-
+          node-version: '24'
+          cache: npm
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: TypeCheck
-        run: yarn typecheck
+        run: npm run typecheck
 
-      - name: Biome
-        run: yarn check --reporter=github
+      - name: Vite+ Check
+        run: npm run check
 
-      - name: Vitest
-        run: yarn test:ci
+      - name: Vite+ Test
+        run: npm run test:ci
 
       - name: Build
-        run: yarn build:all
+        run: npm run build:all
 
-      - name: Yarn Audit
-        run: yarn audit || true
+      - name: NPM Audit
+        run: npm audit || true

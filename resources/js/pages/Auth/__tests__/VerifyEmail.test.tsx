@@ -2,7 +2,7 @@
  * メール認証ページテスト
  */
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 // Inertia.js モック
 const mockPost = vi.fn();
@@ -52,7 +52,13 @@ describe('VerifyEmail', () => {
   it('再送ボタンクリックで post が呼ばれること', () => {
     render(<VerifyEmail />);
     fireEvent.click(screen.getByRole('button', { name: '認証メールを再送する' }));
-    expect(mockPost).toHaveBeenCalledWith('/email/verification-notification', expect.objectContaining({ onSuccess: expect.any(Function) }));
+    expect(mockPost).toHaveBeenCalledWith(
+      '/email/verification-notification',
+      expect.objectContaining({
+        onFinish: expect.any(Function),
+        onSuccess: expect.any(Function),
+      }),
+    );
   });
 
   it('ページタイトルが「メール認証」であること', () => {

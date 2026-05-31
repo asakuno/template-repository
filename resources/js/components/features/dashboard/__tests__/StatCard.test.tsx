@@ -2,7 +2,7 @@
  * StatCard コンポーネントテスト
  */
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import type { StatCardData } from '@/types/dashboard';
 import { StatCard } from '../StatCard';
 

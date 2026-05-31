@@ -1,6 +1,6 @@
 ---
 name: test-methodology-reviewer
-description: 既存テストコードのレビューと改善提案。テスト設計技法（同値分割、境界値分析、状態遷移、デシジョンテーブル等）の観点でUnit/Integration/E2Eテストを評価する。使用: 実装済みテストのレビュー、カバレッジ改善、「テスト手法」「テスト設計」「テストパターン」「カバレッジ」関連の質問時。除外: テスト実行/CI設定（→ test-guidelines）、E2Eコード生成（→ playwright-guidelines）、E2Eテスト仕様書の作成（→ designing-e2e-specs）。
+description: 既存テストコードのレビューと改善提案。テスト設計技法（同値分割、境界値分析、状態遷移、デシジョンテーブル等）の観点でUnit/Integration/E2Eテストを評価する。使用する場面は、実装済みテストのレビュー、カバレッジ改善、「テスト手法」「テスト設計」「テストパターン」「カバレッジ」関連の質問時。除外する場面は、テスト実行/CI設定（test-guidelines を参照）、E2Eコード生成（playwright-guidelines を参照）、E2Eテスト仕様書の作成（designing-e2e-specs を参照）。
 ---
 
 # Test Methodology Reviewer

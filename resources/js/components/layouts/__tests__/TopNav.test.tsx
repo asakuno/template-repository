@@ -1,14 +1,15 @@
 /**
  * TopNav コンポーネントテスト
  */
-import { router } from '@inertiajs/react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+
+const mockPost = vi.hoisted(() => vi.fn());
 
 vi.mock('@inertiajs/react', () => ({
   router: {
-    post: vi.fn(),
+    post: mockPost,
   },
   usePage: vi.fn(() => ({
     props: {
@@ -66,8 +67,13 @@ describe('TopNav', () => {
     // モーダル内のログアウトボタン（配列の末尾）をクリック
     await user.click(buttons[buttons.length - 1]!);
 
-    expect(router.post).toHaveBeenCalledWith('/logout', {}, expect.objectContaining({
-      onError: expect.any(Function),
-    }));
+    expect(mockPost).toHaveBeenCalledWith(
+      '/logout',
+      {},
+      expect.objectContaining({
+        onError: expect.any(Function),
+        onFinish: expect.any(Function),
+      }),
+    );
   });
 });

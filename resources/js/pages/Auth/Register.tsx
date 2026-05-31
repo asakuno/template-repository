@@ -7,24 +7,29 @@
 
 import { Head, Link, useForm } from '@inertiajs/react';
 import type React from 'react';
+import { useTransition } from 'react';
+import { register, showLogin } from '@/actions/App/Http/Controllers/Web/AuthPageController';
 import { InputField } from '@/components/ui/InputField';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { GuestLayout } from '@/layouts/GuestLayout';
 
 export default function Register() {
+  const [isPending, startTransition] = useTransition();
   const form = useForm({
     name: '',
     email: '',
     password: '',
     password_confirmation: '',
-  }).withPrecognition('post', '/register');
+  }).withPrecognition(register().method, register.url());
 
   const { data, setData, submit, processing, errors, validate } = form;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submit();
+    startTransition(() => {
+      submit();
+    });
   };
 
   return (
@@ -82,9 +87,7 @@ export default function Register() {
               autoComplete="new-password"
               required
             />
-            <p className="mt-1 text-xs text-slate-400">
-              8文字以上の英数字を含めてください
-            </p>
+            <p className="mt-1 text-xs text-slate-400">8文字以上の英数字を含めてください</p>
           </div>
 
           {/* パスワード（確認用） */}
@@ -112,14 +115,17 @@ export default function Register() {
           </p>
 
           {/* 送信ボタン */}
-          <PrimaryButton processing={processing}>アカウントを作成する</PrimaryButton>
+          <PrimaryButton processing={processing || isPending}>アカウントを作成する</PrimaryButton>
 
           {/* 区切り線 */}
           <hr className="my-6 border-slate-200" />
 
           {/* フッターリンク */}
           <div className="text-center text-[13px] text-slate-600">
-            <Link href="/login" className="transition hover:text-[#326CCB] hover:underline">
+            <Link
+              href={showLogin.url()}
+              className="transition hover:text-[#326CCB] hover:underline"
+            >
               既にアカウントをお持ちの方はこちら &rarr;
             </Link>
           </div>
