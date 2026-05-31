@@ -12,13 +12,14 @@ import { InputField } from '@/components/ui/InputField';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { GuestLayout } from '@/layouts/GuestLayout';
+import { authRoutes } from '@/repositories';
 
 export default function Login() {
   const [isPending, startTransition] = useTransition();
   const form = useForm({
     email: '',
     password: '',
-  }).withPrecognition('post', '/login');
+  }).withPrecognition('post', authRoutes.login);
 
   const { data, setData, submit, processing, errors, validate } = form;
 
@@ -71,7 +72,10 @@ export default function Login() {
           {/* フッターリンク */}
           <div className="mt-6 flex items-center justify-between text-[13px] text-slate-600">
             <span className="cursor-default text-slate-400">パスワードをお忘れですか？</span>
-            <Link href="/register" className="transition hover:text-[#326CCB] hover:underline">
+            <Link
+              href={authRoutes.register}
+              className="transition hover:text-[#326CCB] hover:underline"
+            >
               新規登録はこちら
             </Link>
           </div>

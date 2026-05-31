@@ -9,6 +9,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import { GuestLayout } from '@/layouts/GuestLayout';
+import { authRepository, authRoutes } from '@/repositories';
 
 interface VerifyEmailProps {
   status?: string;
@@ -19,12 +20,7 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
   const [cooldown, setCooldown] = useState(0);
 
   const resendVerificationEmail = () =>
-    new Promise<void>((resolve) => {
-      post('/email/verification-notification', {
-        onSuccess: () => setCooldown(60),
-        onFinish: () => resolve(),
-      });
-    });
+    authRepository.resendVerificationEmail(post, () => setCooldown(60));
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -82,7 +78,7 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
 
         <div className="text-center text-[13px] text-slate-600">
           <Link
-            href="/logout"
+            href={authRoutes.logout}
             method="post"
             as="button"
             className="transition hover:text-[#326CCB] hover:underline"
